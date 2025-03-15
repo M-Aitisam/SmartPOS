@@ -1,6 +1,180 @@
 ﻿@page "/businessdetails"
-<h3>BusinessDetails</h3>
+@inject IAdminService AdminService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<h3>Business Management</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (businesses == null || businesses.Count == 0)
+{
+    <p>No businesses found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>City</th>
+                <th>Area</th>
+                <th>Location</th>
+                <th>Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var business in businesses)
+            {
+                <tr>
+                    <td>@business.BusinessID</td>
+                    <td>@business.BusinessName</td>
+                    <td>@business.BusinessType</td>
+                    <td>@business.City</td>
+                    <td>@business.Area</td>
+                    <td>@business.Location</td>
+                    <td>@(business.IsActive ? "Yes" : "No")</td>
+                    <td>
+                        <button @onclick="() => EditBusiness(business)" class="btn btn-primary">Edit</button>
+                        <button @onclick="() => ConfirmDelete(business.BusinessID)" class="btn btn-danger">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h4>Add / Edit Business</h4>
+
+<EditForm Model="@newBusiness" OnValidSubmit="SaveBusiness" FormName="BusinessForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Name:</label>
+        <InputText @bind-Value="newBusiness.BusinessName" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label>Type:</label>
+        <InputText @bind-Value="newBusiness.BusinessType" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label>City:</label>
+        <InputText @bind-Value="newBusiness.City" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label>Area:</label>
+        <InputText @bind-Value="newBusiness.Area" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label>Location:</label>
+        <InputText @bind-Value="newBusiness.Location" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label>Active:</label>
+        <InputCheckbox @bind-Value="newBusiness.IsActive" />
+    </div>
+    <button type="submit" class="btn btn-success">Save</button>
+</EditForm>
 
 @code {
+    private List<BusinessModel> businesses = new();
+    private BusinessModel newBusiness = new();
+    private bool isLoading = true;
+    private int businessIdToDelete;
+    private bool _jsInteropRequested;
+    private string _jsMessage = "";
 
+    protected override async Task OnInitializedAsync()
+    {
+        AdminService.OnChange += async () => await LoadBusinesses();
+        await LoadBusinesses();
+    }
+
+    private async Task LoadBusinesses()
+    {
+        isLoading = true;
+        businesses = await AdminService.GetAllBusinesses();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveBusiness()
+    {
+        bool success = newBusiness.BusinessID == 0
+            ? await AdminService.AddBusiness(newBusiness)
+            : await AdminService.UpdateBusiness(newBusiness);
+
+        if (success)
+        {
+            _jsMessage = "Business saved successfully.";
+            _jsInteropRequested = true; // Request alert after render
+
+            if (newBusiness.BusinessID == 0) // If it's a new entry, add it at the top
+            {
+                newBusiness.BusinessID = businesses.Count + 1; // Simulate ID generation
+                businesses.Insert(0, newBusiness); // Add to the top
+            }
+            else
+            {
+                // If it's an update, refresh the list
+                
+await LoadBusinesses();
+            }
+
+            newBusiness = new BusinessModel(); // Reset form
+            StateHasChanged(); // Force UI update
+        }
+        else
+        {
+            _jsMessage = "Failed to save business.";
+            _jsInteropRequested = true; // Request alert after render
+        }
+    }
+
+    private void EditBusiness(BusinessModel business)
+    {
+        newBusiness = new BusinessModel
+            {
+                BusinessID = business.BusinessID,
+                BusinessName = business.BusinessName,
+                BusinessType = business.BusinessType,
+                City = business.City,
+                Area = business.Area,
+                Location = business.Location,
+                IsActive = business.IsActive
+            };
+    }
+
+    private async Task ConfirmDelete(int id)
+    {
+        businessIdToDelete = id;
+        bool confirm = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this business?");
+        if (confirm)
+        {
+            await DeleteBusiness();
+        }
+    }
+
+    private async Task DeleteBusiness()
+    {
+        if (await AdminService.DeleteBusiness(businessIdToDelete))
+        {
+            await LoadBusinesses();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_jsInteropRequested)
+        {
+            _jsInteropRequested = false; // Reset flag
+            await JS.InvokeVoidAsync("alert", _jsMessage);
+        }
+    }
 }
