@@ -71,3 +71,70 @@ h1:focus {
     width: 300px;
     text-align: center;
 }
+
+
+
+.category-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.category-item {
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.sub-items, .nested-sub-items {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.sub-item, .nested-sub-item {
+    display: flex;
+    justify-content: space-between;
+    background: #fff;
+    padding: 5px;
+    margin: 4px 0;
+    border-radius: 5px;
+}
+
+.btn-sm {
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    width: 300px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+}

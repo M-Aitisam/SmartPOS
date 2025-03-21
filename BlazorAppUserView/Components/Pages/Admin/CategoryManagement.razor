@@ -8,9 +8,13 @@
 {
     <p class="text-muted">Loading...</p>
 }
+else if (!categories.Any())
+{
+    <p class="text-warning">No categories found.</p>
+}
 else
 {
-    <table class="table table-striped table-hover">
+    <table class="table table-bordered">
         <thead class="table-dark">
             <tr>
                 <th>ID</th>
@@ -25,8 +29,8 @@ else
                     <td>@category.CategoryID</td>
                     <td>@category.CategoryName</td>
                     <td>
-                        <button class="btn btn-success btn-sm" @onclick="() => OpenPopup(category.CategoryID)">
-                            <i class="bi bi-plus-lg"></i> Add SubItem
+                        <button class="btn btn-success btn-sm" @onclick="() => OpenPopup(category.CategoryID, null)">
+                            <i class="bi bi-plus-lg"></i> Add Subcategory
                         </button>
                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteCategory(category.CategoryID)">
                             <i class="bi bi-trash"></i> Delete
@@ -34,35 +38,49 @@ else
                     </td>
                 </tr>
 
-                @if (category.SubItems.Any())
+                @if (category.SubItems?.Any() == true)
                 {
-                    <tr>
-                        <td colspan="3">
-                            <ul class="list-group">
-                                @foreach (var subItem in category.SubItems)
-                                {
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        @subItem.SubItemName
-                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteSubItem(subItem.SubItemID)">
-                                            <i class="bi bi-trash"></i>
+                    @foreach (var subItem in category.SubItems)
+                    {
+                        <tr>
+                            <td></td>
+                            <td>└── @subItem.SubItemName</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" @onclick="() => OpenPopup(category.CategoryID, subItem.SubItemID)">
+                                    <i class="bi bi-plus"></i> Add Nested Subcategory
+                                </button>
+                                <button class="btn btn-danger btn-sm" @onclick="() => DeleteSubItem(subItem.SubItemID)">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+
+                        @if (subItem.NestedSubItems?.Any() == true)
+                        {
+                            @foreach (var nestedItem in subItem.NestedSubItems)
+                            {
+                                <tr>
+                                    <td></td>
+                                    <td class="ps-4">── @nestedItem.SubItemName (Price: $@nestedItem.Price)</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteSubItem(nestedItem.SubItemID)">
+                                            <i class="bi bi-trash"></i> Delete
                                         </button>
-                                    </li>
-                                }
-                            </ul>
-                        </td>
-                    </tr>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
                 }
             }
         </tbody>
     </table>
 }
 
-<!-- Add Category Form -->
 <h4 class="mt-4 text-primary">Add New Category</h4>
 <EditForm Model="@newCategory" OnValidSubmit="SaveCategory">
     <DataAnnotationsValidator />
     <ValidationSummary />
-
     <div class="mb-3">
         <label class="form-label">Category Name:</label>
         <InputText @bind-Value="newCategory.CategoryName" class="form-control" required />
@@ -70,33 +88,51 @@ else
     <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Category</button>
 </EditForm>
 
-<!-- Popup for Adding SubItems -->
 @if (isPopupOpen)
 {
-    <div class="popup-overlay">
-        <div class="popup-content">
-            <h4>Add Sub Item</h4>
-            <EditForm Model="@newSubItem" OnValidSubmit="SaveSubItem">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <div class="mb-3">
-                    <label class="form-label">Sub Item Name:</label>
-                    <InputText @bind-Value="newSubItem.SubItemName" class="form-control" required />
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @(parentSubItemID == null ? "Add Subcategory" : "Add Nested Subcategory")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="ClosePopup"></button>
                 </div>
-                <button type="submit" class="btn btn-success">Add</button>
-                <button type="button" class="btn btn-danger" @onclick="ClosePopup">Close</button>
-            </EditForm>
+                <div class="modal-body">
+                    <EditForm Model="@newSubItem" OnValidSubmit="SaveSubItem">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Subcategory Name:</label>
+                            <InputText @bind-Value="newSubItem.SubItemName" class="form-control" required />
+                        </div>
+
+                        @if (parentSubItemID != null)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Price:</label>
+                                <InputNumber @bind-Value="newSubItem.Price" class="form-control" />
+                            </div>
+                        }
+
+                        <button type="submit" class="btn btn-success">Add</button>
+                    </EditForm>
+                </div>
+            </div>
         </div>
     </div>
+    <div class="modal-backdrop fade show"></div>
 }
 
 @code {
     private List<BusinessCategory> categories = new();
     private BusinessCategory newCategory = new();
-    private BusinessSubItem newSubItem = new();
+    private BusinessSubItem newSubItem = new() { Price = 0 };
     private bool isPopupOpen = false;
     private int currentCategoryID = 0;
+    private int? parentSubItemID = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,6 +142,7 @@ else
     private async Task LoadCategories()
     {
         categories = await CategoryService.GetCategoriesAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveCategory()
@@ -124,10 +161,11 @@ else
         await LoadCategories();
     }
 
-    private void OpenPopup(int categoryId)
+    private void OpenPopup(int categoryId, int? subItemId)
     {
         currentCategoryID = categoryId;
-        newSubItem = new BusinessSubItem { CategoryID = categoryId };
+        parentSubItemID = subItemId;
+        newSubItem = new BusinessSubItem { CategoryID = categoryId, ParentSubItemID = subItemId, Price = 0 };
         isPopupOpen = true;
     }
 

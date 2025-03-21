@@ -1,11 +1,21 @@
 using BlazorAppUserView.Components;
+using ClassLibraryDAL;
 using ClassLibraryServices;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// ? Load SQLite connection string
+var connectionString = builder.Configuration.GetConnectionString("SQLiteConnection");
+
+// ? Register DbContext with SQLite
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("SQLiteConnection")));
+
 
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
