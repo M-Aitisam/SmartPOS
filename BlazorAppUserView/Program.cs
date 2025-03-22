@@ -2,15 +2,17 @@
 using ClassLibraryDAL;
 using ClassLibraryServices;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+// ✅ Get the correct path for `app.db` dynamically
+var dbFileName = "app.db";
+var dbPath = Path.Combine(AppContext.BaseDirectory, dbFileName);
+var connectionString = $"Data Source={dbPath}";
 
-// ✅ Load SQLite connection string from configuration
-var connectionString = builder.Configuration.GetConnectionString("SQLiteConnection");
+Console.WriteLine($"🔹 SQLite Database Path: {dbPath}");
 
 // ✅ Register DbContext with SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -19,26 +21,43 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
+// ✅ Add Antiforgery Services
+builder.Services.AddAntiforgery();
+
+// ✅ Add Razor Components (Fix)
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
 var app = builder.Build();
 
-// ✅ Ensure database is created on startup
-using (var scope = app.Services.CreateScope())
+// ✅ Ensure the database exists and is migrated properly
+try
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.Migrate(); // Uses Migrate() instead of EnsureCreated() for better handling of schema updates
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Console.WriteLine("🔹 Checking & Applying Migrations...");
+        dbContext.Database.Migrate(); // Ensures schema updates
+        Console.WriteLine("✅ Database Migration Complete!");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"❌ Database Migration Error: {ex.Message}");
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts(); // Default HSTS (30 days)
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseAntiforgery();
+app.UseAntiforgery(); // ✅ Antiforgery Middleware
 
+// ✅ Map Razor Components (Fix)
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
