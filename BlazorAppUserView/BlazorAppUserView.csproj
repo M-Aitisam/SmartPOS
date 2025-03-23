@@ -11,6 +11,14 @@
   </ItemGroup>
 	
 	<ItemGroup>
+		<!-- ✅ Ensure app.db is copied on publish -->
+		<Content Include="..\ClassLibraryDAL\app.db">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
   </ItemGroup>
