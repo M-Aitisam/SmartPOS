@@ -7,7 +7,7 @@ using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Get the correct path for `app.db` dynamically
+// ✅ Get the correct path for app.db dynamically
 var dbFileName = "app.db";
 var dbPath = Path.Combine(AppContext.BaseDirectory, dbFileName);
 var connectionString = $"Data Source={dbPath}";

@@ -9,16 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ClassLibraryServices\ClassLibraryServices.csproj" />
   </ItemGroup>
-
-	<ItemGroup>
-		<!-- ✅ Copy app.db from ClassLibraryDAL to publish folder -->
-		<Content Include="..\ClassLibraryDAL\app.db">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
-		</Content>
-	</ItemGroup>
-
-
+	
 	<ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
