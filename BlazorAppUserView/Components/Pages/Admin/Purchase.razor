@@ -1,0 +1,266 @@
+﻿@page "/purchase"
+@using ClassLibraryEntities
+@inject IProductService ProductService
+@inject ICartService CartService
+@inject ICategoryService CategoryService
+@rendermode InteractiveServer
+@inject StateContainerService StateContainer
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Product Selection - Now Organized by Categories -->
+        <div class="col-md-6">
+            <h4 class="text-primary mb-3">Products</h4>
+          
+
+            <div class="mb-3">
+                <input type="text" class="form-control" placeholder="Search Product..."
+                       @bind="searchTerm" @bind:event="oninput" />
+            </div>
+
+            @if (categories == null)
+            {
+                <p class="text-muted">Loading products...</p>
+            }
+            else
+            {
+                @foreach (var category in categories)
+                {
+                    var categoryProducts = allProducts
+                    .Where(p => p.CategoryID == category.CategoryID)
+                    .Where(p => p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                    @if (categoryProducts.Any())
+                    {
+                        <div class="category-group mb-4">
+                            <h5 class="text-info bg-light p-2 rounded">@category.CategoryName</h5>
+                            <div class="row">
+                                @foreach (var product in categoryProducts)
+                                {
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title">@product.Name</h6>
+                                                <p class="card-text">Price: @product.Price.ToString("C")</p>
+                                                <button class="btn btn-primary btn-sm"
+                                                        @onclick="() => AddToCart(product)">
+                                                    Add to Cart
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            }
+        </div>
+
+        <!-- Cart & Payment (Remains Unchanged) -->
+        <div class="col-md-6">
+            <h4 class="text-primary mb-3">Cart</h4>
+
+            <table class="table table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in cartItems)
+                    {
+                        <tr>
+                            <td>@item.ProductName</td>
+                            <td>@item.UnitPrice.ToString("C")</td>
+                            <td>
+                                <input type="number"
+                                       class="form-control form-control-sm"
+                                       min="1"
+                                       @bind="item.Quantity"
+                                       @bind:event="oninput" />
+                            </td>
+                            <td>@item.TotalPrice.ToString("C")</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm"
+                                        @onclick="() => RemoveFromCart(item)">
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Discount:</label>
+                        <input type="text" class="form-control"
+                               @bind="discountInput" placeholder="ex: 100 or 5%" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Payment Summary</h5>
+                            <p>Subtotal: @subTotal.ToString("C")</p>
+                            <p>Discount: @appliedDiscount.ToString("C")</p>
+                            <p>Total: @grandTotal.ToString("C")</p>
+                            <hr>
+
+                            <div class="mb-3">
+                                <label class="form-label">Payment Amount:</label>
+                                <InputNumber class="form-control" @bind-Value="paymentAmount" />
+                            </div>
+
+                            <p>Change Due: @dueAmount.ToString("C")</p>
+
+                            <button class="btn btn-success w-100"
+                                    @onclick="CompletePurchase">
+                                Complete Purchase
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Product> allProducts = new();
+    private List<BusinessCategory> categories = new();
+    private List<CartItem> cartItems = new();
+    private string searchTerm = string.Empty;
+    private string discountInput = string.Empty;
+    private decimal subTotal;
+    private decimal appliedDiscount;
+    private decimal grandTotal;
+    private decimal paymentAmount;
+    private decimal dueAmount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        StateContainer.OnChange += StateHasChanged;
+        await LoadData(); 
+    }
+
+    private void AddToCart(Product product)
+    {
+        var existingItem = cartItems.FirstOrDefault(i => i.ProductId == product.Id);
+        if (existingItem != null)
+        {
+            existingItem.Quantity++;
+        }
+        else
+        {
+            cartItems.Add(new CartItem
+                {
+                    ProductId = product.Id,
+                    ProductName = product.Name,
+                    UnitPrice = product.Price,
+                    Quantity = 1
+                });
+        }
+        CalculateTotals();
+    }
+
+
+    private void RemoveFromCart(CartItem item)
+    {
+        cartItems.Remove(item);
+        CalculateTotals();
+    }
+
+    private void UpdateCartItem(CartItem item)
+    {
+        if (item.Quantity < 1) item.Quantity = 1;
+        CalculateTotals();
+    }
+
+    private void CalculateTotals()
+    {
+        subTotal = cartItems.Sum(i => i.TotalPrice);
+        ApplyDiscount();
+        grandTotal = subTotal - appliedDiscount;
+        dueAmount = paymentAmount - grandTotal;
+    }
+
+    private void ApplyDiscount()
+    {
+        if (string.IsNullOrWhiteSpace(discountInput)) return;
+
+        if (discountInput.EndsWith("%"))
+        {
+            if (decimal.TryParse(discountInput.TrimEnd('%'), out decimal percentage))
+            {
+                appliedDiscount = subTotal * (percentage / 100);
+            }
+        }
+        else
+        {
+            if (decimal.TryParse(discountInput, out decimal fixedAmount))
+            {
+                appliedDiscount = fixedAmount;
+            }
+        }
+    }
+    private async Task LoadData()
+    {
+        allProducts = await ProductService.GetAllProductsAsync();
+        categories = await CategoryService.GetCategoriesAsync();
+
+        // Update state container
+        StateContainer.Products = allProducts;
+        StateContainer.Categories = categories;
+
+        CalculateTotals();
+        StateHasChanged();
+    }
+
+    private async Task CompletePurchase()
+    {
+        if (grandTotal <= 0) return;
+        if (paymentAmount < grandTotal) return;
+
+        var transaction = new BusinessTransaction // Changed to BusinessTransaction
+            {
+                Items = cartItems.Select(ci => new TransactionItem
+                {
+                    ProductID = ci.ProductId,
+                    ProductName = ci.ProductName,
+                    UnitPrice = ci.UnitPrice,
+                    Quantity = ci.Quantity
+                }).ToList(),
+                SubTotal = subTotal,
+                Discount = appliedDiscount,
+                Total = grandTotal,
+                PaymentAmount = paymentAmount,
+                ChangeAmount = dueAmount,
+                TransactionDate = DateTime.Now
+            };
+
+        await CartService.ProcessTransactionAsync(transaction);
+
+        cartItems.Clear();
+        CalculateTotals();
+        paymentAmount = 0;
+    }
+    public void Dispose()
+    {
+        // Unsubscribe when component is disposed
+        StateContainer.OnChange -= StateHasChanged;
+    }
+
+    // Modify filtered products to use state container
+    private List<Product> filteredProducts => StateContainer.Products
+        .Where(p => p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
+

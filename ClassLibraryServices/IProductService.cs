@@ -5,12 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using ClassLibraryEntities;
 
-namespace ClassLibraryDAL
+namespace ClassLibraryServices
 {
-    public interface IDBOperations
+    public interface IProductService
     {
         Task<List<Product>> GetAllProductsAsync();
-        Task<bool> ProcessTransactionAsync(BusinessTransaction transaction);
-        // Existing methods...
     }
+
 }
