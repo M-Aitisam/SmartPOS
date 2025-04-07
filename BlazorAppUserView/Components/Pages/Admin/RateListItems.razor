@@ -1,0 +1,157 @@
+﻿@page "/ratelist"
+@using System.Collections.Generic
+@inject BillService BillService
+@rendermode InteractiveServer
+
+<div class="container ratelist-container">
+    <input type="text" class="form-control search-box" placeholder="Search product by name" @bind="SearchQuery" />
+
+    <div class="btn-group category-buttons" role="group">
+        @foreach (var category in Categories)
+        {
+            <button class="btn @(category == SelectedCategory ? "btn-success" : "btn-outline-success")"
+                    @onclick="() => FilterByCategory(category)">
+                @category
+            </button>
+        }
+    </div>
+
+    <div class="product-grid-container">
+        <div class="product-grid">
+            @if (FilteredItems.Any())
+            {
+                @foreach (var item in FilteredItems)
+                {
+                    <div class="product-card" @onclick="() => AddToBill(item)">
+                        <div class="card shadow-sm">
+                            <img src="@item.ImageUrl" class="card-img-top product-image" alt="@item.Name">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <h6 class="product-name">@item.Name</h6>
+                                <p class="product-price">$@item.BasePrice</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center no-items">
+                    <p class="text-muted">No items available</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .ratelist-container {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .search-box {
+        margin-bottom: 15px;
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .category-buttons {
+        margin-bottom: 15px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .product-grid-container {
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .product-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+    }
+
+        .product-card:hover {
+            transform: scale(1.05);
+        }
+
+    .card {
+        border: none;
+        text-align: center;
+        padding: 8px;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+    }
+
+    .product-name {
+        font-size: 1rem;
+        font-weight: bold;
+        flex-grow: 1;
+        text-align: left;
+    }
+
+    .product-price {
+        font-size: 1rem;
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .no-items {
+        padding: 20px;
+    }
+</style>
+
+@code {
+    private string SearchQuery { get; set; } = "";
+    private string SelectedCategory { get; set; } = "All";
+
+    private List<string> Categories = new() { "All", "Drink", "Fast Food", "Indian", "Italian", "Chinese" };
+
+    private IEnumerable<RateItem> FilteredItems =>
+      (BillService.RateItems ?? new List<RateItem>())
+      .Where(i => i.IsActive &&
+                 (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
+                 (string.IsNullOrEmpty(SearchQuery) || (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
+      .ToList();
+
+    protected override void OnInitialized()
+    {
+        BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AddToBill(RateItem item)
+    {
+        await BillService.AddItemAsync(item);
+    }
+
+    private void FilterByCategory(string category)
+    {
+        SelectedCategory = category;
+    }
+}
