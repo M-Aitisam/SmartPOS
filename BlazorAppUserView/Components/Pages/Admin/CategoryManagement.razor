@@ -1,6 +1,7 @@
-﻿    @page "/category-management"
+﻿@page "/category-management"
 @inject ICategoryService CategoryService
 @rendermode InteractiveServer
+@inject StateContainerService StateContainer
 
 <h3 class="text-center text-primary">Category Management</h3>
 
@@ -151,6 +152,9 @@ else
         {
             await CategoryService.AddCategoryAsync(newCategory);
             newCategory = new BusinessCategory();
+            categories = await CategoryService.GetCategoriesAsync();
+            StateContainer.Categories = await CategoryService.GetCategoriesAsync();
+            StateHasChanged();
             await LoadCategories();
         }
     }
@@ -180,6 +184,8 @@ else
         {
             await CategoryService.AddSubItemAsync(newSubItem);
             await LoadCategories();
+            StateContainer.Categories = await CategoryService.GetCategoriesAsync();
+            StateHasChanged();
             ClosePopup();
         }
     }

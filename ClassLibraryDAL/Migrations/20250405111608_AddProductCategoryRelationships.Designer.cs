@@ -3,6 +3,7 @@ using System;
 using ClassLibraryDAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClassLibraryDAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250405111608_AddProductCategoryRelationships")]
+    partial class AddProductCategoryRelationships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
@@ -104,15 +107,6 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<int>("CategoryID")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsSelected")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -121,15 +115,6 @@ namespace ClassLibraryDAL.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductCode")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("ProductPrice")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductTitle")
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("SubCategoryID")

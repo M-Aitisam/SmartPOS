@@ -3,6 +3,7 @@ using System;
 using ClassLibraryDAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClassLibraryDAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250405103746_AddBusinessTransactionPrimaryKey")]
+    partial class AddBusinessTransactionPrimaryKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
@@ -101,45 +104,14 @@ namespace ClassLibraryDAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CategoryID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsSelected")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("NestedSubCategoryID")
-                        .HasColumnType("INTEGER");
-
                     b.Property<decimal>("Price")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ProductCode")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("ProductPrice")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductTitle")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("SubCategoryID")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryID");
-
-                    b.HasIndex("SubCategoryID");
 
                     b.ToTable("Products");
                 });
@@ -191,24 +163,6 @@ namespace ClassLibraryDAL.Migrations
                     b.Navigation("ParentSubItem");
                 });
 
-            modelBuilder.Entity("ClassLibraryEntities.Product", b =>
-                {
-                    b.HasOne("ClassLibraryEntities.BusinessCategory", "Category")
-                        .WithMany("Products")
-                        .HasForeignKey("CategoryID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ClassLibraryEntities.BusinessSubItem", "SubCategory")
-                        .WithMany("Products")
-                        .HasForeignKey("SubCategoryID")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Category");
-
-                    b.Navigation("SubCategory");
-                });
-
             modelBuilder.Entity("ClassLibraryEntities.TransactionItem", b =>
                 {
                     b.HasOne("ClassLibraryEntities.BusinessTransaction", null)
@@ -220,16 +174,12 @@ namespace ClassLibraryDAL.Migrations
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessCategory", b =>
                 {
-                    b.Navigation("Products");
-
                     b.Navigation("SubItems");
                 });
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessSubItem", b =>
                 {
                     b.Navigation("NestedSubItems");
-
-                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessTransaction", b =>
