@@ -1,3 +1,8 @@
+*{
+    padding:0px;
+    margin :0px;
+
+}
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -16,9 +21,7 @@ a, .btn-link {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
-.content {
-    padding-top: 1.1rem;
-}
+
 
 h1:focus {
     outline: none;

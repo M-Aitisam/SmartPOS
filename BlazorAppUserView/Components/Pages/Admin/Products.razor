@@ -1,0 +1,289 @@
+﻿@page "/product"
+@using ClassLibraryEntities
+@using System.Text.Json
+@using System.IO
+@inject BillService BillService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<div class="container mt-4">
+    <div>
+        <EditForm Model="newProduct" OnValidSubmit="AddProduct">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row">
+                <div class="col-md-2">
+                    <InputText id="productTitle" class="form-control" placeholder="Enter Product Title" @bind-Value="newProduct.ProductTitle" />
+                </div>
+                <div class="col-md-2">
+                    <InputText id="productCode" class="form-control" placeholder="Enter Product Code" @bind-Value="newProduct.ProductCode" />
+                </div>
+                <div class="col-md-2">
+                    <InputNumber id="productPrice" class="form-control" placeholder="Enter Price" @bind-Value="newProduct.ProductPrice" />
+                </div>
+                <div class="col-md-2">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" @onclick="ToggleDropdown">
+                            @if (string.IsNullOrEmpty(newProduct.ImageUrl))
+                            {
+                                <span>Select Image</span>
+                            }
+                            else
+                            {
+                                <img src="@newProduct.ImageUrl" alt="Selected Image" style="width: 20px; height: 20px; margin-right: 10px;" />
+                                <span>@Path.GetFileName(newProduct.ImageUrl)</span>
+                            }
+                        </button>
+                        <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none");" aria-labelledby="dropdownMenuButton">
+                            @foreach (var imgUrl in ImageUrls)
+                            {
+                                <li>
+                                    <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)">
+                                        <img src="@imgUrl" alt="@Path.GetFileName(imgUrl)" style="width: 25px; height: 25px; margin-right: 10px;" />
+
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check form-switch">
+                        <InputCheckbox @bind-Value="newProduct.IsActive" class="form-check-input" id="flexSwitchCheckChecked" />
+                        <label class="form-check-label" for="flexSwitchCheckChecked">Is Active</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success">Add Product</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Code</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Image</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ProductList.Any())
+                    {
+                        @foreach (var product in ProductList)
+                        {
+                            <tr>
+                                <td>@product.ProductTitle</td>
+                                <td>@product.ProductCode</td>
+                                <td>@product.ProductPrice.ToString("C")</td>
+                                <td>
+                                    <input type="checkbox" class="form-check-input" checked="@product.IsActive" @onchange="(e) => ToggleActiveStatus(product, e.Value)" />
+                                    @(product.IsActive ? "Active" : "Inactive")
+                                </td>
+                                <td>
+                                    <img src="@product.ImageUrl" alt="@product.ProductTitle" style="width: 50px; height: 50px;" />
+                                </td>
+                                <td>
+                                    <button class="btn btn-warning" @onclick="() => EditProduct(product)">Edit</button>
+                                    <button class="btn btn-danger" @onclick="() => DeleteProduct(product)" disabled="@product.IsActive">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">No products available.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Product> ProductList { get; set; } = new();
+    private Product newProduct { get; set; } = new();
+    private Product? editingProduct { get; set; }
+
+    private List<string> ImageUrls { get; set; } = new()
+    {
+        "/images/buzzcut.png",
+        "/images/face.png",
+        "/images/hair-color.png",
+        "/images/facial.png",
+        "/images/hair-spray.png",
+        "/images/hair-styling.png",
+        "/images/heat.png",
+        "/images/manicure1.png",
+        "/images/massage-head.png",
+        "/images/scissor.png",
+        "/images/shave (2).png",
+        "/images/hair-color.png",
+        "/images/spray.png",
+        "/images/spray1.png",
+        "/images/trim-haircut.png",
+        "/images/face.png",
+"/images/fries.jpg",
+        // Add more image paths here
+    };
+
+    private bool isDropdownOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+        UpdateRateItems(); // Ensure RateItems are updated
+    }
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private void SelectImage(string imageUrl)
+    {
+        newProduct.ImageUrl = imageUrl;
+        isDropdownOpen = false;
+    }
+
+    private async Task AddProduct()
+    {
+        if (editingProduct == null)
+        {
+            ProductList.Add(newProduct);
+        }
+        else
+        {
+            // Update the existing product
+            var index = ProductList.IndexOf(editingProduct);
+            if (index != -1)
+            {
+                ProductList[index] = newProduct;
+            }
+        }
+
+        var rateItem = new RateItem
+            {
+                Name = newProduct.ProductTitle,
+                BasePrice = newProduct.ProductPrice,
+                ImageUrl = newProduct.ImageUrl,
+                IsActive = newProduct.IsActive
+            };
+
+        if (editingProduct == null)
+        {
+            await BillService.AddRateItemAsync(rateItem);
+        }
+
+        else
+        {
+            var existingRateItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
+            if (existingRateItem != null)
+            {
+                existingRateItem.Name = newProduct.ProductTitle;
+                existingRateItem.BasePrice = newProduct.ProductPrice;
+                existingRateItem.ImageUrl = newProduct.ImageUrl;
+                existingRateItem.IsActive = newProduct.IsActive;
+            }
+        }
+
+        await SaveProductsToFile();
+        newProduct = new Product();
+        editingProduct = null;
+    }
+
+    private async Task DeleteProduct(Product product)
+    {
+        if (product != null && !string.IsNullOrEmpty(product.ProductTitle))
+        {
+            ProductList.Remove(product);
+            await BillService.RemoveRateItemAsync(product.ProductTitle);
+            await SaveProductsToFile();
+            UpdateRateItems();
+        }
+        else
+        {
+            Console.WriteLine("Product or ProductTitle is null. Cannot remove the product.");
+        }
+    }
+
+    private async Task ToggleActiveStatus(Product product, object? value)
+    {
+        if (value is bool boolValue)
+        {
+            product.IsActive = boolValue;
+
+            var rateItem = BillService.RateItems.FirstOrDefault(x => x.Name == product.ProductTitle);
+            if (rateItem != null)
+            {
+                rateItem.IsActive = boolValue;
+            }
+
+            await SaveProductsToFile();
+            UpdateRateItems();
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Dal", "Product.json");
+        if (File.Exists(filePath))
+        {
+            var existingProductsJson = await File.ReadAllTextAsync(filePath);
+            ProductList = JsonSerializer.Deserialize<List<Product>>(existingProductsJson) ?? new List<Product>();
+        }
+        else
+        {
+            Console.WriteLine("Product.json file not found.");
+        }
+    }
+
+    private async Task SaveProductsToFile()
+    {
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Dal", "Product.json");
+        var productListJson = JsonSerializer.Serialize(ProductList);
+        await File.WriteAllTextAsync(filePath, productListJson);
+    }
+
+    private void UpdateRateItems()
+    {
+        var activeItems = ProductList
+            .Where(p => p.IsActive)
+            .Select(p => new RateItem
+                {
+                    Name = p.ProductTitle,
+                    BasePrice = p.ProductPrice,
+                    ImageUrl = p.ImageUrl,
+                    IsActive = p.IsActive
+                })
+            .ToList();
+
+        BillService.RateItems.Clear();
+        foreach (var item in activeItems)
+        {
+            BillService.RateItems.Add(item);
+        }
+    }
+
+    private void EditProduct(Product product)
+    {
+        editingProduct = product;
+        newProduct = new Product
+            {
+                ProductTitle = product.ProductTitle,
+                ProductCode = product.ProductCode,
+                ProductPrice = product.ProductPrice,
+                ImageUrl = product.ImageUrl,
+                IsActive = product.IsActive
+            };
+    }
+}
