@@ -18,7 +18,12 @@ namespace ClassLibraryServices
 
         public async Task<List<BusinessCategory>> GetCategoriesAsync()
         {
-            return await _context.Categories.Include(c => c.SubItems).ToListAsync();
+            return await _context.Categories
+        .Include(c => c.SubItems)
+            .ThenInclude(s => s.NestedSubItems)
+        .Include(c => c.Products) // Add this line
+        .AsNoTracking()
+        .ToListAsync();
         }
 
         public async Task<bool> AddCategoryAsync(BusinessCategory category)
@@ -53,6 +58,15 @@ namespace ClassLibraryServices
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;
+        }
+        public async Task<List<BusinessCategory>> GetCategoriesWithProductsAsync()
+        {
+            return await _context.Categories
+                .AsNoTracking()
+                .Include(c => c.SubItems)
+                    .ThenInclude(s => s.NestedSubItems)
+                .Include(c => c.Products) // Add this
+                .ToListAsync();
         }
     }
 }

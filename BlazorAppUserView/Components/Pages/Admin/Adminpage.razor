@@ -1,0 +1,57 @@
+﻿@page "/adminpage"
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using BlazorAppUserView.Components.Layout
+@rendermode InteractiveServer
+<PageTitle>Bill Generate</PageTitle>
+
+
+<div style="z-index:2000" class="p-0">
+      <div class="sidebar">
+        <NavMenu />
+     </div>
+    <div style="margin-top:-12px">
+        <div>
+            <nav class="navbar bg-body-tertiary bg-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand">Navbar</a>
+                    <div class="d-flex">
+                        <NavLink href="/product">
+                            <i class="bi bi-gear"></i>
+                        </NavLink>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container-fluid vh-80">
+
+            <div class="row">
+
+                <div class="col-md-5  p-0">
+                    <div class="card border-0 p-0">
+                        <div class="card-body p-0">
+                            <Bills />
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-md-7  p-0 ">
+                    <div class="card border-0">
+                        <div class="card-body">
+                            <RateListItems />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+

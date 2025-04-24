@@ -20,6 +20,7 @@ namespace ClassLibraryEntities
         public int CategoryID { get; set; }  // Foreign key reference
         public BusinessCategory? Category { get; set; }
         public BusinessSubItem? ParentSubItem { get; set; }
-        
+        public ICollection<Product> Products { get; set; } = new List<Product>();
+
     }
 }

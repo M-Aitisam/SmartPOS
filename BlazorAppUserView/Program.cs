@@ -21,6 +21,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
+builder.Services.AddSingleton<BillService>();
+
+builder.Services.AddScoped<IDBOperations, DBOperations>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<StateContainerService>();
+
+
 // ✅ Add Antiforgery Services
 builder.Services.AddAntiforgery();
 

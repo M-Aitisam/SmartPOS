@@ -850,6 +850,9 @@
    
 
     <!-- Navbar with dropdown icons -->
+    <div class="m-0 p-0 ">
+
+    
     <nav class="navbar">
         <div class="logo">
             <img src="/logo.png" alt="TimeTrax Logo" />
@@ -1359,7 +1362,7 @@
             </div>
         </div>
     </footer>
-
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Navbar scroll effect
@@ -1389,7 +1392,7 @@
     private bool navbarCollapsed = true;
     private ElementReference servicesScroll;
     private int currentSlide = 0;
-    private Timer autoSlideTimer;
+    private Timer? autoSlideTimer;
     private DotNetObjectReference<Home>? objRef;
     private bool showMobileMenu = false;
     private List<List<string>> brandGroups = new List<List<string>>()
@@ -1490,8 +1493,8 @@
 
     private class Testimonial
     {
-        public string Text { get; set; }
-        public string Author { get; set; }
-        public string Role { get; set; }
+        public string? Text { get; set; }
+        public string? Author { get; set; }
+        public string? Role { get; set; }
     }
 }
