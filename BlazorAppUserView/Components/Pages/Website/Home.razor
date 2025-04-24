@@ -1,0 +1,1500 @@
+﻿@page "/efrotech-clone"
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager NavigationManager
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EfroTech - Enterprise Solutions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FF6B00;
+            --secondary-color: #333333;
+            --dark-color: #121212;
+            --light-color: #f8f9fa;
+            --text-color: #333333;
+            --text-light: #777777;
+            --bg-grey: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            overflow-x: hidden;
+            background-color: var(--bg-grey);
+            color: var(--text-color);
+        }
+
+        .container {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        @@media (min-width: 576px) {
+            .container {
+                max-width: 540px;
+            }
+        }
+
+        @@media (min-width: 768px) {
+            .container {
+                max-width: 720px;
+            }
+        }
+
+        @@media (min-width: 992px) {
+            .container {
+                max-width: 960px;
+            }
+        }
+
+        @@media (min-width: 1200px) {
+            .container {
+                max-width: 1140px;
+            }
+        }
+
+
+        /* Navbar - With dropdown icons */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0px 5%;
+            background: var(--white-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo img {
+            width: 110px;
+            height: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover img {
+            transform: scale(1.05);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 0;
+            padding: 0;
+        }
+
+            .nav-links a {
+                text-decoration: none;
+                color: var(--secondary-color);
+                font-weight: 500;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 12px;
+                border-radius: 5px;
+                transition: all 0.3s ease;
+                position: relative;
+            }
+
+                .nav-links a:hover {
+                    color: var(--primary-color);
+                }
+
+                .nav-links a .dropdown-icon {
+                    font-size: 12px;
+                    transition: transform 0.3s ease;
+                }
+
+                .nav-links a:hover .dropdown-icon {
+                    transform: rotate(180deg);
+                }
+
+        .login-btn {
+            padding: 8px 20px;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-size: 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .login-btn:hover {
+                background-color: var(--primary-color);
+                color: var(--white-color);
+            }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--secondary-color);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background-color: white;
+            background-size: cover;
+            background-position: center;
+            height: 80vh;
+            display: flex;
+            align-items: center;
+            color: var(--dark-color);
+            position: relative;
+            padding: 40px 0;
+        }
+
+        .hero-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            flex: 1;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            animation: fadeInUp 1s ease;
+            color: var(--secondary-color);
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            animation: fadeInUp 1s ease 0.3s forwards;
+            opacity: 0;
+            color: var(--text-light);
+        }
+
+        .hero-btn {
+            padding: 12px 30px;
+            font-weight: 500;
+            border-radius: 30px;
+            animation: fadeInUp 1s ease 0.6s forwards;
+            opacity: 0;
+            background-color: var(--primary-color);
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+            .hero-btn:hover {
+                background-color: #e05d00;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+
+        .hero-image {
+           
+            flex: 1;
+            max-width: 50%;
+            animation: fadeIn 1s ease 0.3s forwards;
+            opacity: 0;
+        }
+
+            .hero-image img {
+                box-shadow:none;
+                border: none;
+                width: 100%;
+                height: auto;
+                border-radius: 10px;
+               
+            }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @@media (max-width: 992px) {
+            .hero-container {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero-image {
+                max-width: 100%;
+                margin-top: 40px;
+            }
+
+            .hero-title {
+                font-size: 2.8rem;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+
+            .hero-section {
+                height: auto;
+                padding: 80px 0;
+            }
+        }
+
+
+
+        /* Product Section */
+        .product-section {
+            padding: 80px 0;
+            background-color: white;
+        }
+
+        .product-card {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .product-content {
+            padding: 40px;
+            flex: 1;
+        }
+
+        .product-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .product-subtitle {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+        }
+
+        .product-description {
+            color: var(--text-light);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .product-image {
+            flex: 1;
+            position: relative;
+        }
+
+            .product-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                opacity: 0.9;
+            }
+
+        /* Updated Brands Section with Hexagonal Boxes */
+        .brands-section {
+            padding: 60px 5%;
+            background: var(--white-color);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brands-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .brands-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+            position: relative;
+        }
+
+        .brands-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #555;
+            position: relative;
+        }
+
+        .brands-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .brand-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .brand-box-container {
+            position: relative;
+            width: 150px;
+            height: 130px;
+            margin: 10px;
+        }
+
+        .brand-box-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--primary-color);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .brand-box-container:hover .brand-box-bg {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+        .brand-box {
+            position: absolute;
+            width: 140px;
+            height: 120px;
+            top: 5px;
+            left: 5px;
+            background-size: cover;
+            background-position: center;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .brand-connector {
+            position: absolute;
+            height: 10px;
+            background-color: var(--primary-color);
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        .see-more-clients {
+            margin-top: 40px;
+            position: relative;
+            z-index: 2;
+        }
+
+            .see-more-clients a {
+                color: var(--primary-color);
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 1rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                padding: 8px 16px;
+                border: 2px solid var(--primary-color);
+                border-radius: 30px;
+                transition: all 0.3s ease;
+            }
+
+                .see-more-clients a:hover {
+                    background-color: var(--primary-color);
+                    color: white;
+                    text-decoration: none;
+                }
+        /* Why Choose TimeTrox Section */
+        .why-choose-section {
+            padding: 60px 5%;
+            background: var(--white-color);
+            text-align: center;
+        }
+
+        .awards-carousel {
+            position: relative;
+            max-width: 800px;
+            margin: 30px auto;
+            overflow: hidden;
+        }
+
+        .awards-slide {
+            display: none;
+            padding: 20px;
+            transition: transform 0.5s ease;
+            text-align: center;
+        }
+
+            .awards-slide.active {
+                display: block;
+            }
+
+        .awards-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+
+        .awards-subtitle {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            color: var(--secondary-color);
+        }
+
+        .awards-divider {
+            width: 60px;
+            height: 3px;
+            background: var(--primary-color);
+            margin: 0 auto 30px;
+        }
+
+        .award-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .award-image {
+            width: 200px;
+            height: 200px;
+            object-fit: contain;
+            border-radius: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 3px solid var(--primary-color);
+        }
+
+        .award-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+
+        .carousel-arrows {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .carousel-arrow {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+            .carousel-arrow:hover {
+                background: var(--secondary-color);
+                transform: scale(1.1);
+            }
+
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .dot-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .dot-indicator.active {
+                background: var(--primary-color);
+                transform: scale(1.2);
+            }
+        /* Updated Services Section */
+        .modules-section {
+            padding: 80px 0;
+            background-color: var(--bg-grey);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--dark-color);
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .module-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            }
+
+        .module-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+        }
+
+        .module-description {
+            color: var(--text-light);
+            margin-bottom: 20px;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .learn-more {
+            color: var(--primary-color);
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+            .learn-more:hover {
+                color: #e05d00;
+                transform: translateX(5px);
+            }
+
+            .learn-more i {
+                margin-left: 5px;
+                transition: all 0.3s ease;
+            }
+
+        .erp-heading {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Testimonial Section */
+        .testimonial-section {
+            padding: 80px 0;
+            background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('https://www.efrotech.com/images/testimonial-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+        }
+
+        .testimonial-slider {
+            overflow: hidden;
+            position: relative;
+            height: 300px;
+        }
+
+        .testimonial-track {
+            display: flex;
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: calc(250px * 10);
+            animation: scroll 30s linear infinite;
+        }
+
+        .testimonial-card {
+            width: 250px;
+            margin: 0 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 10px;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .testimonial-author {
+            font-weight: 600;
+        }
+
+        .testimonial-role {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            padding: 80px 0;
+            background-color: white;
+        }
+
+        .contact-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control {
+            height: 50px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            width: 100%;
+            padding: 10px 15px;
+        }
+
+        textarea.form-control {
+            height: 150px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 70px 0 0;
+        }
+
+        .footer-logo img {
+            height: 40px;
+            margin-bottom: 20px;
+        }
+
+        .footer-links h5 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+            .footer-links h5:after {
+                content: '';
+                position: absolute;
+                width: 50px;
+                height: 2px;
+                background: var(--primary-color);
+                bottom: 0;
+                left: 0;
+            }
+
+        .footer-links ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+            .footer-links a:hover {
+                color: white;
+                padding-left: 5px;
+            }
+
+        .social-icons a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            margin-right: 10px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+            .social-icons a:hover {
+                background: var(--primary-color);
+                transform: translateY(-5px);
+            }
+
+        .footer-bottom {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+
+        /* Animations */
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes scroll {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(calc(-250px * 5));
+            }
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .product-card {
+                flex-direction: column;
+            }
+
+            .product-image {
+                order: -1;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .top-bar-content {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+   
+
+    <!-- Navbar with dropdown icons -->
+    <div class="m-0 p-0 ">
+
+    
+    <nav class="navbar">
+        <div class="logo">
+            <img src="/logo.png" alt="TimeTrax Logo" />
+        </div>
+
+        <button class="mobile-menu-btn" @onclick="ToggleMobileMenu">
+            ☰
+        </button>
+
+        <ul class="nav-links" style="@(showMobileMenu ? "display: flex;" : "")">
+            <li>
+                <a href="/">
+                    Home
+                    <span class="dropdown-icon">▼</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    Our Solutions
+                    <span class="dropdown-icon">▼</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    Portfolio
+                    <span class="dropdown-icon">▼</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    Gallery
+                    <span class="dropdown-icon">▼</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    Latest
+                    <span class="dropdown-icon">▼</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    Company
+                    <span class="dropdown-icon">▼</span>
+                </a>
+            </li>
+        </ul>
+        <a href="#" class="login-btn" @onclick="NavigateToLogin">
+            Login
+        </a>
+    </nav>
+    
+    <!-- Hero Section -->
+
+    <section class="hero-section" id="home">
+        <div class="container">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Innovative IT Solutions for Your Business</h1>
+                    <p class="hero-subtitle">We provide cutting-edge technology solutions to help your business grow and succeed in the digital world.</p>
+                    <a href="#contact" class="btn hero-btn">Get Started</a>
+                </div>
+                <div class="hero-image">
+                    <img src="/homeimage.PNG" alt="Business Technology Solutions" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Section -->
+    <section class="product-section">
+        <div class="container">
+            <div class="product-card">
+                <div class="product-content">
+                    <h3 class="product-title">Our Product</h3>
+                    <h4 class="product-subtitle">TimeTrax® – Point of Sale System</h4>
+                    <p class="product-description">
+                        Your One-Window Solution to Streamline Sales!<br>
+                        TimeTrax is more than just a Point of Sale system; it's a game-changer for businesses seeking efficient 
+                        sales solutions. Designed with an intuitive interface and packed with powerful features, TimeTrax empowers organizations 
+                        to efficiently manage their retail and sales operations under one platform.
+                    </p>
+                    <button class="btn hero-btn">Learn More</button>
+                </div>
+                <div class="product-image">
+                    <img src="/product.PNG" alt="TimeTrax Product">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Updated Modules Section -->
+    <section class="modules-section" id="services">
+        <div class="container">
+            <h2 class="section-title">Our Modules</h2>
+
+            <div class="modules-grid">
+                <!-- Sales Management -->
+                <div class="module-card">
+                    <h3 class="module-title">Sales Management</h3>
+                    <p class="module-description">
+                        A complete suite for handling sales transactions including product selection, pricing,
+                        discounts, taxes, and real-time invoice generation.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Inventory Tracking -->
+                <div class="module-card">
+                    <h3 class="module-title">Inventory Tracking</h3>
+                    <p class="module-description">
+                        A complete end-2-end cloud-based solution for managing stock levels,
+                        reordering, batch tracking, and item availability.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- User Access Control -->
+                <div class="module-card">
+                    <h3 class="module-title">User Access Control</h3>
+                    <p class="module-description">
+                        Manage role-based access for store staff, supervisors,
+                        and managers with time-restricted and secure logins.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Support & Tickets -->
+                <div class="module-card">
+                    <h3 class="module-title">Support & Tickets</h3>
+                    <p class="module-description">
+                        Raise and monitor technical or billing queries with
+                        smart alerts, ticket priorities, and support status tracking.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Order Management -->
+                <div class="module-card">
+                    <h3 class="module-title">Order Management</h3>
+                    <p class="module-description">
+                        Easily manage order intake, delivery status updates,
+                        customer notes, and digital receipts for in-store sales.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Product Catalog -->
+                <div class="module-card">
+                    <h3 class="module-title">Product Catalog</h3>
+                    <p class="module-description">
+                        Organize products with SKUs, categories, pricing, images,
+                        and real-time availability across POS terminals.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Vendor Integration -->
+                <div class="module-card">
+                    <h3 class="module-title">Vendor Integration</h3>
+                    <p class="module-description">
+                        Streamlined supplier management including PO generation,
+                        inventory sync, and vendor performance tracking.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Payment Handling -->
+                <div class="module-card">
+                    <h3 class="module-title">Payment Handling</h3>
+                    <p class="module-description">
+                        Accept multiple payment methods with integrated approvals,
+                        split billing, refunds, and seamless reconciliation tools.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Expense Tracking -->
+                <div class="module-card">
+                    <h3 class="module-title">Expense Tracking</h3>
+                    <p class="module-description">
+                        Linked with procurement and payment modules
+                        to offer insight into store costs and profitability reporting.
+                    </p>
+                    <a href="#" class="learn-more">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+
+            <div class="erp-heading">
+                > Enterprise Resource Planning
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose TimeTrox Section -->
+    <section class="why-choose-section">
+        <div class="container">
+            <h1 class="awards-title">Why Choose TimeTrox?</h1>
+            <h2 class="section-title">Our Awards & Achievements</h2>
+            <div class="awards-divider"></div>
+            <p class="awards-subtitle">
+                <strong>Did you know?</strong> TimeTrox is a fast-growing company on the rise!<br />
+                Both big and small companies, are growing their business with our cutting-edge solution.
+            </p>
+
+            <div class="awards-carousel">
+                <!-- Slide 1 -->
+                <div class="awards-slide @(currentSlide == 0 ? "active" : "")">
+                    <div class="carousel-arrows">
+                        <button class="carousel-arrow" @onclick="PrevSlide">❮</button>
+                        <div class="award-container">
+                            <img src="/1.png" alt="P@SHA Award" class="award-image" />
+                        </div>
+                        <button class="carousel-arrow" @onclick="NextSlide">❯</button>
+                    </div>
+                    <div class="carousel-dots">
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            <span class="dot-indicator @(i == currentSlide ? "active" : "")" @onclick="() => GoToSlide(i)"></span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="awards-slide @(currentSlide == 1 ? "active" : "")">
+                    <div class="carousel-arrows">
+                        <button class="carousel-arrow" @onclick="PrevSlide">❮</button>
+                        <div class="award-container">
+                            <img src="/2.png" alt="ICT Award" class="award-image" />
+                        </div>
+                        <button class="carousel-arrow" @onclick="NextSlide">❯</button>
+                    </div>
+                    <div class="carousel-dots">
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            <span class="dot-indicator @(i == currentSlide ? "active" : "")" @onclick="() => GoToSlide(i)"></span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="awards-slide @(currentSlide == 2 ? "active" : "")">
+                    <div class="carousel-arrows">
+                        <button class="carousel-arrow" @onclick="PrevSlide">❮</button>
+                        <div class="award-container">
+                            <img src="/3.png" alt="PB:A Award" class="award-image" />
+                        </div>
+                        <button class="carousel-arrow" @onclick="NextSlide">❯</button>
+                    </div>
+                    <div class="carousel-dots">
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            <span class="dot-indicator @(i == currentSlide ? "active" : "")" @onclick="() => GoToSlide(i)"></span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Slide 4 -->
+                <div class="awards-slide @(currentSlide == 3 ? "active" : "")">
+                    <div class="carousel-arrows">
+                        <button class="carousel-arrow" @onclick="PrevSlide">❮</button>
+                        <div class="award-container">
+                            <img src="/4.png" alt="LET'S CHAIR Award" class="award-image" />
+                        </div>
+                        <button class="carousel-arrow" @onclick="NextSlide">❯</button>
+                    </div>
+                    <div class="carousel-dots">
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            <span class="dot-indicator @(i == currentSlide ? "active" : "")" @onclick="() => GoToSlide(i)"></span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Keep all remaining sections the same -->
+    <!-- Testimonial Section -->
+    <section class="testimonial-section py-5" id="testimonials">
+        <div class="container">
+            <h2 class="text-center section-title text-white">What Our Clients Say</h2>
+            <div class="testimonial-slider">
+                <div class="testimonial-track">
+                    @foreach (var testimonial in testimonials)
+                    {
+                        <div class="testimonial-card">
+                            <p class="testimonial-text">"@testimonial.Text"</p>
+                            <div>
+                                <h6 class="testimonial-author">@testimonial.Author</h6>
+                                <p class="testimonial-role">@testimonial.Role</p>
+                            </div>
+                        </div>
+                    }
+                    <!-- Duplicate testimonials for seamless looping -->
+                    @foreach (var testimonial in testimonials)
+                    {
+                        <div class="testimonial-card">
+                            <p class="testimonial-text">"@testimonial.Text"</p>
+                            <div>
+                                <h6 class="testimonial-author">@testimonial.Author</h6>
+                                <p class="testimonial-role">@testimonial.Role</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Updated Brands Section -->
+
+<section class="brands-section">
+    <div class="brands-container">
+        <h2 class="brands-title">Hundreds of Pakistan's Top Brands Trust</h2>
+        <p class="brands-subtitle">TimeTrox Since over 2 Decades!</p>
+
+        <div class="brands-grid">
+            @{
+                var brandImages = new Dictionary<string, string>()
+            {
+            { "Dalda", "/images/brands/dalda.jpg" },
+            { "Kimhaz", "/images/brands/kimhaz.jpg" },
+            { "Pawar", "/images/brands/pawar.jpg" },
+            { "Khandi", "/images/brands/khandi.jpg" },
+            { "Birat Jasmal", "/images/brands/birat.jpg" },
+            { "Papadhyus & Pramadas", "/images/brands/papadhyus.jpg" },
+            { "Carsali", "/images/brands/carsali.jpg" },
+            { "Kilakka", "/images/brands/kilakka.jpg" },
+            { "Savukha", "/images/brands/savukha.jpg" },
+            { "Ziraz Jasmal", "/images/brands/ziraz.jpg" },
+            { "Shan", "/images/brands/shan.jpg" },
+            { "Pepsi", "/images/brands/pepsi.jpg" },
+            { "Savuka", "/images/brands/savuka.jpg" }
+            };
+
+                foreach (var brandGroup in brandGroups)
+                {
+                    <div class="brand-group">
+                        @foreach (var brand in brandGroup)
+                        {
+                            <div class="brand-box-container">
+                                <div class="brand-box-bg"></div>
+                                <div class="brand-box" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('@(brandImages.ContainsKey(brand) ? brandImages[brand] : "/images/brands/default.jpg")')">
+                                    @brand
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="see-more-clients">
+            <a href="#">See More Clients ></a>
+        </div>
+    </div>
+    </section>
+    <!-- Contact Section -->
+    <section class="contact-section py-5" id="contact">
+        <div class="container">
+            <h2 class="text-center section-title">Get In Touch</h2>
+            <div class="row">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="contact-form">
+                        <h4 class="mb-4">Send us a message</h4>
+                        <form>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" placeholder="Your Name">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="email" class="form-control" placeholder="Your Email">
+                                </div>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Subject">
+                            <textarea class="form-control" placeholder="Your Message"></textarea>
+                            <button type="submit" class="btn hero-btn w-100">Send Message</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="ps-lg-5">
+                        <h4 class="mb-4">Contact Information</h4>
+                        <div class="d-flex mb-4">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-primary me-3"></i>
+                            </div>
+                            <div>
+                                <p class="mb-0">123 Tech Park, Silicon Valley, CA 94000, USA</p>
+                            </div>
+                        </div>
+                        <div class="d-flex mb-4">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-phone-alt text-primary me-3"></i>
+                            </div>
+                            <div>
+                                <p class="mb-0">+1 (555) 123-4567</p>
+                            </div>
+                        </div>
+                        <div class="d-flex mb-4">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-envelope text-primary me-3"></i>
+                            </div>
+                            <div>
+                                <p class="mb-0">info@efrotech.com</p>
+                            </div>
+                        </div>
+                        <div class="mt-5">
+                            <h5 class="mb-3">Follow Us</h5>
+                            <div class="social-icons">
+                                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a href="#"><i class="fab fa-twitter"></i></a>
+                                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                                <a href="#"><i class="fab fa-instagram"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-5 mb-lg-0">
+                    <div class="footer-logo">
+                        <img src="https://www.efrotech.com/images/logo-white.png" alt="EfroTech Logo">
+                    </div>
+                    <p class="mb-4">Innovative IT solutions to transform your business and drive growth in the digital era.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-5 mb-md-0">
+                    <div class="footer-links">
+                        <h5>Quick Links</h5>
+                        <ul>
+                            <li><a href="#home">Home</a></li>
+                            <li><a href="#services">Services</a></li>
+                            <li><a href="#about">About Us</a></li>
+                            <li><a href="#testimonials">Testimonials</a></li>
+                            <li><a href="#contact">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-5 mb-md-0">
+                    <div class="footer-links">
+                        <h5>Services</h5>
+                        <ul>
+                            <li><a href="#">Web Development</a></li>
+                            <li><a href="#">Mobile Apps</a></li>
+                            <li><a href="#">Cloud Solutions</a></li>
+                            <li><a href="#">Cyber Security</a></li>
+                            <li><a href="#">Data Analytics</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="footer-links">
+                        <h5>Newsletter</h5>
+                        <p>Subscribe to our newsletter for the latest updates and news.</p>
+                        <form class="mt-4">
+                            <div class="input-group mb-3">
+                                <input type="email" class="form-control" placeholder="Your Email">
+                                <button class="btn hero-btn" type="button">Subscribe</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6 text-center text-md-start">
+                        <p class="mb-0">&copy; @DateTime.Now.Year EfroTech. All Rights Reserved.</p>
+                    </div>
+                    <div class="col-md-6 text-center text-md-end">
+                        <p class="mb-0">Designed with <i class="fas fa-heart text-danger"></i> by EfroTech Team</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function () {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+@code {
+    private bool navbarCollapsed = true;
+    private ElementReference servicesScroll;
+    private int currentSlide = 0;
+    private Timer? autoSlideTimer;
+    private DotNetObjectReference<Home>? objRef;
+    private bool showMobileMenu = false;
+    private List<List<string>> brandGroups = new List<List<string>>()
+    {
+        new List<string> { "Dalda", "Kimhaz", "Pawar", "Khandi" },
+        new List<string> { "Birat Jasmal", "Papadhyus & Pramadas", "Carsali", "Kilakka", "Savukha" },
+        new List<string> { "Ziraz Jasmal", "Shan", "Pepsi", "Savuka" },
+        
+    };
+    private void ToggleNavbar()
+    {
+        navbarCollapsed = !navbarCollapsed;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("initializeServicesScroll", objRef, servicesScroll);
+        }
+    }
+
+   
+
+    private List<Testimonial> testimonials = new List<Testimonial>
+    {
+        new Testimonial
+        {
+            Text = "EfroTech delivered an exceptional web application that has transformed our customer engagement. Their team was professional and met all our requirements.",
+            Author = "John Smith",
+            Role = "CEO, TechCorp"
+        },
+        new Testimonial
+        {
+            Text = "The mobile app developed by EfroTech has significantly improved our operational efficiency. Their attention to detail and post-launch support is commendable.",
+            Author = "Sarah Johnson",
+            Role = "COO, RetailPlus"
+        },
+        new Testimonial
+        {
+            Text = "We've been working with EfroTech for over 3 years and they consistently deliver high-quality solutions. Truly a trusted technology partner.",
+            Author = "Michael Brown",
+            Role = "CTO, FinServe"
+        },
+        new Testimonial
+        {
+            Text = "Their cloud migration expertise helped us reduce costs by 40% while improving system performance. Highly recommended!",
+            Author = "Emily Davis",
+            Role = "IT Director, HealthCare Solutions"
+        },
+        new Testimonial
+        {
+            Text = "EfroTech's data analytics platform provided insights we never knew were possible. It's been a game-changer for our business strategy.",
+            Author = "Robert Wilson",
+            Role = "VP Analytics, MarketGuru"
+        }
+    };
+
+    private void ToggleMobileMenu()
+    {
+        showMobileMenu = !showMobileMenu;
+    }
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+    protected override void OnInitialized()
+    {
+        // Set up auto-slide every 5 seconds for awards
+        autoSlideTimer = new Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                NextSlide();
+                StateHasChanged();
+            });
+        }, null, 5000, 5000);
+    }
+    private void NextSlide()
+    {
+        currentSlide = (currentSlide + 1) % 4;
+    }
+
+    private void PrevSlide()
+    {
+        currentSlide = (currentSlide - 1 + 4) % 4;
+    }
+
+    private void GoToSlide(int slideIndex)
+    {
+        currentSlide = slideIndex;
+    }
+    public new void Dispose()
+    {
+        objRef?.Dispose();
+    }
+
+    private class Testimonial
+    {
+        public string? Text { get; set; }
+        public string? Author { get; set; }
+        public string? Role { get; set; }
+    }
+}

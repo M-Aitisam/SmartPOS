@@ -1,4 +1,4 @@
-﻿@page "/purchase"
+@page "/purchase"
 @using ClassLibraryEntities
 @inject IProductService ProductService
 @inject ICartService CartService
@@ -8,6 +8,7 @@
 @rendermode InteractiveServer
 
 <h3>Purchase</h3>
+
 
 @if (StateContainer.Categories == null || !StateContainer.Categories.Any())
 {
@@ -33,6 +34,18 @@ else
             <div class="mb-3 border p-2">
                 <p><strong>@product.SubItemName</strong> - ₹@product.Price</p>
                 <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(new Product { Id = product.SubItemID, Name = product.SubItemName, Price = product.Price })">Add to Cart</button>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Product Selection - Now Organized by Categories -->
+        <div class="col-md-6">
+            <h4 class="text-primary mb-3">Products</h4>
+          
+
+            <div class="mb-3">
+                <input type="text" class="form-control" placeholder="Search Product..."
+                       @bind="searchTerm" @bind:event="oninput" />
+            </div>
 
                 @if (product.NestedSubItems != null && product.NestedSubItems.Any())
                 {
