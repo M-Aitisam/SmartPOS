@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ClassLibraryEntities;
+﻿using ClassLibraryEntities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClassLibraryDAL
@@ -24,7 +19,7 @@ namespace ClassLibraryDAL
          .Include(p => p.SubCategory)
          .AsNoTracking() // Important for fresh data
          .ToListAsync();
-         }
+        }
 
         public async Task<bool> ProcessTransactionAsync(BusinessTransaction transaction)
         {

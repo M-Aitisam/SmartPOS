@@ -1,13 +1,10 @@
 ﻿@page "/category-management"
 @inject ICategoryService CategoryService
-@inject StateContainerService StateContainer
 @rendermode InteractiveServer
+@inject StateContainerService StateContainer
 
-<h3 class="text-center text-primary mb-4">Category Management</h3>
+<h3 class="text-center text-primary">Category Management</h3>
 
-<<<<<<< HEAD
-@if (isLoading)
-=======
 <h4 class="mt-4 text-primary">Add New Category</h4>
 <EditForm Model="@newCategory" OnValidSubmit="SaveCategory">
     <DataAnnotationsValidator />
@@ -16,33 +13,19 @@
         <label class="form-label">Category Name:</label>
         <InputText @bind-Value="newCategory.CategoryName" class="form-control" required />
     </div>
-    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Category</button><br /> 
+    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Category</button><br />
 </EditForm>
 
 @if (categories == null)
->>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
 {
-    <div class="text-center text-muted">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
+    <p class="text-muted">Loading...</p>
 }
-else if (categories?.Any() != true)
+else if (!categories.Any())
 {
     <p class="text-warning">No categories found.</p>
 }
 else
 {
-<<<<<<< HEAD
-    <div class="table-responsive">
-        <table class="table table-bordered align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Category Name</th>
-                    <th>Actions</th>
-=======
     <table class="table table-bordered">
         <thead class="table-dark">
             <tr>
@@ -69,35 +52,14 @@ else
                             <i class="bi bi-trash"></i> Delete
                         </button>
                     </td>
->>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var category in categories)
-                {
-                    <tr>
-                        <td>@category.CategoryID</td>
-                        <td>@category.CategoryName</td>
-                        <td>
-                            <button class="btn btn-success btn-sm me-2" @onclick="() => OpenPopup(category.CategoryID, null)">
-                                <i class="bi bi-plus-lg"></i> Add Subcategory
-                            </button>
-                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteCategory(category.CategoryID)">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>
-                        </td>
-                    </tr>
 
-                    @foreach (var subItem in category.SubItems ?? new())
+                @if (category.SubItems?.Any() == true)
+                {
+                    @foreach (var subItem in category.SubItems)
                     {
                         <tr>
                             <td></td>
-<<<<<<< HEAD
-                            <td>├── @subItem.SubItemName</td>
-                            <td>
-                                <button class="btn btn-success btn-sm me-2" @onclick="() => OpenPopup(category.CategoryID, subItem.SubItemID)">
-                                    <i class="bi bi-plus"></i> Add Nested
-=======
                             <td class="ps-3">
                                 └ <InputText class="form-control" @bind-Value="subItem.SubItemName" />
                             </td>
@@ -107,7 +69,6 @@ else
                             <td>
                                 <button class="btn btn-success btn-sm" @onclick="() => OpenPopup(category.CategoryID, subItem.SubItemID)">
                                     <i class="bi bi-plus"></i> Add Sub-product
->>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
                                 </button>
                                 <button class="btn btn-danger btn-sm" @onclick="() => ConfirmDeleteSubItem(subItem.SubItemID)">
                                     <i class="bi bi-trash"></i> Delete
@@ -115,41 +76,8 @@ else
                             </td>
                         </tr>
 
-                        @foreach (var nested in subItem.NestedSubItems ?? new())
+                        @if (subItem.NestedSubItems?.Any() == true)
                         {
-<<<<<<< HEAD
-                            <tr>
-                                <td></td>
-                                <td class="ps-4">│   └── @nested.SubItemName <small class="text-muted">(Price: $@nested.Price)</small></td>
-                                <td>
-                                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteSubItem(nested.SubItemID)">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-}
-
-<hr />
-
-<h4 class="mt-4 text-primary">Add New Category</h4>
-<EditForm Model="@newCategory" OnValidSubmit="SaveCategory">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="mb-3">
-        <label class="form-label">Category Name:</label>
-        <InputText @bind-Value="newCategory.CategoryName" class="form-control" required />
-    </div>
-    <button type="submit" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Add Category
-    </button>
-</EditForm>
-=======
                             @foreach (var nestedItem in subItem.NestedSubItems)
                             {
                                 <tr>
@@ -178,12 +106,11 @@ else
 }
 
 
->>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
 
 @if (isPopupOpen)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="ClosePopup">
-        <div class="modal-dialog" @onclick:stopPropagation>
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
@@ -195,6 +122,7 @@ else
                     <EditForm Model="@newSubItem" OnValidSubmit="SaveSubItem">
                         <DataAnnotationsValidator />
                         <ValidationSummary />
+
                         <div class="mb-3">
                             <label class="form-label">Name:</label>
                             <InputText @bind-Value="newSubItem.SubItemName" class="form-control" required />
@@ -205,12 +133,13 @@ else
                             <InputNumber @bind-Value="newSubItem.Price" class="form-control" />
                         </div>
 
-                        <button type="submit" class="btn btn-success">Save</button>
+                        <button type="submit" class="btn btn-success">Add</button>
                     </EditForm>
                 </div>
             </div>
         </div>
     </div>
+    <div class="modal-backdrop fade show"></div>
 }
 
 @if (confirmDeleteVisible)
@@ -238,17 +167,11 @@ else
     private BusinessCategory newCategory = new();
     private BusinessSubItem newSubItem = new() { Price = 0 };
     private bool isPopupOpen = false;
-<<<<<<< HEAD
-    private int currentCategoryID;
-    private int? parentSubItemID = null;
-    private bool isLoading = true;
-=======
     private bool confirmDeleteVisible = false;
     private int currentCategoryID = 0;
     private int? parentSubItemID = null;
     private int? itemToDeleteId = null;
     private bool isDeletingCategory = false;
->>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
 
     protected override async Task OnInitializedAsync()
     {
@@ -257,14 +180,9 @@ else
 
     private async Task LoadCategories()
     {
-        isLoading = true;
         categories = await CategoryService.GetCategoriesAsync();
         StateContainer.Categories = categories;
-<<<<<<< HEAD
-        isLoading = false;
-=======
         await InvokeAsync(StateHasChanged);
->>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
     }
 
     private async Task SaveCategory()
@@ -309,12 +227,7 @@ else
     {
         currentCategoryID = categoryId;
         parentSubItemID = subItemId;
-        newSubItem = new BusinessSubItem
-            {
-                CategoryID = categoryId,
-                ParentSubItemID = subItemId,
-                Price = 0
-            };
+        newSubItem = new BusinessSubItem { CategoryID = categoryId, ParentSubItemID = subItemId, Price = 0 };
         isPopupOpen = true;
     }
 
@@ -328,12 +241,8 @@ else
         if (!string.IsNullOrWhiteSpace(newSubItem.SubItemName))
         {
             await CategoryService.AddSubItemAsync(newSubItem);
-<<<<<<< HEAD
-=======
             await LoadCategories();
->>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
             ClosePopup();
-            await LoadCategories();
         }
     }
 

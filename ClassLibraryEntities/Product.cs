@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ClassLibraryEntities
 {
@@ -21,7 +16,7 @@ namespace ClassLibraryEntities
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
 
-      
+
         public int CategoryID { get; set; }
         public int? SubCategoryID { get; set; }
         public int? NestedSubCategoryID { get; set; }
