@@ -143,6 +143,8 @@ h1:focus {
     gap: 8px;
 }
 
+<<<<<<< HEAD
+=======
 :root {
     --primary-color: #FF6B00;
     --secondary-color: #333333;
@@ -975,3 +977,4 @@ textarea.form-control {
 }
 
 
+>>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996

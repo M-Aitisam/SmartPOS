@@ -2,8 +2,6 @@
 using ClassLibraryDAL;
 using ClassLibraryServices;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 

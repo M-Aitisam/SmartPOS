@@ -9,7 +9,6 @@
 
 <h3>Purchase</h3>
 
-
 @if (StateContainer.Categories == null || !StateContainer.Categories.Any())
 {
     <p>Loading categories...</p>
@@ -34,18 +33,6 @@ else
             <div class="mb-3 border p-2">
                 <p><strong>@product.SubItemName</strong> - ₹@product.Price</p>
                 <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(new Product { Id = product.SubItemID, Name = product.SubItemName, Price = product.Price })">Add to Cart</button>
-
-<div class="container-fluid">
-    <div class="row">
-        <!-- Product Selection - Now Organized by Categories -->
-        <div class="col-md-6">
-            <h4 class="text-primary mb-3">Products</h4>
-          
-
-            <div class="mb-3">
-                <input type="text" class="form-control" placeholder="Search Product..."
-                       @bind="searchTerm" @bind:event="oninput" />
-            </div>
 
                 @if (product.NestedSubItems != null && product.NestedSubItems.Any())
                 {
@@ -113,7 +100,7 @@ else
 @code {
     private List<CartItem> cartItems = new();
     private int? selectedCategoryId;
-    private BusinessCategory? selectedCategory => StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
+    private BusinessCategory selectedCategory => StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
     private string discountInput = string.Empty;
     private decimal subTotal;
     private decimal appliedDiscount;

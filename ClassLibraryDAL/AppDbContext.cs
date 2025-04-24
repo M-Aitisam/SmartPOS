@@ -1,8 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ClassLibraryEntities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using ClassLibraryEntities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClassLibraryDAL
 {

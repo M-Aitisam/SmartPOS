@@ -1,4 +1,4 @@
-﻿@page "/efrotech-clone"
+﻿@page "/"
 @using Microsoft.AspNetCore.Components
 @inject NavigationManager NavigationManager
 @implements IDisposable
@@ -900,7 +900,7 @@
                 </a>
             </li>
         </ul>
-        <a href="#" class="login-btn" @onclick="NavigateToLogin">
+        <a href="/login" class="login-btn" @onclick="NavigateToLogin">
             Login
         </a>
     </nav>
@@ -1393,7 +1393,7 @@
     private ElementReference servicesScroll;
     private int currentSlide = 0;
     private Timer? autoSlideTimer;
-    private DotNetObjectReference<Home>? objRef;
+    private DotNetObjectReference<Website>? objRef;
     private bool showMobileMenu = false;
     private List<List<string>> brandGroups = new List<List<string>>()
     {
