@@ -1,0 +1,61 @@
+﻿@page "/login"
+
+<link href="/app.css" rel="stylesheet" />
+
+<div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+    <form class="login-form p-4 p-md-5 bg-white shadow-lg rounded-4 text-center">
+        <!-- Logo Placeholder -->
+        <div class="mx-auto mb-4" style="width: 80px; height: 80px; background: linear-gradient(180deg, rgba(248, 248, 248, 0) 50%, #F8F8F888 100%); border: 1px solid #F7F7F8; border-radius: 11px; filter: drop-shadow(0 0.5px 0.5px #efefef) drop-shadow(0 1px 0.5px rgba(239, 239, 239, 0.5));">
+        </div>
+
+        <!-- Title -->
+        <h2 class="fs-4 fw-bold text-dark">Login to your Account</h2>
+        <p class="fs-6 text-muted mb-4" style="line-height: 1.4;">
+            Get started with our app, just create an account and enjoy the experience.
+        </p>
+
+        <!-- Email Field -->
+        <div class="mb-3 text-start">
+            <label for="email_field" class="form-label text-muted fw-semibold">Email</label>
+            <div class="position-relative">
+                <span class="position-absolute top-50 start-0 translate-middle-y ps-3">
+                    📧
+                </span>
+                <input type="email" class="form-control ps-5" id="email_field" placeholder="name@mail.com" name="email" required />
+            </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="mb-3 text-start">
+            <label for="password_field" class="form-label text-muted fw-semibold">Password</label>
+            <div class="position-relative">
+                <span class="position-absolute top-50 start-0 translate-middle-y ps-3">
+                    🔒
+                </span>
+                <input type="password" class="form-control ps-5" id="password_field" placeholder="Password" name="password" required />
+            </div>
+        </div>
+
+        <!-- Sign In Button -->
+        <button type="submit" class="btn btn-primary w-100 mt-3 rounded-3">Sign In</button>
+
+        <!-- OR separator -->
+        <div class="d-flex align-items-center justify-content-center gap-3 my-4">
+            <hr class="w-100 text-muted" />
+            <span class="text-muted">Or</span>
+            <hr class="w-100 text-muted" />
+        </div>
+
+        <!-- Sign in with Google -->
+        <button type="button" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 mb-2 rounded-3">
+            <i class="bi bi-google"></i>
+            <span>Sign in with Google</span>
+        </button>
+
+        <!-- Sign in with Apple -->
+        <button type="button" class="btn btn-dark w-100 d-flex align-items-center justify-content-center gap-2 rounded-3">
+            <i class="bi bi-apple"></i>
+            <span>Sign in with Apple</span>
+        </button>
+    </form>
+</div>
