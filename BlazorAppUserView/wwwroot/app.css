@@ -1,4 +1,9 @@
 
+*{
+    margin :0;
+    padding : 0;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -137,10 +142,6 @@ h1:focus {
     display: flex;
     gap: 8px;
 }
-
-
-
-
 
 :root {
     --primary-color: #FF6B00;
