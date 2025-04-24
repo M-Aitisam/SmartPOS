@@ -12,6 +12,8 @@ namespace ClassLibraryServices
         Task<List<BusinessCategory>> GetCategoriesAsync();
         Task<bool> AddCategoryAsync(BusinessCategory category);
         Task<bool> AddSubItemAsync(BusinessSubItem subItem);
+        Task UpdateCategoriesAsync(List<BusinessCategory> categories);
+
         Task<bool> DeleteCategoryAsync(int categoryId);
         Task<bool> DeleteSubItemAsync(int subItemId);
     }

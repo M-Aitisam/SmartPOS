@@ -1,18 +1,55 @@
-﻿@page "/purchase"
+@page "/purchase"
 @using ClassLibraryEntities
 @inject IProductService ProductService
 @inject ICartService CartService
 @inject ICategoryService CategoryService
-@rendermode InteractiveServer
 @inject StateContainerService StateContainer
+@implements IDisposable
+@rendermode InteractiveServer
 
+<<<<<<< HEAD
 <div class="container-fluid py-3">
     <div class="row g-4">
         <!-- Left: Product Catalog -->
         <div class="col-lg-6">
+=======
+<h3>Purchase</h3>
+
+
+@if (StateContainer.Categories == null || !StateContainer.Categories.Any())
+{
+    <p>Loading categories...</p>
+}
+else
+{
+    <label>Select Category:</label>
+    <select @bind="selectedCategoryId" class="form-select">
+        <option value="">-- Select Category --</option>
+        @foreach (var category in StateContainer.Categories)
+        {
+            <option value="@category.CategoryID">@category.CategoryName</option>
+        }
+    </select>
+
+    @if (selectedCategory != null)
+    {
+        <hr />
+        <h4>Products</h4>
+        @foreach (var product in selectedCategory.SubItems)
+        {
+            <div class="mb-3 border p-2">
+                <p><strong>@product.SubItemName</strong> - ₹@product.Price</p>
+                <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(new Product { Id = product.SubItemID, Name = product.SubItemName, Price = product.Price })">Add to Cart</button>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Product Selection - Now Organized by Categories -->
+        <div class="col-md-6">
+>>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
             <h4 class="text-primary mb-3">Products</h4>
             <input type="text" class="form-control mb-4 rounded shadow-sm" placeholder="Search Product..." @bind="searchTerm" @bind:event="oninput" />
 
+<<<<<<< HEAD
             @if (categories == null)
             {
                 <div class="text-center text-muted">Loading categories...</div>
@@ -105,16 +142,75 @@
                         </div>
                     </div>
                 </div>
+=======
+                @if (product.NestedSubItems != null && product.NestedSubItems.Any())
+                {
+                    <label class="mt-2">Select Sub-Product:</label>
+                    <select class="form-select" @onchange="e => AddNestedToCart(e, product)">
+                        <option value="">-- Select --</option>
+                        @foreach (var sub in product.NestedSubItems)
+                        {
+                            <option value="@sub.SubItemID">@sub.SubItemName - ₹@sub.Price</option>
+                        }
+                    </select>
+                }
+>>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
             </div>
-        </div>
-    </div>
-</div>
+        }
+    }
+
+    <hr />
+    <h4>Cart</h4>
+    @if (cartItems.Any())
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in cartItems)
+                {
+                    <tr>
+                        <td>@item.ProductName</td>
+                        <td>₹@item.UnitPrice</td>
+                        <td>
+                            <input type="number" class="form-control" @bind="item.Quantity" @bind:event="oninput" min="1" @onchange="@(_ => UpdateCartItem(item))" />
+                        </td>
+                        <td>₹@item.TotalPrice</td>
+                        <td><button class="btn btn-danger btn-sm" @onclick="() => RemoveFromCart(item)">Remove</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p><strong>Subtotal:</strong> ₹@subTotal</p>
+        <p>
+            <label>Discount:</label>
+            <input type="text" class="form-control" @bind="discountInput" @bind:event="oninput" />
+        </p>
+        <p><strong>Total After Discount:</strong> ₹@grandTotal</p>
+        <p>
+            <label>Payment:</label>
+            <input type="number" class="form-control" @bind="paymentAmount" @bind:event="oninput" />
+        </p>
+        <p><strong>Change/Due:</strong> ₹@dueAmount</p>
+        <button class="btn btn-success" @onclick="CompletePurchase">Complete Purchase</button>
+    }
+    else
+    {
+        <p>No items in cart.</p>
+    }
+}
 
 @code {
-    private List<Product> allProducts = new();
-    private List<BusinessCategory> categories = new();
     private List<CartItem> cartItems = new();
-    private string searchTerm = string.Empty;
+    private int? selectedCategoryId;
+    private BusinessCategory? selectedCategory => StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
     private string discountInput = string.Empty;
     private decimal subTotal;
     private decimal appliedDiscount;
@@ -124,6 +220,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+<<<<<<< HEAD
         StateContainer.OnChange += StateHasChanged;
         await LoadData();
     }
@@ -135,6 +232,32 @@
         StateContainer.Products = allProducts;
         StateContainer.Categories = categories;
         CalculateTotals();
+=======
+        StateContainer.OnChange += RefreshDataFromState;
+        await LoadData();
+    }
+
+    public void Dispose()
+    {
+        StateContainer.OnChange -= RefreshDataFromState;
+    }
+
+    private async Task LoadData()
+    {
+        if (StateContainer.Categories == null || !StateContainer.Categories.Any())
+        {
+            var categories = await CategoryService.GetCategoriesAsync();
+            StateContainer.Categories = categories;
+        }
+
+        RefreshDataFromState();
+    }
+
+    private void RefreshDataFromState()
+    {
+        CalculateTotals();
+        StateHasChanged();
+>>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
     }
 
     private void AddToCart(Product product)
@@ -157,6 +280,21 @@
         CalculateTotals();
     }
 
+<<<<<<< HEAD
+=======
+    private void AddNestedToCart(ChangeEventArgs e, BusinessSubItem parentItem)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int subId))
+        {
+            var nested = parentItem.NestedSubItems?.FirstOrDefault(s => s.SubItemID == subId);
+            if (nested != null)
+            {
+                AddToCart(new Product { Id = nested.SubItemID, Name = $"{parentItem.SubItemName} > {nested.SubItemName}", Price = nested.Price });
+            }
+        }
+    }
+
+>>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
     private void RemoveFromCart(CartItem item)
     {
         cartItems.Remove(item);
@@ -182,6 +320,7 @@
         appliedDiscount = 0;
         if (string.IsNullOrWhiteSpace(discountInput)) return;
 
+<<<<<<< HEAD
         if (discountInput.EndsWith("%"))
         {
             if (decimal.TryParse(discountInput.TrimEnd('%'), out var percent))
@@ -196,6 +335,12 @@
                 appliedDiscount = fixedValue;
             }
         }
+=======
+        if (discountInput.EndsWith("%") && decimal.TryParse(discountInput.TrimEnd('%'), out var percent))
+            appliedDiscount = subTotal * (percent / 100);
+        else if (decimal.TryParse(discountInput, out var fixedDiscount))
+            appliedDiscount = fixedDiscount;
+>>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
     }
 
     private async Task CompletePurchase()
@@ -220,14 +365,16 @@
             };
 
         await CartService.ProcessTransactionAsync(transaction);
-
         cartItems.Clear();
         paymentAmount = 0;
         CalculateTotals();
     }
+<<<<<<< HEAD
 
     public void Dispose()
     {
         StateContainer.OnChange -= StateHasChanged;
     }
+=======
+>>>>>>> de5ddb538c2704a693b40fcbf21354384b85d996
 }

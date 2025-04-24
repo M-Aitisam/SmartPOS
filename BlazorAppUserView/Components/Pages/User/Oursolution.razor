@@ -1,0 +1,822 @@
+﻿@page "/oursolution"
+@using Microsoft.CodeAnalysis.Differencing
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Solutions | TimeTrax</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #FF6B00;
+            --secondary-color: #333333;
+            --dark-color: #121212;
+            --light-color: #f8f9fa;
+            --text-color: #333333;
+            --text-light: #777777;
+            --bg-grey: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: white;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        /* Navbar (same as main site) */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            background-color: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo img {
+            height: 40px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links li a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-links li a:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-links li a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            bottom: -5px;
+            left: 0;
+            transition: width 0.3s;
+        }
+
+        .nav-links li a:hover::after {
+            width: 100%;
+        }
+
+        .dropdown-icon {
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+
+        .login-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            background-color: #e05d00;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 0, 0.3);
+        }
+
+        /* Hero Section */
+        .solutions-hero {
+            background: linear-gradient(135deg, rgba(255,107,0,0.1) 0%, rgba(255,255,255,1) 100%);
+            padding: 180px 5% 100px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .solutions-hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards 0.3s;
+        }
+
+        .solutions-hero p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards 0.5s;
+        }
+
+        .hero-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-image: radial-gradient(rgba(255,107,0,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        /* Solutions Grid */
+        .solutions-container {
+            padding: 5rem 5%;
+            background-color: white;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-header h2::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 4px;
+            background: var(--primary-color);
+            bottom: -10px;
+            left: 25%;
+            border-radius: 2px;
+        }
+
+        .section-header p {
+            color: var(--text-light);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .solutions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .solution-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateY(50px);
+            opacity: 0;
+        }
+
+        .solution-card.animate {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .solution-card:hover {
+            transform: translateY(-10px) !important;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .solution-icon {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255,107,0,0.1) 0%, rgba(255,255,255,1) 100%);
+            color: var(--primary-color);
+            font-size: 3rem;
+        }
+
+        .solution-content {
+            padding: 2rem;
+        }
+
+        .solution-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+        }
+
+        .solution-content p {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .solution-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .solution-link i {
+            margin-left: 8px;
+            transition: transform 0.3s;
+        }
+
+        .solution-link:hover {
+            color: #e05d00;
+        }
+
+        .solution-link:hover i {
+            transform: translateX(5px);
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 5rem 5%;
+            background-color: var(--bg-grey);
+        }
+
+        .features-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-tabs {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .feature-tab {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid transparent;
+        }
+
+        .feature-tab.active {
+            border-left: 4px solid var(--primary-color);
+            background: linear-gradient(90deg, rgba(255,107,0,0.05) 0%, rgba(255,255,255,1) 100%);
+        }
+
+        .feature-tab h3 {
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-tab p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .feature-content {
+            flex: 2;
+            min-width: 300px;
+            position: relative;
+            height: 400px;
+        }
+
+        .feature-preview {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .feature-preview.active {
+            opacity: 1;
+            transform: scale(1);
+            z-index: 1;
+        }
+
+        .feature-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 2rem;
+            background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+            color: white;
+        }
+
+        .preview-overlay h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-overlay p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 5rem 5%;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #e05d00 100%);
+            color: white;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-section p {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: white;
+            color: var(--primary-color);
+            padding: 1rem 2.5rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Footer (same as main site) */
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 5rem 5% 2rem;
+        }
+
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-logo img {
+            height: 40px;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-about p {
+            color: #aaa;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        .footer-links h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-links h3::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 3px;
+            background: var(--primary-color);
+            bottom: 0;
+            left: 0;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: #aaa;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+            padding-left: 5px;
+        }
+
+        .footer-newsletter p {
+            color: #aaa;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .newsletter-form {
+            display: flex;
+        }
+
+        .newsletter-form input {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 30px 0 0 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .newsletter-form input::placeholder {
+            color: #ccc;
+        }
+
+        .newsletter-form button {
+            padding: 0 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0 30px 30px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .newsletter-form button:hover {
+            background: #e05d00;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .solutions-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+            
+            .features-container {
+                flex-direction: column;
+            }
+            
+            .feature-content {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar (same as main site) -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="/logo.png" alt="TimeTrax Logo" />
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="#" class="active">Our Solutions</a></li>
+            <li><a href="#">Portfolio</a></li>
+            <li><a href="#">Gallery</a></li>
+            <li><a href="#">Latest</a></li>
+            <li><a href="#">Company</a></li>
+        </ul>
+        <a href="#" class="login-btn">Login</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="solutions-hero">
+        <div class="hero-pattern"></div>
+        <h1>Innovative Solutions for Modern Businesses</h1>
+        <p>Discover how TimeTrax can transform your operations with our cutting-edge technology solutions designed to streamline processes and boost efficiency.</p>
+        <a href="#solutions" class="btn hero-btn">Explore Solutions</a>
+    </section>
+
+    <!-- Solutions Grid -->
+    <section class="solutions-container" id="solutions">
+        <div class="section-header">
+            <h2>Our Comprehensive Solutions</h2>
+            <p>Tailored to meet the diverse needs of businesses across industries, our solutions deliver measurable results and exceptional value.</p>
+        </div>
+        
+        <div class="solutions-grid">
+            <div class="solution-card">
+                <div class="solution-icon">
+                    <i class="fas fa-cash-register"></i>
+                </div>
+                <div class="solution-content">
+                    <h3>Point of Sale System</h3>
+                    <p>Streamline your sales process with our intuitive POS system that handles transactions, inventory, and customer management seamlessly.</p>
+                    <a href="#" class="solution-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            
+            <div class="solution-card">
+                <div class="solution-icon">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <div class="solution-content">
+                    <h3>Inventory Management</h3>
+                    <p>Gain real-time visibility into your stock levels, automate reordering, and reduce waste with our advanced inventory solutions.</p>
+                    <a href="#" class="solution-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            
+            <div class="solution-card">
+                <div class="solution-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="solution-content">
+                    <h3>Business Analytics</h3>
+                    <p>Transform your data into actionable insights with powerful reporting and analytics tools that drive informed decision-making.</p>
+                    <a href="#" class="solution-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            
+            <div class="solution-card">
+                <div class="solution-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div class="solution-content">
+                    <h3>Customer Relationship</h3>
+                    <p>Build stronger customer relationships with tools that help you track interactions, preferences, and purchase history.</p>
+                    <a href="#" class="solution-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            
+            <div class="solution-card">
+                <div class="solution-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div class="solution-content">
+                    <h3>Supply Chain</h3>
+                    <p>Optimize your supply chain with end-to-end visibility, vendor management, and automated procurement processes.</p>
+                    <a href="#" class="solution-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            
+            <div class="solution-card">
+                <div class="solution-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="solution-content">
+                    <h3>Mobile Solutions</h3>
+                    <p>Extend your business capabilities with mobile apps that let you manage operations from anywhere, anytime.</p>
+                    <a href="#" class="solution-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="section-header">
+            <h2>Key Features</h2>
+            <p>Discover the powerful capabilities that make TimeTrax the preferred choice for businesses of all sizes.</p>
+        </div>
+        
+        <div class="features-container">
+            <div class="feature-tabs">
+                <div class="feature-tab active" data-tab="dashboard">
+                    <h3>Intuitive Dashboard</h3>
+                    <p>Get a comprehensive overview of your business performance at a glance.</p>
+                </div>
+                <div class="feature-tab" data-tab="reports">
+                    <h3>Advanced Reporting</h3>
+                    <p>Generate detailed reports with customizable parameters and visualizations.</p>
+                </div>
+                <div class="feature-tab" data-tab="integration">
+                    <h3>Seamless Integration</h3>
+                    <p>Connect with other business systems and third-party applications easily.</p>
+                </div>
+                <div class="feature-tab" data-tab="security">
+                    <h3>Enterprise Security</h3>
+                    <p>Protect your data with robust security measures and compliance standards.</p>
+                </div>
+            </div>
+            
+            <div class="feature-content">
+                <div class="feature-preview active" id="dashboard-preview">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Dashboard Preview">
+                    <div class="preview-overlay">
+                        <h3>Intuitive Dashboard</h3>
+                        <p>Monitor key metrics and KPIs with our customizable dashboard interface.</p>
+                    </div>
+                </div>
+                <div class="feature-preview" id="reports-preview">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Reports Preview">
+                    <div class="preview-overlay">
+                        <h3>Advanced Reporting</h3>
+                        <p>Create, customize, and export reports with just a few clicks.</p>
+                    </div>
+                </div>
+                <div class="feature-preview" id="integration-preview">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Integration Preview">
+                    <div class="preview-overlay">
+                        <h3>Seamless Integration</h3>
+                        <p>Connect with accounting, e-commerce, and other business systems.</p>
+                    </div>
+                </div>
+                <div class="feature-preview" id="security-preview">
+                    <img src="https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Security Preview">
+                    <div class="preview-overlay">
+                        <h3>Enterprise Security</h3>
+                        <p>Bank-level encryption and role-based access control.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Ready to Transform Your Business?</h2>
+        <p>Join thousands of businesses that have improved their operations with TimeTrax solutions. Get started today with a free consultation.</p>
+        <a href="#" class="cta-btn">Request Demo</a>
+    </section>
+
+    <!-- Footer (same as main site) -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-about">
+                <div class="footer-logo">
+                    <img src="https://www.efrotech.com/images/logo-white.png" alt="TimeTrax Logo">
+                </div>
+                <p>Innovative IT solutions to transform your business and drive growth in the digital era.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-links">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Our Solutions</a></li>
+                    <li><a href="#">Portfolio</a></li>
+                    <li><a href="#">Gallery</a></li>
+                    <li><a href="#">Company</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h3>Solutions</h3>
+                <ul>
+                    <li><a href="#">Point of Sale</a></li>
+                    <li><a href="#">Inventory Management</a></li>
+                    <li><a href="#">Business Analytics</a></li>
+                    <li><a href="#">Customer Relationship</a></li>
+                    <li><a href="#">Mobile Solutions</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-newsletter">
+                <h3>Newsletter</h3>
+                <p>Subscribe to our newsletter for the latest updates and news.</p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Your Email">
+                    <button type="submit"><i class="fas fa-paper-plane"></i></button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2023 TimeTrax. All Rights Reserved. | Designed with <i class="fas fa-heart" style="color: #FF6B00;"></i> by TimeTrax Team</p>
+        </div>
+    </footer>
+
+    <script>
+        // Animate solution cards on scroll
+        const solutionCards = document.querySelectorAll('.solution-card');
+        
+        const animateOnScroll = () => {
+            solutionCards.forEach((card, index) => {
+                const cardPosition = card.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.3;
+                
+                if (cardPosition < screenPosition) {
+                    setTimeout(() => {
+                        card.classList.add('animate');
+                    }, index * 100);
+                }
+            });
+        };
+        
+        window.addEventListener('load', animateOnScroll);
+        window.addEventListener('scroll', animateOnScroll);
+        
+        // Feature tabs functionality
+        const featureTabs = document.querySelectorAll('.feature-tab');
+        const featurePreviews = document.querySelectorAll('.feature-preview');
+        
+        featureTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and previews
+                featureTabs.forEach(t => t.classList.remove('active'));
+                featurePreviews.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding preview
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-preview`).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
