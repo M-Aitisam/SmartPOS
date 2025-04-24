@@ -3,143 +3,104 @@
 @inject IProductService ProductService
 @inject ICartService CartService
 @inject ICategoryService CategoryService
-@rendermode InteractiveServer
 @inject StateContainerService StateContainer
+@implements IDisposable
+@rendermode InteractiveServer
 
+<h3>Purchase</h3>
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- Product Selection - Now Organized by Categories -->
-        <div class="col-md-6">
-            <h4 class="text-primary mb-3">Products</h4>
-          
+@if (StateContainer.Categories == null || !StateContainer.Categories.Any())
+{
+    <p>Loading categories...</p>
+}
+else
+{
+    <label>Select Category:</label>
+    <select @bind="selectedCategoryId" class="form-select">
+        <option value="">-- Select Category --</option>
+        @foreach (var category in StateContainer.Categories)
+        {
+            <option value="@category.CategoryID">@category.CategoryName</option>
+        }
+    </select>
 
-            <div class="mb-3">
-                <input type="text" class="form-control" placeholder="Search Product..."
-                       @bind="searchTerm" @bind:event="oninput" />
+    @if (selectedCategory != null)
+    {
+        <hr />
+        <h4>Products</h4>
+        @foreach (var product in selectedCategory.SubItems)
+        {
+            <div class="mb-3 border p-2">
+                <p><strong>@product.SubItemName</strong> - ₹@product.Price</p>
+                <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(new Product { Id = product.SubItemID, Name = product.SubItemName, Price = product.Price })">Add to Cart</button>
 
-            </div>
-
-            @if (categories == null)
-            {
-                <p class="text-muted">Loading products...</p>
-            }
-            else
-            {
-                @foreach (var category in categories)
+                @if (product.NestedSubItems != null && product.NestedSubItems.Any())
                 {
-                    var categoryProducts = allProducts
-                    .Where(p => p.CategoryID == category.CategoryID)
-                    .Where(p => p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                    @if (categoryProducts.Any())
-                    {
-                        <div class="category-group mb-4">
-                            <h5 class="text-info bg-light p-2 rounded">@category.CategoryName</h5>
-                            <div class="row">
-                                @foreach (var product in categoryProducts)
-                                {
-                                    <div class="col-md-6 mb-3">
-                                        <div class="card">
-                                            <div class="card-body">
-                                                <h6 class="card-title">@product.Name</h6>
-                                                <p class="card-text">Price: @product.Price.ToString("C")</p>
-                                                <button class="btn btn-primary btn-sm"
-                                                        @onclick="() => AddToCart(product)">
-                                                    Add to Cart
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
+                    <label class="mt-2">Select Sub-Product:</label>
+                    <select class="form-select" @onchange="e => AddNestedToCart(e, product)">
+                        <option value="">-- Select --</option>
+                        @foreach (var sub in product.NestedSubItems)
+                        {
+                            <option value="@sub.SubItemID">@sub.SubItemName - ₹@sub.Price</option>
+                        }
+                    </select>
                 }
-            }
-        </div>
-
-        <!-- Cart & Payment (Remains Unchanged) -->
-        <div class="col-md-6">
-            <h4 class="text-primary mb-3">Cart</h4>
-
-            <table class="table table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in cartItems)
-                    {
-                        <tr>
-                            <td>@item.ProductName</td>
-                            <td>@item.UnitPrice.ToString("C")</td>
-                            <td>
-                                <input type="number"
-                                       class="form-control form-control-sm"
-                                       min="1"
-                                       @bind="item.Quantity"
-                                       @bind:event="oninput" />
-                            </td>
-                            <td>@item.TotalPrice.ToString("C")</td>
-                            <td>
-                                <button class="btn btn-danger btn-sm"
-                                        @onclick="() => RemoveFromCart(item)">
-                                    Remove
-                                </button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label">Discount:</label>
-                        <input type="text" class="form-control"
-                               @bind="discountInput" placeholder="ex: 100 or 5%" />
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Payment Summary</h5>
-                            <p>Subtotal: @subTotal.ToString("C")</p>
-                            <p>Discount: @appliedDiscount.ToString("C")</p>
-                            <p>Total: @grandTotal.ToString("C")</p>
-                            <hr>
-
-                            <div class="mb-3">
-                                <label class="form-label">Payment Amount:</label>
-                                <InputNumber class="form-control" @bind-Value="paymentAmount" />
-                            </div>
-
-                            <p>Change Due: @dueAmount.ToString("C")</p>
-
-                            <button class="btn btn-success w-100"
-                                    @onclick="CompletePurchase">
-                                Complete Purchase
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </div>
-    </div>
-</div>
+        }
+    }
+
+    <hr />
+    <h4>Cart</h4>
+    @if (cartItems.Any())
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in cartItems)
+                {
+                    <tr>
+                        <td>@item.ProductName</td>
+                        <td>₹@item.UnitPrice</td>
+                        <td>
+                            <input type="number" class="form-control" @bind="item.Quantity" @bind:event="oninput" min="1" @onchange="@(_ => UpdateCartItem(item))" />
+                        </td>
+                        <td>₹@item.TotalPrice</td>
+                        <td><button class="btn btn-danger btn-sm" @onclick="() => RemoveFromCart(item)">Remove</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p><strong>Subtotal:</strong> ₹@subTotal</p>
+        <p>
+            <label>Discount:</label>
+            <input type="text" class="form-control" @bind="discountInput" @bind:event="oninput" />
+        </p>
+        <p><strong>Total After Discount:</strong> ₹@grandTotal</p>
+        <p>
+            <label>Payment:</label>
+            <input type="number" class="form-control" @bind="paymentAmount" @bind:event="oninput" />
+        </p>
+        <p><strong>Change/Due:</strong> ₹@dueAmount</p>
+        <button class="btn btn-success" @onclick="CompletePurchase">Complete Purchase</button>
+    }
+    else
+    {
+        <p>No items in cart.</p>
+    }
+}
 
 @code {
-    private List<Product> allProducts = new();
-    private List<BusinessCategory> categories = new();
     private List<CartItem> cartItems = new();
-    private string searchTerm = string.Empty;
+    private int? selectedCategoryId;
+    private BusinessCategory? selectedCategory => StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
     private string discountInput = string.Empty;
     private decimal subTotal;
     private decimal appliedDiscount;
@@ -149,8 +110,30 @@
 
     protected override async Task OnInitializedAsync()
     {
-        StateContainer.OnChange += StateHasChanged;
-        await LoadData(); 
+        StateContainer.OnChange += RefreshDataFromState;
+        await LoadData();
+    }
+
+    public void Dispose()
+    {
+        StateContainer.OnChange -= RefreshDataFromState;
+    }
+
+    private async Task LoadData()
+    {
+        if (StateContainer.Categories == null || !StateContainer.Categories.Any())
+        {
+            var categories = await CategoryService.GetCategoriesAsync();
+            StateContainer.Categories = categories;
+        }
+
+        RefreshDataFromState();
+    }
+
+    private void RefreshDataFromState()
+    {
+        CalculateTotals();
+        StateHasChanged();
     }
 
     private void AddToCart(Product product)
@@ -173,6 +156,17 @@
         CalculateTotals();
     }
 
+    private void AddNestedToCart(ChangeEventArgs e, BusinessSubItem parentItem)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int subId))
+        {
+            var nested = parentItem.NestedSubItems?.FirstOrDefault(s => s.SubItemID == subId);
+            if (nested != null)
+            {
+                AddToCart(new Product { Id = nested.SubItemID, Name = $"{parentItem.SubItemName} > {nested.SubItemName}", Price = nested.Price });
+            }
+        }
+    }
 
     private void RemoveFromCart(CartItem item)
     {
@@ -196,42 +190,20 @@
 
     private void ApplyDiscount()
     {
+        appliedDiscount = 0;
         if (string.IsNullOrWhiteSpace(discountInput)) return;
 
-        if (discountInput.EndsWith("%"))
-        {
-            if (decimal.TryParse(discountInput.TrimEnd('%'), out decimal percentage))
-            {
-                appliedDiscount = subTotal * (percentage / 100);
-            }
-        }
-        else
-        {
-            if (decimal.TryParse(discountInput, out decimal fixedAmount))
-            {
-                appliedDiscount = fixedAmount;
-            }
-        }
-    }
-    private async Task LoadData()
-    {
-        allProducts = await ProductService.GetAllProductsAsync();
-        categories = await CategoryService.GetCategoriesAsync();
-
-        // Update state container
-        StateContainer.Products = allProducts;
-        StateContainer.Categories = categories;
-
-        CalculateTotals();
-        StateHasChanged();
+        if (discountInput.EndsWith("%") && decimal.TryParse(discountInput.TrimEnd('%'), out var percent))
+            appliedDiscount = subTotal * (percent / 100);
+        else if (decimal.TryParse(discountInput, out var fixedDiscount))
+            appliedDiscount = fixedDiscount;
     }
 
     private async Task CompletePurchase()
     {
-        if (grandTotal <= 0) return;
-        if (paymentAmount < grandTotal) return;
+        if (grandTotal <= 0 || paymentAmount < grandTotal) return;
 
-        var transaction = new BusinessTransaction // Changed to BusinessTransaction
+        var transaction = new BusinessTransaction
             {
                 Items = cartItems.Select(ci => new TransactionItem
                 {
@@ -249,20 +221,8 @@
             };
 
         await CartService.ProcessTransactionAsync(transaction);
-
         cartItems.Clear();
-        CalculateTotals();
         paymentAmount = 0;
+        CalculateTotals();
     }
-    public void Dispose()
-    {
-        // Unsubscribe when component is disposed
-        StateContainer.OnChange -= StateHasChanged;
-    }
-
-    // Modify filtered products to use state container
-    private List<Product> filteredProducts => StateContainer.Products
-        .Where(p => p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-        .ToList();
 }
-
