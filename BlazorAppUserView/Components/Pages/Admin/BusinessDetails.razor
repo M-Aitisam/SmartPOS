@@ -1,86 +1,103 @@
-﻿@page "/businessdetails"
+﻿@page "/"
 @inject IAdminService AdminService
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<h3>Business Management</h3>
+<!-- Bootstrap Navbar with Logo -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <img src="https://getbootstrap.com/docs/5.3/assets/brand/bootstrap-logo-shadow.png" alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
+            Business Manager
+        </a>
+    </div>
+</nav>
 
-@if (isLoading)
-{
-    <p>Loading...</p>
-}
-else if (businesses == null || businesses.Count == 0)
-{
-    <p>No businesses found.</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>City</th>
-                <th>Area</th>
-                <th>Location</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var business in businesses)
-            {
+<div class="container">
+    <h3 class="mb-4 text-primary">Business Management</h3>
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">Loading...</div>
+    }
+    else if (businesses == null || businesses.Count == 0)
+    {
+        <div class="alert alert-warning">No businesses found.</div>
+    }
+    else
+    {
+        <table class="table table-bordered table-hover table-striped">
+            <thead class="table-dark">
                 <tr>
-                    <td>@business.BusinessID</td>
-                    <td>@business.BusinessName</td>
-                    <td>@business.BusinessType</td>
-                    <td>@business.City</td>
-                    <td>@business.Area</td>
-                    <td>@business.Location</td>
-                    <td>@(business.IsActive ? "Yes" : "No")</td>
-                    <td>
-                        <button @onclick="() => EditBusiness(business)" class="btn btn-primary">Edit</button>
-                        <button @onclick="() => ConfirmDelete(business.BusinessID)" class="btn btn-danger">Delete</button>
-                    </td>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>City</th>
+                    <th>Area</th>
+                    <th>Location</th>
+                    <th>Active</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
+            </thead>
+            <tbody>
+                @foreach (var business in businesses)
+                {
+                    <tr>
+                        <td>@business.BusinessID</td>
+                        <td>@business.BusinessName</td>
+                        <td>@business.BusinessType</td>
+                        <td>@business.City</td>
+                        <td>@business.Area</td>
+                        <td>@business.Location</td>
+                        <td><span class="badge bg-@(business.IsActive ? "success" : "secondary")">@(business.IsActive ? "Yes" : "No")</span></td>
+                        <td>
+                            <button @onclick="() => EditBusiness(business)" class="btn btn-sm btn-primary me-1">Edit</button>
+                            <button @onclick="() => ConfirmDelete(business.BusinessID)" class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 
-<h4>Add / Edit Business</h4>
+    <div class="card mt-5 shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Add / Edit Business</h4>
+        </div>
+        <div class="card-body">
+            <EditForm Model="@newBusiness" OnValidSubmit="SaveBusiness">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
 
-<EditForm Model="@newBusiness" OnValidSubmit="SaveBusiness" FormName="BusinessForm">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-
-    <div class="mb-3">
-        <label>Name:</label>
-        <InputText @bind-Value="newBusiness.BusinessName" class="form-control" required />
+                <div class="mb-3">
+                    <label class="form-label">Name:</label>
+                    <InputText @bind-Value="newBusiness.BusinessName" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type:</label>
+                    <InputText @bind-Value="newBusiness.BusinessType" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">City:</label>
+                    <InputText @bind-Value="newBusiness.City" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Area:</label>
+                    <InputText @bind-Value="newBusiness.Area" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Location:</label>
+                    <InputText @bind-Value="newBusiness.Location" class="form-control" required />
+                </div>
+                <div class="form-check mb-3">
+                    <InputCheckbox @bind-Value="newBusiness.IsActive" class="form-check-input" />
+                    <label class="form-check-label">Active</label>
+                </div>
+                <button type="submit" class="btn btn-success">Save</button>
+            </EditForm>
+        </div>
     </div>
-    <div class="mb-3">
-        <label>Type:</label>
-        <InputText @bind-Value="newBusiness.BusinessType" class="form-control" required />
-    </div>
-    <div class="mb-3">
-        <label>City:</label>
-        <InputText @bind-Value="newBusiness.City" class="form-control" required />
-    </div>
-    <div class="mb-3">
-        <label>Area:</label>
-        <InputText @bind-Value="newBusiness.Area" class="form-control" required />
-    </div>
-    <div class="mb-3">
-        <label>Location:</label>
-        <InputText @bind-Value="newBusiness.Location" class="form-control" required />
-    </div>
-    <div class="mb-3">
-        <label>Active:</label>
-        <InputCheckbox @bind-Value="newBusiness.IsActive" />
-    </div>
-    <button type="submit" class="btn btn-success">Save</button>
-</EditForm>
+</div>
 
 @code {
     private List<BusinessModel> businesses = new();
@@ -113,27 +130,25 @@ else
         if (success)
         {
             _jsMessage = "Business saved successfully.";
-            _jsInteropRequested = true; // Request alert after render
+            _jsInteropRequested = true;
 
-            if (newBusiness.BusinessID == 0) // If it's a new entry, add it at the top
+            if (newBusiness.BusinessID == 0)
             {
-                newBusiness.BusinessID = businesses.Count + 1; // Simulate ID generation
-                businesses.Insert(0, newBusiness); // Add to the top
+                newBusiness.BusinessID = businesses.Count + 1;
+                businesses.Insert(0, newBusiness);
             }
             else
             {
-                // If it's an update, refresh the list
-                
-await LoadBusinesses();
+                await LoadBusinesses();
             }
 
-            newBusiness = new BusinessModel(); // Reset form
-            StateHasChanged(); // Force UI update
+            newBusiness = new BusinessModel();
+            StateHasChanged();
         }
         else
         {
             _jsMessage = "Failed to save business.";
-            _jsInteropRequested = true; // Request alert after render
+            _jsInteropRequested = true;
         }
     }
 
@@ -173,7 +188,7 @@ await LoadBusinesses();
     {
         if (_jsInteropRequested)
         {
-            _jsInteropRequested = false; // Reset flag
+            _jsInteropRequested = false;
             await JS.InvokeVoidAsync("alert", _jsMessage);
         }
     }

@@ -1,211 +1,108 @@
 ﻿@page "/bills"
 @inject BillService BillService
 @rendermode InteractiveServer
-<div class="container main-container col-md-12 border rounded shadow-sm" style=" margin-left:-20px;height:93vh; padding-top: 10px">
-	<div class="table-responsive" style=" overflow-y: auto; ">
-		<table class="table text-center">
-			<thead class="table-light">
-				<tr>
-					<th class="th">#</th>
-					<th class="th">Product Name</th>
-					<th class="th">Qty.</th>
-					<th class="th">Price</th>
-					<th class="th">Action</th>
-				</tr>
-			</thead>
-			<tbody>
-				@if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
-				{
-					@foreach (var (item, index) in BillService.SelectedItems.Select((item, index) => (item, index + 1)))
-					{
-						<tr>
-							<td>@index</td>
-							<td class="name">@item.Name</td>
-							<td class="quan">
-								<button class=" action-btn" @onclick="() => IncreaseQuantity(item)">
-									<i class="bi bi-plus"></i>
-								</button>
-								<input type="text" class="form-control mini-input text-center" value="@item.Quantity" readonly>
-								<button class=" action-btn" @onclick="() => DecreaseQuantity(item)">
-									<i class="bi bi-dash"></i>
-								</button>
-							</td>
-							<td>@item.Price</td>
-							<td>
-								<button class="btn btn-sm btn-outline-danger delete-btn" @onclick="() => ConfirmDelete(item)">
-									<i class="bi bi-trash"></i>
-								</button>
-							</td>
-						</tr>
-					}
-				}
-			</tbody>
-		</table>
-		<hr>
-		<!-- Fixed Footer Section -->
-		<div class="container footer-container" style="max-width:40%">
-			<div class="row d-flex">
-				<div class=" d-flex" style="width:50% ; background-color:greenyellow">
-					<div>
 
-						<p class="mb-1" style=" display:flex; align-content:start ;margin-left:1rem ">Total Item(s): <span style="margin-left:50px"> <strong>@BillService.SelectedItems?.Count()</strong></span></p>
-						<p style="display:flex; align-content:start;margin-left:1rem" class="mb-1">Discount:</p>
-					</div>
+<div class="container-fluid p-2">
+    <div class="card shadow-sm h-100">
+        <div class="card-body p-2 table-responsive" style="max-height: 60vh; overflow-y: auto;">
+            <table class="table table-hover table-striped text-center align-middle">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>#</th>
+                        <th>Product Name</th>
+                        <th>Qty.</th>
+                        <th>Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
+                    {
+                        @foreach (var (item, index) in BillService.SelectedItems.Select((item, index) => (item, index + 1)))
+                        {
+                            <tr>
+                                <td>@index</td>
+                                <td class="text-start">@item.Name</td>
+                                <td>
+                                    <div class="d-flex justify-content-center align-items-center gap-1">
+                                        <button class="btn btn-sm btn-secondary" @onclick="() => IncreaseQuantity(item)">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                        <input type="text" class="form-control form-control-sm text-center" value="@item.Quantity" readonly style="width: 50px;" />
+                                        <button class="btn btn-sm btn-secondary" @onclick="() => DecreaseQuantity(item)">
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>@item.Price</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(item)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
 
-					<div style="display:flex; margin-top:2.5rem;margin-left:-20px; flex-direction:column">
+        <!-- Footer -->
+        <div class="card-footer bg-light mt-2">
+            <div class="row g-2">
+                <div class="col-md-6 d-flex flex-column flex-md-row align-items-start justify-content-between gap-2 bg-success-subtle p-3 rounded">
+                    <div>
+                        <p class="mb-1">Total Item(s): <strong>@BillService.SelectedItems?.Count()</strong></p>
+                        <p class="mb-1">Discount:</p>
+                    </div>
+                    <div class="d-flex flex-column align-items-start gap-2">
+                        <input type="text" class="form-control form-control-sm" placeholder="Discount" style="width: 80px;" />
+                        <button class="btn btn-sm btn-danger">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                    </div>
+                </div>
 
-						<input type="text" class="form-control form-control-sm" style="width: 80px; display: inline-block;">
-						<button class="btn btn-sm btn-danger">
-							<i class="bi bi-x-circle"></i> Cancel
-						</button>
-					</div>
-				</div>
-				<div style="width:25%; display:flex; flex-direction:column; gap:1px">
-					<div style="display:flex; flex-direction:column; row-gap:0px; align-items: flex-start;">
-						<p class="mb-1" style="margin: 0;">Price:</p>
-						<p class="mb-1" style="margin: 0;">Gross Price</p>
-						<p class="mb-1" style="margin: 0;">(Inc 15% Tax):</p>
-					</div>
-					<button class="btn btn-sm btn-info">
-						<i class="bi bi-pause-circle"></i> Hold
-					</button>
-				</div>
-			</div>
-			<div style="width:25%; display:flex; flex-direction:column; gap:5px; align-items:flex-start;">
-				<span style="margin: 0;"><strong>@BillService.TotalAmount</strong></span>
-				<span style="margin: 0; font-size:20px;"><strong>@(BillService.TotalAmount * 1.15m)</strong></span>
-				<button class="btn btn-sm btn-success">
-					<i class="bi bi-check-circle"></i> Pay
-				</button>
-			</div>
+                <div class="col-md-3 d-flex flex-column align-items-start gap-2">
+                    <p class="mb-0">Price:</p>
+                    <p class="mb-0">Gross Price</p>
+                    <p class="mb-0">(Inc 15% Tax):</p>
+                    <button class="btn btn-sm btn-info">
+                        <i class="bi bi-pause-circle"></i> Hold
+                    </button>
+                </div>
 
-		</div>
-	</div>
-
-</div>
-<!-- Bootstrap Delete Confirmation Modal -->
-<div class="modal fade @(ShowDeleteModal ? "show d-block" : "d-none")" tabindex="-1" role="dialog">
-	<div class="modal-dialog" role="document">
-		<div class="modal-content">
-			<div class="modal-header bg-danger text-white">
-				<h5 class="modal-title">Confirm Deletion</h5>
-				<button type="button" class="close btn btn-light" @onclick="CancelDelete">
-					<span>&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-				<p>Are you sure you want to delete <strong>@(SelectedItem?.Name)</strong>?</p>
-			</div>
-			<div class="modal-footer">
-				<button class="btn btn-xs btn-secondary" @onclick="CancelDelete">Cancel</button>
-				<button class="btn btn-xs btn-danger" @onclick="DeleteItem">OK</button>
-			</div>
-		</div>
-	</div>
+                <div class="col-md-3 d-flex flex-column align-items-start gap-2">
+                    <strong>@BillService.TotalAmount</strong>
+                    <strong class="fs-5">@((BillService.TotalAmount * 1.15m).ToString("0.00"))</strong>
+                    <button class="btn btn-sm btn-success">
+                        <i class="bi bi-check-circle"></i> Pay
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<style>
+<!-- Bootstrap Modal -->
+<div class="modal fade @(ShowDeleteModal ? "show d-block" : "")" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>@(SelectedItem?.Name)</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" @onclick="CancelDelete">Cancel</button>
+                <button class="btn btn-danger btn-sm" @onclick="DeleteItem">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-	.modal {
-		background: rgba(0, 0, 0, 0.5);
-	}
-
-	tbody .name {
-		margin-left: 3rem;
-		text-align: start;
-	}
-
-	tbody .quan {
-		display: flex;
-		margin-left: -3rem;
-		gap: 5px;
-	}
-
-	.modal-content {
-		border-radius: 10px;
-	}
-
-	.table-light .th {
-		font-size: 1rem;
-	}
-
-	/* Mini Buttons */
-	.mini-btn, .delete-btn {
-		font-size: 0.8rem;
-		padding: 2px 8px;
-	}
-
-	.action-btn {
-		padding: 5px 15px 5px 15px;
-		background-color: grey;
-		border-style: none
-	}
-
-	.delete-btn:hover, .mini-btn:hover {
-		transform: scale(1.1);
-	}
-
-	.btn-xs {
-		font-size: 0.7rem;
-	}
-
-	.mini-input {
-		width: 50px;
-		font-size: 1rem;
-		text-align: center;
-		display: inline-block;
-		padding: 0px;
-	}
-
-	/* Table Scroll */
-	.table-responsive {
-		min-height: 480px;
-		max-height: 480px;
-		overflow-y: auto;
-	}
-
-	/* Footer Styling */
-	.main-container .footer-container {
-		margin: 0px 0 -2px 12.5px;
-		position: fixed;
-		bottom: 10px;
-		left: 0;
-		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-		border-top: 2px solid #ddd;
-		padding: 10px 10px 10px 0px;
-		background-color: aqua
-	}
-
-	.footer-container p {
-		font-size: 15px;
-	}
-
-	.footer-content {
-		display: flex;
-		justify-content: space-between;
-	}
-
-	.total-section p {
-		margin: 0;
-		font-weight: bold;
-		font-size: 0.9rem;
-	}
-
-	.button-section {
-		display: flex;
-		padding-right: 20px;
-		justify-content: center;
-		gap: 8px;
-	}
-
-		.button-section button {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: -10px 2px -10px 2px;
-			gap: 8px;
-		}
-</style>
 
 @code {
 	private RateItem? SelectedItem;

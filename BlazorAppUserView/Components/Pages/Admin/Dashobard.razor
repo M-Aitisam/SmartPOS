@@ -1,0 +1,53 @@
+﻿@page "/dashboard"
+@layout MainLayout
+
+<div class="text-center my-5">
+    <h2>Welcome to</h2>
+    <h1 class="text-danger fw-bold">Restaurant Management</h1>
+</div>
+
+<div class="container">
+    <div class="row g-4 justify-content-center">
+        @foreach (var item in DashboardItems)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <div class="card text-center shadow-sm border-0 dashboard-card h-100" @onclick="@(() => NavigateTo(item.Route))" style="cursor: pointer;">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                        <i class="@item.Icon text-danger mb-3" style="font-size: 2rem;"></i>
+                        <span class="fw-semibold">@item.Label</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<DashboardItem> DashboardItems = new()
+    {
+        new("Users", "fas fa-user", "/users"),
+        new("Restaurant Info", "fas fa-utensils", "/restaurant-info"),
+        new("Categories", "fas fa-edit", "/categories"),
+        new("Units", "fas fa-university", "/units"),
+        new("Products", "fas fa-boxes", "/products"),
+        new("Materials", "fas fa-th", "/materials"),
+        new("Customers", "fas fa-users", "/customers"),
+        new("Suppliers", "fas fa-copy", "/suppliers"),
+        new("Sales", "fas fa-shopping-cart", "/sales"),
+        new("Purchases", "fas fa-credit-card", "/purchases"),
+        new("Tables", "fas fa-table", "/tables"),
+        new("Waiters", "fas fa-user-tie", "/waiters"),
+        new("Adjustments", "fas fa-adjust", "/adjustments"),
+        new("Recipes", "fas fa-project-diagram", "/recipes"),
+        new("Reports", "fas fa-rocket", "/reports")
+    };
+
+    [Inject] private NavigationManager NavigationManager { get; set; }
+
+    private record DashboardItem(string Label, string Icon, string Route);
+
+    private void NavigateTo(string route)
+    {
+        NavigationManager.NavigateTo(route);
+    }
+}
