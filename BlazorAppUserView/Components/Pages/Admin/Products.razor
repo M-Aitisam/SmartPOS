@@ -4,6 +4,7 @@
 @using System.IO
 @inject BillService BillService
 @inject NavigationManager Navigation
+@inject IWebHostEnvironment WebHostEnvironment
 @rendermode InteractiveServer
 
 <div class="container mt-4">
@@ -35,13 +36,13 @@
                                 <span>@Path.GetFileName(newProduct.ImageUrl)</span>
                             }
                         </button>
-                        <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none");" aria-labelledby="dropdownMenuButton">
+                        <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none"); max-height: 300px; overflow-y: auto;" aria-labelledby="dropdownMenuButton">
                             @foreach (var imgUrl in ImageUrls)
                             {
                                 <li>
                                     <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)">
                                         <img src="@imgUrl" alt="@Path.GetFileName(imgUrl)" style="width: 25px; height: 25px; margin-right: 10px;" />
-
+                                        @Path.GetFileName(imgUrl)
                                     </a>
                                 </li>
                             }
@@ -113,35 +114,43 @@
     private List<Product> ProductList { get; set; } = new();
     private Product newProduct { get; set; } = new();
     private Product? editingProduct { get; set; }
-
-    private List<string> ImageUrls { get; set; } = new()
-    {
-        "/images/buzzcut.png",
-        "/images/face.png",
-        "/images/hair-color.png",
-        "/images/facial.png",
-        "/images/hair-spray.png",
-        "/images/hair-styling.png",
-        "/images/heat.png",
-        "/images/manicure1.png",
-        "/images/massage-head.png",
-        "/images/scissor.png",
-        "/images/shave (2).png",
-        "/images/hair-color.png",
-        "/images/spray.png",
-        "/images/spray1.png",
-        "/images/trim-haircut.png",
-        "/images/face.png",
-"/images/fries.jpg",
-        // Add more image paths here
-    };
-
+    private List<string> ImageUrls { get; set; } = new();
     private bool isDropdownOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadImages();
         await LoadProducts();
-        UpdateRateItems(); // Ensure RateItems are updated
+        UpdateRateItems();
+    }
+
+    private async Task LoadImages()
+    {
+        try
+        {
+            var imagesPath = Path.Combine(WebHostEnvironment.WebRootPath, "Images");
+            if (Directory.Exists(imagesPath))
+            {
+                var imageFiles = Directory.GetFiles(imagesPath, "*.*", SearchOption.AllDirectories)
+                    .Where(file => file.ToLower().EndsWith(".png") ||
+                                   file.ToLower().EndsWith(".jpg") ||
+                                   file.ToLower().EndsWith(".jpeg") ||
+                                   file.ToLower().EndsWith(".gif"))
+                    .ToList();
+
+                ImageUrls = imageFiles
+                    .Select(file => file.Replace(WebHostEnvironment.WebRootPath, "").Replace("\\", "/"))
+                    .ToList();
+            }
+            else
+            {
+                Console.WriteLine("Images directory not found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading images: {ex.Message}");
+        }
     }
 
     private void ToggleDropdown()
@@ -163,7 +172,6 @@
         }
         else
         {
-            // Update the existing product
             var index = ProductList.IndexOf(editingProduct);
             if (index != -1)
             {
@@ -183,7 +191,6 @@
         {
             await BillService.AddRateItemAsync(rateItem);
         }
-
         else
         {
             var existingRateItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
