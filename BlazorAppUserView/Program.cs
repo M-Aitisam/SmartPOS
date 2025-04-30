@@ -14,7 +14,10 @@ Console.WriteLine($"🔹 SQLite Database Path: {dbPath}");
 
 // ✅ Register DbContext with SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseSqlite(connectionString,
+    b => b.MigrationsAssembly("ClassLibraryDAL")
+    )
+    );
 
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();

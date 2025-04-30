@@ -8,7 +8,7 @@ namespace ClassLibraryDAL
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         // Define DbSets (Tables)
-        public DbSet<BusinessCategory> Categories { get; set; }
+        public DbSet<BusinessCategory> BusinessCategories { get; set; }
         public DbSet<BusinessSubItem> SubCategories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<BusinessTransaction> Transactions { get; set; }
@@ -21,6 +21,9 @@ namespace ClassLibraryDAL
                     .WithOne(s => s.Category)
                     .HasForeignKey(s => s.CategoryID)
                     .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BusinessCategory>()
+                    .ToTable("BusinessCategories");
 
             modelBuilder.Entity<BusinessSubItem>()
                 .HasOne(s => s.ParentSubItem)
@@ -35,35 +38,8 @@ namespace ClassLibraryDAL
                 .HasForeignKey(p => p.CategoryID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Product>()
-                .HasOne(p => p.SubCategory)
-                .WithMany(s => s.Products)
-                .HasForeignKey(p => p.SubCategoryID)
-                .OnDelete(DeleteBehavior.Restrict);
 
-            // Existing transaction configurations (keep these)
-            modelBuilder.Entity<BusinessTransaction>()
-                .HasKey(b => b.TransactionID);
-
-            modelBuilder.Entity<TransactionItem>()
-                .HasKey(t => t.TransactionItemID);
-
-            modelBuilder.Entity<BusinessTransaction>()
-                .HasMany(b => b.Items)
-                .WithOne()
-                .HasForeignKey(t => t.TransactionID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // String property configurations (keep these)
-            modelBuilder.Entity<BusinessCategory>()
-                .Property(c => c.CategoryName)
-                .IsRequired()
-                .HasMaxLength(255);
-
-            modelBuilder.Entity<BusinessSubItem>()
-                .Property(s => s.SubItemName)
-                .IsRequired()
-                .HasMaxLength(255); ;
+            
         }
     }
 }

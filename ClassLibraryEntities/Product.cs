@@ -22,6 +22,7 @@ namespace ClassLibraryEntities
         public int? NestedSubCategoryID { get; set; }
 
         [ForeignKey("CategoryID")]
+
         public BusinessCategory? Category { get; set; }
 
         [ForeignKey("SubCategoryID")]

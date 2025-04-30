@@ -13,6 +13,11 @@ namespace ClassLibraryServices
         public decimal TotalAmount => SelectedItems.Sum(item => item.Price);
 
         public event Func<Task>? OnChange;
+        public RateItem? GetRateItemByName(string name)
+        {
+            return RateItems.FirstOrDefault(r => r.Name == name);
+        }
+        
 
         public BillService()
         {
@@ -20,6 +25,18 @@ namespace ClassLibraryServices
             EnsureDirectoryExists();
             LoadRateItemsFromFile();
         }
+        public Task<List<BusinessCategory>> GetCategoriesAsync()
+        {
+            var categories = RateItems
+                .Where(item => !string.IsNullOrWhiteSpace(item.Category))
+                .Select(item => new BusinessCategory { CategoryName = item.Category! })
+                .DistinctBy(c => c.CategoryName)
+                .ToList();
+
+            return Task.FromResult(categories);
+        }
+
+
 
         public async Task AddItemAsync(RateItem item)
         {
@@ -32,7 +49,7 @@ namespace ClassLibraryServices
             else
             {
                 item.Quantity = 1;
-                if (item.BasePrice == 0) // Ensure BasePrice is always set
+                if (item.BasePrice == 0)
                 {
                     item.BasePrice = item.Price;
                 }
@@ -66,12 +83,6 @@ namespace ClassLibraryServices
             await NotifyStateChangedAsync();
         }
 
-        public async Task ClearAllItemsAsync()
-        {
-            SelectedItems.Clear();
-            await NotifyStateChangedAsync();
-        }
-
         public async Task RemoveRateItemAsync(string productName)
         {
             var rateItem = RateItems.FirstOrDefault(x => x.Name == productName);
@@ -81,6 +92,12 @@ namespace ClassLibraryServices
                 SaveRateItemsToFile();
                 await NotifyStateChangedAsync();
             }
+        }
+
+        public async Task ClearAllItemsAsync()
+        {
+            SelectedItems.Clear();
+            await NotifyStateChangedAsync();
         }
 
         public async Task ClearTotalAmountAsync()
@@ -102,6 +119,12 @@ namespace ClassLibraryServices
                 item.Price = item.BasePrice * item.Quantity;
                 await NotifyStateChangedAsync();
             }
+        }
+
+        public void UpdateRateItems(List<RateItem> items)
+        {
+            RateItems = items;
+            SaveRateItemsToFile();
         }
 
         private async Task NotifyStateChangedAsync()

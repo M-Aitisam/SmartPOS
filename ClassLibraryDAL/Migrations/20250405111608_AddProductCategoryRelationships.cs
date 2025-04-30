@@ -10,6 +10,8 @@ namespace ClassLibraryDAL.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+
+
             migrationBuilder.AddColumn<int>(
                 name: "CategoryID",
                 table: "Products",
@@ -43,7 +45,7 @@ namespace ClassLibraryDAL.Migrations
                 name: "FK_Products_Categories_CategoryID",
                 table: "Products",
                 column: "CategoryID",
-                principalTable: "Categories",
+                principalTable: "BusinessCategories",
                 principalColumn: "CategoryID",
                 onDelete: ReferentialAction.Restrict);
 

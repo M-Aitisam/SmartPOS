@@ -35,7 +35,7 @@ namespace ClassLibraryServices
         public async Task AddProductAsync(Product product)
         {
             // Validate category exists
-            var category = await _context.Categories
+            var category = await _context.BusinessCategories
                 .FirstOrDefaultAsync(c => c.CategoryID == product.CategoryID);
 
             if (category == null)

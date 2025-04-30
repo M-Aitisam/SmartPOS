@@ -15,17 +15,13 @@ namespace ClassLibraryServices
 
         public async Task<List<BusinessCategory>> GetCategoriesAsync()
         {
-            return await _context.Categories
-                .Include(c => c.SubItems)
-                    .ThenInclude(s => s.NestedSubItems)
-                .AsNoTracking()
-                .ToListAsync();
+            return await _context.BusinessCategories.ToListAsync();
         }
 
 
         public async Task<bool> AddCategoryAsync(BusinessCategory category)
         {
-            _context.Categories.Add(category);
+            _context.BusinessCategories.Add(category);
             return await _context.SaveChangesAsync() > 0;
         }
 
@@ -39,41 +35,8 @@ namespace ClassLibraryServices
         {
             foreach (var category in categories)
             {
-                var existingCategory = await _context.Categories
-                    .Include(c => c.SubItems)
-                        .ThenInclude(si => si.NestedSubItems)
-                    .FirstOrDefaultAsync(c => c.CategoryID == category.CategoryID);
-
-                if (existingCategory != null)
-                {
-                    existingCategory.CategoryName = category.CategoryName;
-
-                    foreach (var updatedSub in category.SubItems)
-                    {
-                        var existingSub = existingCategory.SubItems
-                            .FirstOrDefault(s => s.SubItemID == updatedSub.SubItemID);
-
-                        if (existingSub != null)
-                        {
-                            existingSub.SubItemName = updatedSub.SubItemName;
-                            existingSub.Price = updatedSub.Price;
-
-                            foreach (var updatedNested in updatedSub.NestedSubItems)
-                            {
-                                var existingNested = existingSub.NestedSubItems
-                                    .FirstOrDefault(n => n.SubItemID == updatedNested.SubItemID);
-
-                                if (existingNested != null)
-                                {
-                                    existingNested.SubItemName = updatedNested.SubItemName;
-                                    existingNested.Price = updatedNested.Price;
-                                }
-                            }
-                        }
-                    }
-                }
+                _context.Entry(category).State = EntityState.Modified;
             }
-
             await _context.SaveChangesAsync();
         }
 
@@ -81,10 +44,10 @@ namespace ClassLibraryServices
 
         public async Task<bool> DeleteCategoryAsync(int categoryId)
         {
-            var category = await _context.Categories.FindAsync(categoryId);
+            var category = await _context.BusinessCategories.FindAsync(categoryId);
             if (category != null)
             {
-                _context.Categories.Remove(category);
+                _context.BusinessCategories.Remove(category);
                 return await _context.SaveChangesAsync() > 0;
             }
             return false;
@@ -103,7 +66,7 @@ namespace ClassLibraryServices
 
         public async Task<List<BusinessCategory>> GetCategoriesWithProductsAsync()
         {
-            return await _context.Categories
+            return await _context.BusinessCategories
                 .AsNoTracking()
                 .Include(c => c.SubItems)
                     .ThenInclude(s => s.NestedSubItems)
