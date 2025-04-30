@@ -4,12 +4,9 @@
 @using System.IO
 @inject BillService BillService
 @inject NavigationManager Navigation
-<<<<<<< HEAD
 @inject StateContainerService StateContainer
 @inject ICategoryService CategoryService
-=======
 @inject IWebHostEnvironment WebHostEnvironment
->>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
 @rendermode InteractiveServer
 
 <div class="container mt-4">
@@ -17,9 +14,8 @@
         <div class="card-body">
             <h3 class="card-title text-primary mb-4">Product Management</h3>
 
-<<<<<<< HEAD
             <div class="row g-3 mb-4">
-                <div class="col-md-4">
+                <div>
                     <label class="form-label">Select Category:</label>
                     <select class="form-select" @bind="selectedCategoryId">
                         <option value="0">-- Select Category --</option>
@@ -29,193 +25,178 @@
                             <option value="@category.CategoryID">@category.CategoryName</option>
                         }
                     </select>
-=======
-            <div class="row">
-                <div class="col-md-2">
-                    <InputText id="productTitle" class="form-control" placeholder="Enter Product Title" @bind-Value="newProduct.ProductTitle" />
-                </div>
-                <div class="col-md-2">
-                    <InputText id="productCode" class="form-control" placeholder="Enter Product Code" @bind-Value="newProduct.ProductCode" />
-                </div>
-                <div class="col-md-2">
-                    <InputNumber id="productPrice" class="form-control" placeholder="Enter Price" @bind-Value="newProduct.ProductPrice" />
-                </div>
-                <div class="col-md-2">
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" @onclick="ToggleDropdown">
-                            @if (string.IsNullOrEmpty(newProduct.ImageUrl))
+
+                    @* <div class="row"> *@
+                    @*     <div class="col-md-2"> *@
+                    @*         <InputText id="productTitle" class="form-control" placeholder="Enter Product Title" @bind-Value="newProduct.ProductTitle" /> *@
+                    @*     </div> *@
+                    @*     <div class="col-md-2"> *@
+                    @*         <InputText id="productCode" class="form-control" placeholder="Enter Product Code" @bind-Value="newProduct.ProductCode" /> *@
+                    @*     </div> *@
+                    @*     <div class="col-md-2"> *@
+                    @*         <InputNumber id="productPrice" class="form-control" placeholder="Enter Price" @bind-Value="newProduct.ProductPrice" /> *@
+                    @*     </div> *@
+                    @*     <div class="col-md-2"> *@
+                    @*         <div class="dropdown"> *@
+                    @*             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" @onclick="ToggleDropdown"> *@
+                    @*                 @if (string.IsNullOrEmpty(newProduct.ImageUrl)) *@
+                    @*                 { *@
+                    @*                     <span>Select Image</span> *@
+                    @*                 } *@
+                    @*                 else *@
+                    @*                 { *@
+                    @*                     <img src="@newProduct.ImageUrl" alt="Selected Image" style="width: 20px; height: 20px; margin-right: 10px;" /> *@
+                    @*                     <span>@Path.GetFileName(newProduct.ImageUrl)</span> *@
+                    @*                 } *@
+                    @*             </button> *@
+                    @*             <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none"); max-height: 300px; overflow-y: auto;" aria-labelledby="dropdownMenuButton"> *@
+                    @*                 @foreach (var imgUrl in ImageUrls) *@
+                    @*                 { *@
+                    @*                     <li> *@
+                    @*                         <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)"> *@
+                    @*                             <img src="@imgUrl" alt="@Path.GetFileName(imgUrl)" style="width: 25px; height: 25px; margin-right: 10px;" /> *@
+                    @*                             @Path.GetFileName(imgUrl) *@
+                    @*                         </a> *@
+                    @*                     </li> *@
+                    @*                 } *@
+                    @*             </ul> *@
+                    @*         </div> *@
+                    @*     </div> *@
+                    @*     <div class="col-md-2"> *@
+                    @*         <div class="form-check form-switch"> *@
+                    @*             <InputCheckbox @bind-Value="newProduct.IsActive" class="form-check-input" id="flexSwitchCheckChecked" /> *@
+                    @*             <label class="form-check-label" for="flexSwitchCheckChecked">Is Active</label> *@
+                    @*         </div> *@
+                    @*     </div> *@
+                    @*     <div class="col-md-2"> *@
+                    @*         <button type="submit" class="btn btn-success">Add Product</button> *@
+
+                    @*     </div> *@
+                    @* </div> *@
+
+                    @if (selectedCategoryId > 0)
+                    {
+                        <div class="border p-3 rounded-3 bg-light">
+                            <h5 class="text-primary mb-3">Manage Products</h5>
+                            <EditForm Model="@newProduct" OnValidSubmit="AddProduct">
+                                <DataAnnotationsValidator />
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Product Name:</label>
+                                        <InputText @bind-Value="newProduct.ProductTitle" class="form-control" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Price:</label>
+                                        <InputNumber @bind-Value="newProduct.ProductPrice" class="form-control" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Image:</label>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary w-100 text-start" type="button" @onclick="ToggleDropdown">
+                                                @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
+                                                {
+                                                    <img src="@newProduct.ImageUrl" class="me-2" style="width: 20px; height: 20px;" />
+                                                    @Path.GetFileName(newProduct.ImageUrl)
+                                                }
+                                                else
+                                                {
+                                                    <span>Select Image</span>
+                                                }
+                                            </button>
+                                            <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none");">
+                                                @foreach (var imgUrl in ImageUrls)
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)">
+                                                            <img src="@imgUrl" class="me-2" style="width: 20px; height: 20px;" />
+                                                            @Path.GetFileName(imgUrl)
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary mt-4">
+                                            @(editingProduct == null ? "Add Product" : "Update Product")
+                                        </button>
+                                    </div>
+                                </div>
+                                <ValidationSummary class="text-danger mt-2" />
+                            </EditForm>
+                        </div>
+
+                        <div class="mt-4">
+                            <h5 class="text-primary mb-3">Products in Category</h5>
+                            @if (FilteredProducts.Any())
                             {
-                                <span>Select Image</span>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Product Name</th>
+                                                <th>Price</th>
+                                                <th>Image</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var product in FilteredProducts)
+                                            {
+                                                <tr>
+                                                    <td>@product.ProductTitle</td>
+                                                    <td>@product.ProductPrice.ToString("C")</td>
+                                                    <td>
+                                                        <img src="@product.ImageUrl" style="width: 50px; height: 50px;" alt="@product.ProductTitle" />
+                                                    </td>
+                                                    <td>
+                                                        <div class="form-check form-switch">
+                                                            <InputCheckbox @bind-Value="product.IsActive" class="form-check-input" @onchange="async e => await ToggleActiveStatus(product)" />
+                                                            <label class="form-check-label">
+                                                                @(product.IsActive ? "Active" : "Inactive")
+                                                            </label>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-warning me-2" @onclick="() => EditProduct(product)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteProduct(product)" disabled="@product.IsActive">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
                             }
                             else
                             {
-                                <img src="@newProduct.ImageUrl" alt="Selected Image" style="width: 20px; height: 20px; margin-right: 10px;" />
-                                <span>@Path.GetFileName(newProduct.ImageUrl)</span>
+                                <div class="alert alert-info">No products found in this category.</div>
                             }
-                        </button>
-                        <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none"); max-height: 300px; overflow-y: auto;" aria-labelledby="dropdownMenuButton">
-                            @foreach (var imgUrl in ImageUrls)
-                            {
-                                <li>
-                                    <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)">
-                                        <img src="@imgUrl" alt="@Path.GetFileName(imgUrl)" style="width: 25px; height: 25px; margin-right: 10px;" />
-                                        @Path.GetFileName(imgUrl)
-                                    </a>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-check form-switch">
-                        <InputCheckbox @bind-Value="newProduct.IsActive" class="form-check-input" id="flexSwitchCheckChecked" />
-                        <label class="form-check-label" for="flexSwitchCheckChecked">Is Active</label>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-success">Add Product</button>
->>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
+                        </div>
+                    }
                 </div>
             </div>
-
-            @if (selectedCategoryId > 0)
-            {
-                <div class="border p-3 rounded-3 bg-light">
-                    <h5 class="text-primary mb-3">Manage Products</h5>
-                    <EditForm Model="@newProduct" OnValidSubmit="AddProduct">
-                        <DataAnnotationsValidator />
-                        <div class="row g-3 align-items-center">
-                            <div class="col-md-4">
-                                <label class="form-label">Product Name:</label>
-                                <InputText @bind-Value="newProduct.ProductTitle" class="form-control" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Price:</label>
-                                <InputNumber @bind-Value="newProduct.ProductPrice" class="form-control" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Image:</label>
-                                <div class="dropdown">
-                                    <button class="btn btn-outline-secondary w-100 text-start" type="button" @onclick="ToggleDropdown">
-                                        @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
-                                        {
-                                            <img src="@newProduct.ImageUrl" class="me-2" style="width: 20px; height: 20px;" />
-                                            @Path.GetFileName(newProduct.ImageUrl)
-                                        }
-                                        else
-                                        {
-                                            <span>Select Image</span>
-                                        }
-                                    </button>
-                                    <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none");">
-                                        @foreach (var imgUrl in ImageUrls)
-                                        {
-                                            <li>
-                                                <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)">
-                                                    <img src="@imgUrl" class="me-2" style="width: 20px; height: 20px;" />
-                                                    @Path.GetFileName(imgUrl)
-                                                </a>
-                                            </li>
-                                        }
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary mt-4">
-                                    @(editingProduct == null ? "Add Product" : "Update Product")
-                                </button>
-                            </div>
-                        </div>
-                        <ValidationSummary class="text-danger mt-2" />
-                    </EditForm>
-                </div>
-
-                <div class="mt-4">
-                    <h5 class="text-primary mb-3">Products in Category</h5>
-                    @if (FilteredProducts.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Product Name</th>
-                                        <th>Price</th>
-                                        <th>Image</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var product in FilteredProducts)
-                                    {
-                                        <tr>
-                                            <td>@product.ProductTitle</td>
-                                            <td>@product.ProductPrice.ToString("C")</td>
-                                            <td>
-                                                <img src="@product.ImageUrl" style="width: 50px; height: 50px;" alt="@product.ProductTitle" />
-                                            </td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <InputCheckbox @bind-Value="product.IsActive" class="form-check-input" @onchange="async e => await ToggleActiveStatus(product)" />
-                                                    <label class="form-check-label">
-                                                        @(product.IsActive ? "Active" : "Inactive")
-                                                    </label>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-warning me-2" @onclick="() => EditProduct(product)">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteProduct(product)" disabled="@product.IsActive">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info">No products found in this category.</div>
-                    }
-                </div>
-            }
         </div>
     </div>
 </div>
-
 @code {
-<<<<<<< HEAD
-    private List<Product> ProductList = new();
-    private Product newProduct = new();
-    private Product? editingProduct = null;
+
     private int selectedCategoryId = 0;
-    private bool isDropdownOpen = false;
-
-    private List<string> ImageUrls { get; set; } = new()
-    {
-        "/images/buzzcut.png",
-        "/images/face.png",
-        "/images/hair-color.png"
-    };
-
-    private List<Product> FilteredProducts =>
-        ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
-=======
     private List<Product> ProductList { get; set; } = new();
     private Product newProduct { get; set; } = new();
     private Product? editingProduct { get; set; }
     private List<string> ImageUrls { get; set; } = new();
     private bool isDropdownOpen = false;
->>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
 
+    private List<Product> FilteredProducts => ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
     protected override async Task OnInitializedAsync()
     {
         await LoadImages();
         await LoadProducts();
-<<<<<<< HEAD
 
 
         if (StateContainer.Categories == null || !StateContainer.Categories.Any())
@@ -224,8 +205,7 @@
             StateContainer.Categories = await CategoryService.GetCategoriesAsync();
         }
 
-        UpdateRateItems();
-=======
+
         UpdateRateItems();
     }
 
@@ -256,7 +236,6 @@
         {
             Console.WriteLine($"Error loading images: {ex.Message}");
         }
->>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
     }
 
 
@@ -294,10 +273,7 @@
             if (index != -1)
             {
                 ProductList[index] = newProduct;
-                var existingItem = BillService.RateItems.FirstOrDefault(x =>
-                x.Name == editingProduct.ProductTitle);
-
-<<<<<<< HEAD
+                var existingItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
                 if (existingItem != null)
                 {
                     existingItem.Name = newProduct.ProductTitle;
@@ -305,29 +281,6 @@
                     existingItem.ImageUrl = newProduct.ImageUrl;
                     existingItem.IsActive = newProduct.IsActive;
                 }
-=======
-        var rateItem = new RateItem
-            {
-                Name = newProduct.ProductTitle,
-                BasePrice = newProduct.ProductPrice,
-                ImageUrl = newProduct.ImageUrl,
-                IsActive = newProduct.IsActive
-            };
-
-        if (editingProduct == null)
-        {
-            await BillService.AddRateItemAsync(rateItem);
-        }
-        else
-        {
-            var existingRateItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
-            if (existingRateItem != null)
-            {
-                existingRateItem.Name = newProduct.ProductTitle;
-                existingRateItem.BasePrice = newProduct.ProductPrice;
-                existingRateItem.ImageUrl = newProduct.ImageUrl;
-                existingRateItem.IsActive = newProduct.IsActive;
->>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
             }
         }
 
@@ -389,6 +342,7 @@
             ProductList = JsonSerializer.Deserialize<List<Product>>(json) ?? new List<Product>();
         }
     }
+
 
     private async Task SaveProductsToFile()
     {
