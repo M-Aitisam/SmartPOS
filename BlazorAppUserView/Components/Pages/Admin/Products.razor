@@ -4,8 +4,12 @@
 @using System.IO
 @inject BillService BillService
 @inject NavigationManager Navigation
+<<<<<<< HEAD
 @inject StateContainerService StateContainer
 @inject ICategoryService CategoryService
+=======
+@inject IWebHostEnvironment WebHostEnvironment
+>>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
 @rendermode InteractiveServer
 
 <div class="container mt-4">
@@ -13,6 +17,7 @@
         <div class="card-body">
             <h3 class="card-title text-primary mb-4">Product Management</h3>
 
+<<<<<<< HEAD
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
                     <label class="form-label">Select Category:</label>
@@ -24,6 +29,52 @@
                             <option value="@category.CategoryID">@category.CategoryName</option>
                         }
                     </select>
+=======
+            <div class="row">
+                <div class="col-md-2">
+                    <InputText id="productTitle" class="form-control" placeholder="Enter Product Title" @bind-Value="newProduct.ProductTitle" />
+                </div>
+                <div class="col-md-2">
+                    <InputText id="productCode" class="form-control" placeholder="Enter Product Code" @bind-Value="newProduct.ProductCode" />
+                </div>
+                <div class="col-md-2">
+                    <InputNumber id="productPrice" class="form-control" placeholder="Enter Price" @bind-Value="newProduct.ProductPrice" />
+                </div>
+                <div class="col-md-2">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" @onclick="ToggleDropdown">
+                            @if (string.IsNullOrEmpty(newProduct.ImageUrl))
+                            {
+                                <span>Select Image</span>
+                            }
+                            else
+                            {
+                                <img src="@newProduct.ImageUrl" alt="Selected Image" style="width: 20px; height: 20px; margin-right: 10px;" />
+                                <span>@Path.GetFileName(newProduct.ImageUrl)</span>
+                            }
+                        </button>
+                        <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none"); max-height: 300px; overflow-y: auto;" aria-labelledby="dropdownMenuButton">
+                            @foreach (var imgUrl in ImageUrls)
+                            {
+                                <li>
+                                    <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)">
+                                        <img src="@imgUrl" alt="@Path.GetFileName(imgUrl)" style="width: 25px; height: 25px; margin-right: 10px;" />
+                                        @Path.GetFileName(imgUrl)
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check form-switch">
+                        <InputCheckbox @bind-Value="newProduct.IsActive" class="form-check-input" id="flexSwitchCheckChecked" />
+                        <label class="form-check-label" for="flexSwitchCheckChecked">Is Active</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success">Add Product</button>
+>>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
                 </div>
             </div>
 
@@ -136,6 +187,7 @@
 </div>
 
 @code {
+<<<<<<< HEAD
     private List<Product> ProductList = new();
     private Product newProduct = new();
     private Product? editingProduct = null;
@@ -151,10 +203,19 @@
 
     private List<Product> FilteredProducts =>
         ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
+=======
+    private List<Product> ProductList { get; set; } = new();
+    private Product newProduct { get; set; } = new();
+    private Product? editingProduct { get; set; }
+    private List<string> ImageUrls { get; set; } = new();
+    private bool isDropdownOpen = false;
+>>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadImages();
         await LoadProducts();
+<<<<<<< HEAD
 
 
         if (StateContainer.Categories == null || !StateContainer.Categories.Any())
@@ -164,6 +225,38 @@
         }
 
         UpdateRateItems();
+=======
+        UpdateRateItems();
+    }
+
+    private async Task LoadImages()
+    {
+        try
+        {
+            var imagesPath = Path.Combine(WebHostEnvironment.WebRootPath, "Images");
+            if (Directory.Exists(imagesPath))
+            {
+                var imageFiles = Directory.GetFiles(imagesPath, "*.*", SearchOption.AllDirectories)
+                    .Where(file => file.ToLower().EndsWith(".png") ||
+                                   file.ToLower().EndsWith(".jpg") ||
+                                   file.ToLower().EndsWith(".jpeg") ||
+                                   file.ToLower().EndsWith(".gif"))
+                    .ToList();
+
+                ImageUrls = imageFiles
+                    .Select(file => file.Replace(WebHostEnvironment.WebRootPath, "").Replace("\\", "/"))
+                    .ToList();
+            }
+            else
+            {
+                Console.WriteLine("Images directory not found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading images: {ex.Message}");
+        }
+>>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
     }
 
 
@@ -204,6 +297,7 @@
                 var existingItem = BillService.RateItems.FirstOrDefault(x =>
                 x.Name == editingProduct.ProductTitle);
 
+<<<<<<< HEAD
                 if (existingItem != null)
                 {
                     existingItem.Name = newProduct.ProductTitle;
@@ -211,6 +305,29 @@
                     existingItem.ImageUrl = newProduct.ImageUrl;
                     existingItem.IsActive = newProduct.IsActive;
                 }
+=======
+        var rateItem = new RateItem
+            {
+                Name = newProduct.ProductTitle,
+                BasePrice = newProduct.ProductPrice,
+                ImageUrl = newProduct.ImageUrl,
+                IsActive = newProduct.IsActive
+            };
+
+        if (editingProduct == null)
+        {
+            await BillService.AddRateItemAsync(rateItem);
+        }
+        else
+        {
+            var existingRateItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
+            if (existingRateItem != null)
+            {
+                existingRateItem.Name = newProduct.ProductTitle;
+                existingRateItem.BasePrice = newProduct.ProductPrice;
+                existingRateItem.ImageUrl = newProduct.ImageUrl;
+                existingRateItem.IsActive = newProduct.IsActive;
+>>>>>>> 099ab6d1e9a516c1c565aaa17020b2bcd4336b72
             }
         }
 
