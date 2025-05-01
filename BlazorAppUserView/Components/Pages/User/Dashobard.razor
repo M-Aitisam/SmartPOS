@@ -1,0 +1,66 @@
+﻿@page "/"
+@layout MainLayout
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<div class="text-center my-5">
+    <h2>Welcome to</h2>
+    <h1 class="text-danger fw-bold">Restaurant Management</h1>
+</div>
+
+<div class="container">
+    <div class="row g-4 justify-content-center">
+        @foreach (var item in DashboardItems)
+        {
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <div class="card text-center shadow-sm border-0 dashboard-card h-100" @onclick="() => NavigateTo(item.Route)" style="cursor: pointer;">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                        <i class="@item.Icon text-danger mb-3" style="font-size: 2rem;"></i>
+                        <span class="fw-semibold">@item.Label</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<DashboardItem> DashboardItems = new()
+    {
+        new DashboardItem("BusinessRegister", "fas fa-user", "businessdetails"),
+        new DashboardItem("Restaurant Info", "fas fa-utensils", "restaurant-info"),
+        new DashboardItem("Categories", "fas fa-edit", "categories"),
+        new DashboardItem("Units", "fas fa-university", "units"),
+        new DashboardItem("Products", "fas fa-boxes", "products"),
+        new DashboardItem("Materials", "fas fa-th", "materials"),
+        new DashboardItem("Customers", "fas fa-users", "customers"),
+        new DashboardItem("Suppliers", "fas fa-copy", "suppliers"),
+        new DashboardItem("Sales", "fas fa-shopping-cart", "sales"),
+        new DashboardItem("Purchases", "fas fa-credit-card", "purchases"),
+        new DashboardItem("Tables", "fas fa-table", "tables"),
+        new DashboardItem("Waiters", "fas fa-user-tie", "waiters"),
+        new DashboardItem("Adjustments", "fas fa-adjust", "adjustments"),
+        new DashboardItem("Recipes", "fas fa-project-diagram", "recipes"),
+        new DashboardItem("Reports", "fas fa-rocket", "reports")
+    };
+
+    private class DashboardItem
+    {
+        public string Label { get; }
+        public string Icon { get; }
+        public string Route { get; }
+
+        public DashboardItem(string label, string icon, string route)
+        {
+            Label = label;
+            Icon = icon;
+            Route = route;
+        }
+    }
+
+    private void NavigateTo(string route)
+    {
+        Console.WriteLine($"Attempting to navigate to: {route}"); // Debug output
+        NavigationManager.NavigateTo($"/{route}");
+    }
+}
