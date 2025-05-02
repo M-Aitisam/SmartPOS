@@ -1,0 +1,352 @@
+﻿@page "/sidebar"
+@rendermode InteractiveServer
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sidebar Navigation</title>
+    <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        :root {
+            --header-height: 3rem;
+            --nav-width: 68px;
+            --first-color: #4723D9;
+            --first-color-light: #AFA5D9;
+            --white-color: #F7F6FB;
+            --body-font: 'Nunito', sans-serif;
+            --normal-font-size: 1rem;
+            --z-fixed: 100
+        }
+
+        *, ::before, ::after {
+            box-sizing: border-box
+        }
+
+        body {
+            position: relative;
+            margin: var(--header-height) 0 0 0;
+            padding: 0 1rem;
+            font-family: var(--body-font);
+            font-size: var(--normal-font-size);
+            transition: .5s
+        }
+
+        a {
+            text-decoration: none
+        }
+
+        .header {
+            width: 100%;
+            height: var(--header-height);
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            background-color: var(--white-color);
+            z-index: var(--z-fixed);
+            transition: .5s
+        }
+
+        .header_toggle {
+            color: var(--first-color);
+            font-size: 1.5rem;
+            cursor: pointer
+        }
+
+        .header_img {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            justify-content: center;
+            border-radius: 50%;
+            overflow: hidden
+        }
+
+            .header_img img {
+                width: 40px
+            }
+
+        .l-navbar {
+            position: fixed;
+            top: 0;
+            left: -30%;
+            width: var(--nav-width);
+            height: 100vh;
+            background-color: var(--first-color);
+            padding: .5rem 1rem 0 0;
+            transition: .5s;
+            z-index: var(--z-fixed)
+        }
+
+        .nav {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden
+        }
+
+        .nav_logo, .nav_link {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            align-items: center;
+            column-gap: 1rem;
+            padding: .5rem 0 .5rem 1.5rem
+        }
+
+        .nav_logo {
+            margin-bottom: 2rem
+        }
+
+        .nav_logo-icon {
+            font-size: 1.25rem;
+            color: var(--white-color)
+        }
+
+        .nav_logo-name {
+            color: var(--white-color);
+            font-weight: 700
+        }
+
+        .nav_link {
+            position: relative;
+            color: var(--first-color-light);
+            margin-bottom: 1.5rem;
+            transition: .3s;
+            cursor: pointer;
+        }
+
+            .nav_link:hover {
+                color: var(--white-color)
+            }
+
+        .nav_icon {
+            font-size: 1.25rem
+        }
+
+        .show {
+            left: 0
+        }
+
+        .body-pd {
+            padding-left: calc(var(--nav-width) + 1rem)
+        }
+
+        .active {
+            color: var(--white-color)
+        }
+
+            .active::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                width: 2px;
+                height: 32px;
+                background-color: var(--white-color)
+            }
+
+        .height-100 {
+            height: 100vh
+        }
+
+        .submenu {
+            display: none;
+            padding-left: 1.5rem;
+        }
+
+            .submenu.show-submenu {
+                display: block;
+            }
+
+        .submenu-item {
+            padding: 0.5rem 0;
+            color: var(--first-color-light);
+            transition: .3s;
+        }
+
+            .submenu-item:hover {
+                color: var(--white-color);
+            }
+
+        @@media screen and (min-width: 768px) {
+            body {
+                margin: calc(var(--header-height) + 1rem) 0 0 0;
+                padding-left: calc(var(--nav-width) + 2rem)
+            }
+
+            .header {
+                height: calc(var(--header-height) + 1rem);
+                padding: 0 2rem 0 calc(var(--nav-width) + 2rem)
+            }
+
+            .header_img {
+                width: 40px;
+                height: 40px
+            }
+
+                .header_img img {
+                    width: 45px
+                }
+
+            .l-navbar {
+                left: 0;
+                padding: 1rem 1rem 0 0
+            }
+
+            .show {
+                width: calc(var(--nav-width) + 156px)
+            }
+
+            .body-pd {
+                padding-left: calc(var(--nav-width) + 188px)
+            }
+        }
+    </style>
+</head>
+<body id="body-pd">
+    <header class="header" id="header">
+        <div class="header_toggle"> <i class='bx bx-menu' id="header-toggle"></i> </div>
+        <div class="header_img">
+            <NavLink href="/product">
+                <i class="bi bi-gear"></i>
+            </NavLink>
+        </div>
+    </header>
+    <div class="l-navbar" id="nav-bar">
+        <nav class="nav">
+            <div>
+                <a href="#" class="nav_logo">
+                    <i class='bx bx-layer nav_logo-icon'></i>
+                    <span class="nav_logo-name">POS</span>
+                </a>
+                <div class="nav_list">
+                    <div class="nav_item">
+                        <a href="#" class="nav_link active" onclick="toggleSubmenu(event, 'dashboard-submenu')">
+                            <i class='bx bx-grid-alt nav_icon'></i>
+                            <span class="nav_name">Dashboard</span>
+                            <i class='bx bx-chevron-down nav_icon submenu-arrow' style="margin-left: auto;"></i>
+                        </a>
+                        <div id="dashboard-submenu" class="submenu">
+                            <a href="/dashboard/overview" class="submenu-item">Overview</a>
+                            <a href="/dashboard/analytics" class="submenu-item">Analytics</a>
+                            <a href="/dashboard/reports" class="submenu-item">Reports</a>
+                        </div>
+                    </div>
+
+                    <div class="nav_item">
+                        <a href="#" class="nav_link" onclick="toggleSubmenu(event, 'users-submenu')">
+                            <i class='bx bx-user nav_icon'></i>
+                            <span class="nav_name">Users</span>
+                            <i class='bx bx-chevron-down nav_icon submenu-arrow' style="margin-left: auto;"></i>
+                        </a>
+                        <div id="users-submenu" class="submenu">
+                            <a href="/users/list" class="submenu-item">All Users</a>
+                            <a href="/users/add" class="submenu-item">Add User</a>
+                            <a href="/users/roles" class="submenu-item">Roles</a>
+                        </div>
+                    </div>
+
+                    <div class="nav_item">
+                        <a href="#" class="nav_link" onclick="toggleSubmenu(event, 'messages-submenu')">
+                            <i class='bx bx-message-square-detail nav_icon'></i>
+                            <span class="nav_name">Messages</span>
+                            <i class='bx bx-chevron-down nav_icon submenu-arrow' style="margin-left: auto;"></i>
+                        </a>
+                        <div id="messages-submenu" class="submenu">
+                            <a href="/messages/inbox" class="submenu-item">Inbox</a>
+                            <a href="/messages/sent" class="submenu-item">Sent</a>
+                            <a href="/messages/compose" class="submenu-item">Compose</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <a href="/logout" class="nav_link">
+                <i class='bx bx-log-out nav_icon'></i>
+                <span class="nav_name">SignOut</span>
+            </a>
+        </nav>
+    </div>
+   
+    <script>
+        // Store sidebar state in localStorage
+        const sidebarState = localStorage.getItem('sidebarState');
+        const bodyPd = document.getElementById('body-pd');
+        const headerPd = document.getElementById('header');
+        const navBar = document.getElementById('nav-bar');
+        const headerToggle = document.getElementById('header-toggle');
+
+        document.addEventListener("DOMContentLoaded", function(event) {
+            // Initialize sidebar state
+            if (sidebarState === 'open') {
+                navBar.classList.add('show');
+                headerToggle.classList.add('bx-x');
+                bodyPd.classList.add('body-pd');
+                headerPd.classList.add('body-pd');
+            }
+
+            // Toggle sidebar
+            headerToggle.addEventListener('click', () => {
+                const isOpen = navBar.classList.contains('show');
+                navBar.classList.toggle('show');
+                headerToggle.classList.toggle('bx-x');
+                bodyPd.classList.toggle('body-pd');
+                headerPd.classList.toggle('body-pd');
+
+                // Store state
+                localStorage.setItem('sidebarState', isOpen ? 'closed' : 'open');
+            });
+
+            // Active link functionality
+            const linkColor = document.querySelectorAll('.nav_link:not(.nav_logo)');
+
+            function colorLink() {
+                if (linkColor) {
+                    linkColor.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            }
+
+            linkColor.forEach(l => l.addEventListener('click', function(e) {
+                // Don't run colorLink if clicking on submenu arrow
+                if (!e.target.classList.contains('submenu-arrow')) {
+                    colorLink.call(this);
+                }
+            }));
+        });
+
+        function toggleSubmenu(event, submenuId) {
+            event.preventDefault();
+            const submenu = document.getElementById(submenuId);
+            const arrow = event.currentTarget.querySelector('.submenu-arrow');
+
+            // Close all other submenus first
+            document.querySelectorAll('.submenu').forEach(menu => {
+                if (menu.id !== submenuId && menu.classList.contains('show-submenu')) {
+                    menu.classList.remove('show-submenu');
+                    const otherArrow = menu.parentElement.querySelector('.submenu-arrow');
+                    if (otherArrow) {
+                        otherArrow.classList.remove('bx-chevron-up');
+                        otherArrow.classList.add('bx-chevron-down');
+                    }
+                }
+            });
+
+            // Toggle current submenu
+            submenu.classList.toggle('show-submenu');
+
+            // Toggle arrow icon
+            if (submenu.classList.contains('show-submenu')) {
+                arrow.classList.remove('bx-chevron-down');
+                arrow.classList.add('bx-chevron-up');
+            } else {
+                arrow.classList.remove('bx-chevron-up');
+                arrow.classList.add('bx-chevron-down');
+            }
+        }
+    </script>
+</body>
+</html>

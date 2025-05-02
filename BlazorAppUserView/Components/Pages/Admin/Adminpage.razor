@@ -1,57 +1,205 @@
 ﻿@page "/adminpage"
-@using Microsoft.AspNetCore.Components.Web
-@using Microsoft.JSInterop
-@* @using BlazorAppUserView.Components.Layout *@
 @rendermode InteractiveServer
+
 <PageTitle>Bill Generate</PageTitle>
 
+<div class="admin-container">
+   
 
-<div style="z-index:2000" class="p-0">
-     @*  <div class="sidebar"> *@
-     @*    <NavMenu /> *@
-     @* </div> *@
-    <div style="margin-top:-12px">
-        @* <div> *@
-        @*     <nav class="navbar bg-body-tertiary bg-light"> *@
-        @*         <div class="container-fluid"> *@
-        @*             <a class="navbar-brand">Navbar</a> *@
-        @*             <div class="d-flex"> *@
-        @*             </div> *@
-        @*         </div> *@
-        @*     </nav> *@
-        @* </div> *@
+    <div class="main-layout">
+        <Sidebar />
 
-                        <NavLink href="/product"> 
-                             <i class="bi bi-gear"></i>
-                       </NavLink>
-        <div class="container-fluid vh-80">
-
-            <div class="row">
-                <div class="col-md-7  p-0 ">
-                    <div class="card border-0">
-                        <div >
+        <div class="content-area">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-7 p-0">
+                        <div class="card border-0">
                             <RateListItems />
                         </div>
                     </div>
-
-                </div>
-                <div class="col-md-5  p-0">
-                    <div class="card border-0 p-0">
-                        <div class="card-body p-0">
-                            <Bills />
+                    <div class="col-md-5 p-0">
+                        <div class="card border-0 p-0">
+                            <div class="card-body p-0">
+                                <Bills />
+                            </div>
                         </div>
                     </div>
-
                 </div>
-               
             </div>
-
         </div>
-
-
     </div>
-
 </div>
 
+<style>
+    :root {
+        --header-height: 56px;
+        --nav-width: 250px;
+        --nav-collapsed-width: 68px;
+        --first-color: #4723D9;
+        --first-color-light: #AFA5D9;
+        --white-color: #F7F6FB;
+        --body-font: 'Nunito', sans-serif;
+        --normal-font-size: 1rem;
+        --z-fixed: 100;
+    }
 
+    .admin-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
 
+    .header {
+        width: 100%;
+        height: var(--header-height);
+        position: fixed;
+        top: 0;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1rem;
+        background-color: var(--white-color);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: var(--z-fixed);
+        transition: .5s;
+    }
+
+    .header_toggle {
+        color: var(--first-color);
+        font-size: 1.5rem;
+        cursor: pointer;
+        margin-left: var(--nav-collapsed-width);
+        transition: margin-left 0.5s;
+    }
+
+    .l-navbar.show ~ .content-area .header_toggle {
+        margin-left: var(--nav-width);
+    }
+
+    .main-layout {
+        display: flex;
+        flex: 1;
+        margin-top: var(--header-height);
+    }
+
+    .l-navbar {
+        position: fixed;
+        top: 0;
+        left: -30%;
+        width: var(--nav-width);
+        height: 100vh;
+        background-color: var(--first-color);
+        padding: .5rem 1rem 0 0;
+        transition: .5s;
+        z-index: var(--z-fixed);
+    }
+
+        .l-navbar.show {
+            left: 0;
+        }
+
+    .content-area {
+        flex: 1;
+        padding: 1rem;
+        transition: margin-left 0.5s;
+        margin-left: var(--nav-collapsed-width);
+    }
+
+    .l-navbar.show ~ .content-area {
+        margin-left: var(--nav-width);
+    }
+
+    /* Navbar styles */
+    .nav {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+
+    .nav_logo, .nav_link {
+        display: grid;
+        grid-template-columns: max-content max-content;
+        align-items: center;
+        column-gap: 1rem;
+        padding: .5rem 0 .5rem 1.5rem;
+    }
+
+    .nav_logo {
+        margin-bottom: 2rem;
+    }
+
+    .nav_logo-icon {
+        font-size: 1.25rem;
+        color: var(--white-color);
+    }
+
+    .nav_logo-name {
+        color: var(--white-color);
+        font-weight: 700;
+    }
+
+    .nav_link {
+        position: relative;
+        color: var(--first-color-light);
+        margin-bottom: 1.5rem;
+        transition: .3s;
+    }
+
+        .nav_link:hover {
+            color: var(--white-color);
+        }
+
+    .nav_icon {
+        font-size: 1.25rem;
+    }
+
+    .active {
+        color: var(--white-color);
+    }
+
+        .active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 2px;
+            height: 32px;
+            background-color: var(--white-color);
+        }
+
+    .submenu {
+        display: none;
+        padding-left: 1.5rem;
+    }
+
+        .submenu.show-submenu {
+            display: block;
+        }
+
+    .submenu-item {
+        padding: 0.5rem 0;
+        color: var(--first-color-light);
+        transition: .3s;
+        display: block;
+    }
+
+        .submenu-item:hover, .submenu-item.active {
+            color: var(--white-color);
+        }
+
+    @@media screen and (min-width: 768px) {
+        .l-navbar {
+            left: 0;
+        }
+
+        .content-area {
+            margin-left: var(--nav-width);
+        }
+
+        .header_toggle {
+            margin-left: var(--nav-width);
+        }
+    }
+</style>

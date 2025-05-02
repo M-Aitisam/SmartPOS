@@ -1,170 +1,404 @@
 ﻿@page "/bills"
 @inject BillService BillService
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
-<div class="container-fluid p-2">
-    <div class="card shadow-sm h-100">
-        <div class="card-body p-2 table-responsive" style="max-height: 60vh; overflow-y: auto;">
-            <table class="table table-hover table-striped text-center align-middle">
-                <thead class="table-light sticky-top">
-                    <tr>
-                        <th>#</th>
-                        <th>Product Name</th>
-                        <th>Qty.</th>
-                        <th>Price</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
+<style>
+    .product-container {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+    }
+
+    .action-btn {
+        min-width: 100px;
+        padding: 8px 12px;
+        font-weight: 500;
+    }
+
+    .quantity-control {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .quantity-input {
+        width: 50px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .summary-card {
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 15px;
+    }
+
+    .delete-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .modal-overlay {
+        background-color: rgba(0,0,0,0.5);
+    }
+
+    .price-highlight {
+        font-size: 1.2rem;
+        color: #2e7d32;
+        font-weight: 600;
+    }
+
+    .fixed-summary {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 350px;
+        z-index: 1000;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border-radius: 10px;
+    }
+
+    .discount-input {
+        width: 80px;
+    }
+
+    .page-container {
+        padding-bottom: 400px; /* Ensure space for fixed summary */
+    }
+</style>
+
+<div class="container-fluid p-3 page-container">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0 fw-semibold">Current Order</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="product-container">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr class="sticky-header">
+                                    <th class="ps-4">#</th>
+                                    <th class="text-start">Product Name</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                    <th class="pe-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
+                                {
+                                    @foreach (var (item, index) in BillService.SelectedItems.Select((item, index) => (item, index + 1)))
+                                    {
+                                        <tr>
+                                            <td class="ps-4">@index</td>
+                                            <td class="text-start">@item.Name</td>
+                                            <td>
+                                                <div class="d-flex justify-content-center align-items-center gap-2">
+                                                    <button class="btn btn-sm btn-outline-primary quantity-control" @onclick="() => DecreaseQuantity(item)">
+                                                        <i class="bi bi-dash"></i>
+                                                    </button>
+                                                    <input type="text" class="form-control quantity-input" value="@item.Quantity" readonly />
+                                                    <button class="btn btn-sm btn-outline-primary quantity-control" @onclick="() => IncreaseQuantity(item)">
+                                                        <i class="bi bi-plus"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td>@item.BasePrice.ToString("0.00")</td>
+                                            <td>@item.Price.ToString("0.00")</td>
+                                            <td class="pe-4">
+                                                <button class="btn btn-sm btn-outline-danger delete-btn" @onclick="() => ConfirmDelete(item)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            No products added to the bill
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Order Summary Panel -->
+    <div class="fixed-summary">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h5 class="mb-0 fw-semibold">Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 summary-card bg-light">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Items:</span>
+                        <strong>@BillService.SelectedItems?.Count()</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <strong>@BillService.TotalAmount.ToString("0.00")</strong>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Discount:</span>
+                            <div class="input-group" style="width: 120px;">
+                                <input type="number" class="form-control form-control-sm discount-input"
+                                       @bind="discountValue" @bind:event="oninput"
+                                       placeholder="0.00" min="0" max="100" step="0.01" />
+                                <span class="input-group-text">@(isPercentageDiscount ? "%" : "₹")</span>
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleDiscountType">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3 summary-card">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (15%):</span>
+                        <strong>@taxAmount.ToString("0.00")</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-semibold">Total:</span>
+                        <strong class="price-highlight">@totalWithTax.ToString("0.00")</strong>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success action-btn" @onclick="ProcessPayment" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())">
+                        <i class="bi bi-credit-card me-2"></i> Pay Now
+                    </button>
+                    <button class="btn btn-warning action-btn" @onclick="HoldOrder" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())">
+                        <i class="bi bi-pause-circle me-2"></i> Hold Order
+                    </button>
+                    <button class="btn btn-outline-danger action-btn" @onclick="CancelOrder">
+                        <i class="bi bi-x-circle me-2"></i> Cancel Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+@if (ShowDeleteModal)
+{
+    <div class="modal-overlay d-block">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Remove Item</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDelete"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to remove <strong>@(SelectedItem?.Name)</strong> from the bill?</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-outline-secondary" @onclick="CancelDelete">Cancel</button>
+                    <button class="btn btn-danger" @onclick="DeleteItem">Remove</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Payment Modal -->
+@if (ShowPaymentModal)
+{
+    <div class="modal-overlay d-block">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Process Payment</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="ClosePaymentModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-select" @bind="selectedPaymentMethod">
+                            <option value="Cash">Cash</option>
+                            <option value="Card">Credit/Debit Card</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Net Banking">Net Banking</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount Received</label>
+                        <input type="number" class="form-control" @bind="amountReceived"
+                               min="@totalWithTax" step="0.01" />
+                    </div>
+                    @if (amountReceived > 0)
                     {
-                        @foreach (var (item, index) in BillService.SelectedItems.Select((item, index) => (item, index + 1)))
-                        {
-                            <tr>
-                                <td>@index</td>
-                                <td class="text-start">@item.Name</td>
-                                <td>
-                                    <div class="d-flex justify-content-center align-items-center gap-1">
-                                        <button class="btn btn-sm btn-secondary" @onclick="() => IncreaseQuantity(item)">
-                                            <i class="bi bi-plus"></i>
-                                        </button>
-                                        <input type="text" class="form-control form-control-sm text-center" value="@item.Quantity" readonly style="width: 50px;" />
-                                        <button class="btn btn-sm btn-secondary" @onclick="() => DecreaseQuantity(item)">
-                                            <i class="bi bi-dash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                                <td>@item.Price</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(item)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
+                        <div class="alert alert-info">
+                            Change: @((amountReceived - totalWithTax).ToString("0.00"))
+                        </div>
                     }
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Footer -->
-        <div class="card-footer bg-light mt-2">
-            <div class="row g-2">
-                <div class="col-md-6 d-flex flex-column flex-md-row align-items-start justify-content-between gap-2 bg-success-subtle p-3 rounded">
-                    <div>
-                        <p class="mb-1">Total Item(s): <strong>@BillService.SelectedItems?.Count()</strong></p>
-                        <p class="mb-1">Discount:</p>
-                    </div>
-                    <div class="d-flex flex-column align-items-start gap-2">
-                        <input type="text" class="form-control form-control-sm" placeholder="Discount" style="width: 80px;" />
-                        <button class="btn btn-sm btn-danger">
-                            <i class="bi bi-x-circle"></i> Cancel
-                        </button>
-                    </div>
                 </div>
-
-                <div class="col-md-3 d-flex flex-column align-items-start gap-2">
-                    <p class="mb-0">Price:</p>
-                    <p class="mb-0">Gross Price</p>
-                    <p class="mb-0">(Inc 15% Tax):</p>
-                    <button class="btn btn-sm btn-info">
-                        <i class="bi bi-pause-circle"></i> Hold
-                    </button>
-                </div>
-
-                <div class="col-md-3 d-flex flex-column align-items-start gap-2">
-                    <strong>@BillService.TotalAmount</strong>
-                    <strong class="fs-5">@((BillService.TotalAmount * 1.15m).ToString("0.00"))</strong>
-                    <button class="btn btn-sm btn-success">
-                        <i class="bi bi-check-circle"></i> Pay
-                    </button>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-outline-secondary" @onclick="ClosePaymentModal">Cancel</button>
+                    <button class="btn btn-success" @onclick="ConfirmPayment">Confirm Payment</button>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Bootstrap Modal -->
-<div class="modal fade @(ShowDeleteModal ? "show d-block" : "")" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.5);">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Confirm Deletion</h5>
-                <button type="button" class="btn-close" @onclick="CancelDelete"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete <strong>@(SelectedItem?.Name)</strong>?</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary btn-sm" @onclick="CancelDelete">Cancel</button>
-                <button class="btn btn-danger btn-sm" @onclick="DeleteItem">OK</button>
-            </div>
-        </div>
-    </div>
-</div>
-
+}
 
 @code {
-	private RateItem? SelectedItem;
-	private bool ShowDeleteModal = false;
+    private RateItem? SelectedItem;
+    private bool ShowDeleteModal = false;
+    private bool ShowPaymentModal = false;
+    private decimal discountValue = 0;
+    private bool isPercentageDiscount = true;
+    private string selectedPaymentMethod = "Cash";
+    private decimal amountReceived = 0;
 
-	protected override void OnInitialized()
-	{
-		BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
-	}
+    private decimal discountAmount => isPercentageDiscount
+        ? BillService.TotalAmount * (discountValue / 100m)
+        : discountValue;
 
-	public void Dispose()
-	{
-		BillService.OnChange -= async () => await InvokeAsync(StateHasChanged);
-	}
+    private decimal subtotalAfterDiscount => BillService.TotalAmount - discountAmount;
+    private decimal taxAmount => subtotalAfterDiscount * 0.15m;
+    private decimal totalWithTax => subtotalAfterDiscount + taxAmount;
 
-	private async Task IncreaseQuantity(RateItem item)
-	{
-		if (item.Quantity == 0)
-		{
-			item.Quantity = 1; // Set the initial quantity
-			item.Price = item.BasePrice; // Set initial price to base price
-		}
-		else
-		{
-			item.Quantity++;
-			item.Price = item.BasePrice * item.Quantity;
-		}
+    protected override void OnInitialized()
+    {
+        BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
+    }
 
-		await BillService.UpdateItemAsync(item);
-	}
+    public void Dispose()
+    {
+        BillService.OnChange -= async () => await InvokeAsync(StateHasChanged);
+    }
 
+    private async Task IncreaseQuantity(RateItem item)
+    {
+        if (item.Quantity == 0)
+        {
+            item.Quantity = 1;
+            item.Price = item.BasePrice;
+        }
+        else
+        {
+            item.Quantity++;
+            item.Price = item.BasePrice * item.Quantity;
+        }
+        await BillService.UpdateItemAsync(item);
+    }
 
-	private async Task DecreaseQuantity(RateItem item)
-	{
-		if (item.Quantity > 1)
-		{
-			item.Quantity--;
-			item.Price = item.BasePrice * item.Quantity;
-			await BillService.UpdateItemAsync(item);
-		}
-	}
+    private async Task DecreaseQuantity(RateItem item)
+    {
+        if (item.Quantity > 1)
+        {
+            item.Quantity--;
+            item.Price = item.BasePrice * item.Quantity;
+            await BillService.UpdateItemAsync(item);
+        }
+    }
 
-	private void ConfirmDelete(RateItem item)
-	{
-		SelectedItem = item;
-		ShowDeleteModal = true;
-	}
+    private void ConfirmDelete(RateItem item)
+    {
+        SelectedItem = item;
+        ShowDeleteModal = true;
+    }
 
-	private async Task DeleteItem()
-	{
-		if (SelectedItem != null)
-		{
-			await BillService.RemoveItemAsync(SelectedItem);
-			SelectedItem = null;
-			await InvokeAsync(StateHasChanged);
-		}
-		ShowDeleteModal = false;
-	}
+    private async Task DeleteItem()
+    {
+        if (SelectedItem != null)
+        {
+            await BillService.RemoveItemAsync(SelectedItem);
+            SelectedItem = null;
+            await InvokeAsync(StateHasChanged);
+        }
+        ShowDeleteModal = false;
+    }
 
-	private void CancelDelete()
-	{
-		SelectedItem = null;
-		ShowDeleteModal = false;
-	}
+    private void CancelDelete()
+    {
+        SelectedItem = null;
+        ShowDeleteModal = false;
+    }
+
+    private void ToggleDiscountType()
+    {
+        isPercentageDiscount = !isPercentageDiscount;
+        // Reset discount value when changing type
+        discountValue = 0;
+    }
+
+    private void ProcessPayment()
+    {
+        amountReceived = totalWithTax; // Default to exact amount
+        ShowPaymentModal = true;
+    }
+
+    private void ClosePaymentModal()
+    {
+        ShowPaymentModal = false;
+    }
+
+    private async Task ConfirmPayment()
+    {
+        // Process payment logic here
+        // You would typically save the order to database here
+
+        // Show success message
+         await BillService.ClearCart();
+
+        ShowPaymentModal = false;
+        NavigationManager.NavigateTo("/orders"); // Redirect to orders page
+    }
+
+    private async Task HoldOrder()
+    {
+        // Logic to hold the order
+        // await BillService.HoldCurrentOrder();
+
+        // Show success message
+         await BillService.ClearCart();
+
+        NavigationManager.NavigateTo("/orders");
+    }
+
+    private async Task CancelOrder()
+    {
+        // Safely clear all items using only available methods
+        if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
+        {
+            // Create a copy of the list to avoid modification during iteration
+            var itemsToRemove = BillService.SelectedItems.ToList();
+            foreach (var item in itemsToRemove)
+            {
+                await BillService.RemoveItemAsync(item);
+            }
+        }
+
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
 }

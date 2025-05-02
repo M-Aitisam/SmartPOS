@@ -3,13 +3,16 @@
 @inject BillService BillService
 @rendermode InteractiveServer
 
-<div class="container1">
-    <input type="text" class="search-box" placeholder="Search product by name" @bind="SearchQuery" />
+<div class="container">
+    <div class="search-container">
+        <input type="text" class="search-box" placeholder="Search product..." @bind="SearchQuery" />
+        <i class="bi bi-search search-icon"></i>
+    </div>
 
     <div class="category-buttons">
         @foreach (var category in Categories)
         {
-            <button class="btn @(category == SelectedCategory ? "btn-primary" : "btn-outline-primary")"
+            <button class="category-btn @(category == SelectedCategory ? "active" : "")"
                     @onclick="() => FilterByCategory(category)">
                 @category
             </button>
@@ -21,154 +24,215 @@
         {
             @foreach (var item in FilteredItems)
             {
-                <div class="product-item" @onclick="() => AddToBill(item)">
-                    <img src="@item.ImageUrl" alt="@item.Name" class="product-image" />
-                    <div class="product-info">
-                        <div class="card-info">
-                            <p class="text-title">@item.Name </p>
-                            <p class="text-body">Product description and details</p>
-                        </div>
+                <div class="product-card" @onclick="() => AddToBill(item)">
+                    <div class="card-image">
+                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                        {
+                            <img src="@item.ImageUrl" alt="@item.Name" />
+                        }
+                        else
+                        {
+                            <i class="bi bi-box-seam default-icon"></i>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <h5>@item.Name</h5>
                         <div class="card-footer">
-                             <span class="price">$@item.BasePrice</span>
-                            <div class="card-button">
-                                <i class="bi bi-images text-primary mb-2" style="font-size: 1.2em;  width: 20px; height: 20px;"></i>
+                            <span class="price">$@item.BasePrice.ToString("0.00")</span>
+                            <div class="add-icon">
+                                <i class="bi bi-plus-circle"></i>
                             </div>
-                       </div>
-                      
+                        </div>
                     </div>
                 </div>
             }
         }
         else
         {
-            <p class="no-items">No items found.</p>
+            <div class="no-items">
+                <i class="bi bi-exclamation-circle"></i>
+                <p>No products found</p>
+            </div>
         }
     </div>
 </div>
 
 <style>
+    /* Base Styles */
     .container {
-        padding: 20px;
+        padding: 1rem;
+        max-width: 1200px;
+        margin: 0 auto;
     }
 
+    /* Search */
+    .search-container {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
 
     .search-box {
         width: 100%;
-        padding: 10px;
-        margin-bottom: 15px;
-        font-size: 16px;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
     }
 
-  
-    .product-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 20px;
-    }
-    .container1{
-        padding:10px;
-    }
-    .product-item {
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        text-align: center;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        background-color: #fff;
-    }
-
-        .product-item:hover {
-            background-color: #f9f9f9;
+        .search-box:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
         }
 
-    .product-image {
-        width: 100%;
-        height: 120px;
-        object-fit: cover;
-        border-radius: 6px;
-        margin-bottom: 10px;
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
     }
 
-    .product-info h5 {
-        margin: 0;
-        font-size: 1em;
-        color: #333;
+    /* Categories */
+    .category-buttons {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
     }
 
-    .price {
-        font-weight: bold;
-        color: #007bff;
+    .category-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 50px;
+        background: white;
+        color: #495057;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
 
-    .no-items {
-        text-align: center;
-        color: #888;
-        padding: 20px;
+        .category-btn.active,
+        .category-btn:hover {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+    /* Product Grid */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
     }
 
-    .card-info {
-        padding-top: 10%;
+    /* Product Card */
+    .product-card {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+    .card-image {
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        padding: 0.5rem;
+    }
+
+        .card-image img {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+    .default-icon {
+        font-size: 2rem;
+        color: #adb5bd;
+    }
+
+    .card-body {
+        padding: 0.75rem;
+    }
+
+        .card-body h5 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
     .card-footer {
-        width: 100%;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding-top: 10px;
-        border-top: 1px solid #ddd;
     }
 
-    /*Text*/
-    .text-title {
-        font-weight: 900;
-        font-size: 1.2em;
-        line-height: 1.5;
+    .price {
+        font-weight: 700;
+        color: #28a745;
+        font-size: 0.9rem;
     }
 
-    .text-body {
-        font-size: .9em;
-        padding-bottom: 10px;
+    .add-icon {
+        color: #007bff;
+        font-size: 1.2rem;
     }
 
-    .card-button {
-        border: 1px solid #252525;
-        display: flex;
-        padding: .3em;
-        cursor: pointer;
-        border-radius: 50px;
-        transition: .3s ease-in-out;
+    /* No Items */
+    .no-items {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
     }
 
-    /*Hover*/
-    .card-img:hover {
-        transform: translateY(-25%);
-        box-shadow: rgba(226, 196, 63, 0.25) 0px 13px 47px -5px, rgba(180, 71, 71, 0.3) 0px 8px 16px -8px;
-    }
+        .no-items i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #adb5bd;
+        }
 
-    .card-button:hover {
-        border: 1px solid #ffcaa6;
-        background-color: #ffcaa6;
-    }
+        .no-items p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
 
     /* Responsive */
     @@media (max-width: 768px) {
-        .product-grid
-
-    {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
+        .product-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
     }
 
     @@media (max-width: 480px) {
-        .product-grid
+        .product-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
 
-    {
-        grid-template-columns: 1fr;
-    }
+        .category-buttons {
+            gap: 0.25rem;
+        }
 
+        .category-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.7rem;
+        }
     }
 </style>
 
@@ -179,11 +243,13 @@
     private List<string> Categories = new() { "All", "Drink", "Fast Food", "Indian", "Italian", "Chinese" };
 
     private IEnumerable<RateItem> FilteredItems =>
-      (BillService.RateItems ?? new List<RateItem>())
-      .Where(i => i.IsActive &&
-                 (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
-                 (string.IsNullOrEmpty(SearchQuery) || (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
-      .ToList();
+        (BillService.RateItems ?? new List<RateItem>())
+        .Where(i => i.IsActive &&
+                   (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
+                   (string.IsNullOrEmpty(SearchQuery) ||
+                    (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
+        .OrderBy(i => i.Name)
+        .ToList();
 
     protected override void OnInitialized()
     {

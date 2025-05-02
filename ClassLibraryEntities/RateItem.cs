@@ -10,6 +10,7 @@
         public bool IsActive { get; set; } = false;
         public string? ImageUrl { get; set; } = string.Empty;
         public string? Category { get; set; }
+        public int Id { get; set; }
 
     }
 }

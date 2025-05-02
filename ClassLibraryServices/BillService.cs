@@ -13,11 +13,6 @@ namespace ClassLibraryServices
         public decimal TotalAmount => SelectedItems.Sum(item => item.Price);
 
         public event Func<Task>? OnChange;
-        public RateItem? GetRateItemByName(string name)
-        {
-            return RateItems.FirstOrDefault(r => r.Name == name);
-        }
-        
 
         public BillService()
         {
@@ -25,22 +20,26 @@ namespace ClassLibraryServices
             EnsureDirectoryExists();
             LoadRateItemsFromFile();
         }
-        public Task<List<BusinessCategory>> GetCategoriesAsync()
-        {
-            var categories = RateItems
-                .Where(item => !string.IsNullOrWhiteSpace(item.Category))
-                .Select(item => new BusinessCategory { CategoryName = item.Category! })
-                .DistinctBy(c => c.CategoryName)
-                .ToList();
 
-            return Task.FromResult(categories);
-        }
+        public RateItem? GetRateItemByName(string name) =>
+            RateItems.FirstOrDefault(r => r.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
 
-
+        public Task<List<BusinessCategory>> GetCategoriesAsync() =>
+            Task.FromResult(
+                RateItems
+                    .Where(item => !string.IsNullOrWhiteSpace(item.Category))
+                    .Select(item => new BusinessCategory { CategoryName = item.Category! })
+                    .DistinctBy(c => c.CategoryName)
+                    .ToList()
+            );
 
         public async Task AddItemAsync(RateItem item)
         {
-            var existingItem = SelectedItems.FirstOrDefault(i => i.Name == item.Name);
+            ArgumentNullException.ThrowIfNull(item);
+
+            var existingItem = SelectedItems.FirstOrDefault(i =>
+                i.Name?.Equals(item.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+
             if (existingItem != null)
             {
                 existingItem.Quantity++;
@@ -48,36 +47,50 @@ namespace ClassLibraryServices
             }
             else
             {
-                item.Quantity = 1;
-                if (item.BasePrice == 0)
+                var newItem = new RateItem
                 {
-                    item.BasePrice = item.Price;
-                }
-                SelectedItems.Add(item);
+                    Id = item.Id,
+                    Name = item.Name,
+                    BasePrice = item.BasePrice,
+                    Price = item.BasePrice,
+                    Quantity = 1,
+                    Category = item.Category,
+                    IsActive = item.IsActive
+                    // Copy all other properties
+                };
+                SelectedItems.Add(newItem);
+            }
+            await NotifyStateChangedAsync();
+        }
+        public async Task RemoveItemAsync(RateItem item)
+        {
+            var existingItem = SelectedItems.FirstOrDefault(i =>
+                i.Name?.Equals(item.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+
+            if (existingItem == null) return;
+
+            if (existingItem.Quantity > 1)
+            {
+                existingItem.Quantity--;
+                existingItem.Price = existingItem.BasePrice * existingItem.Quantity;
+            }
+            else
+            {
+                SelectedItems.Remove(existingItem);
             }
             await NotifyStateChangedAsync();
         }
 
-        public async Task RemoveItemAsync(RateItem item)
-        {
-            var existingItem = SelectedItems.FirstOrDefault(i => i.Name == item.Name);
-            if (existingItem != null)
-            {
-                if (existingItem.Quantity > 1)
-                {
-                    existingItem.Quantity--;
-                    existingItem.Price = existingItem.BasePrice * existingItem.Quantity;
-                }
-                else
-                {
-                    SelectedItems.Remove(existingItem);
-                }
-                await NotifyStateChangedAsync();
-            }
-        }
-
         public async Task AddRateItemAsync(RateItem item)
         {
+            ArgumentNullException.ThrowIfNull(item);
+
+            if (RateItems.Any(r =>
+                r.Name?.Equals(item.Name, StringComparison.OrdinalIgnoreCase) ?? false))
+            {
+                throw new InvalidOperationException($"Product '{item.Name}' already exists");
+            }
+
             RateItems.Add(item);
             SaveRateItemsToFile();
             await NotifyStateChangedAsync();
@@ -85,8 +98,10 @@ namespace ClassLibraryServices
 
         public async Task RemoveRateItemAsync(string productName)
         {
-            var rateItem = RateItems.FirstOrDefault(x => x.Name == productName);
-            if (rateItem != null && !rateItem.IsActive)
+            var rateItem = RateItems.FirstOrDefault(x =>
+                x.Name?.Equals(productName, StringComparison.OrdinalIgnoreCase) ?? false);
+
+            if (rateItem != null)
             {
                 RateItems.Remove(rateItem);
                 SaveRateItemsToFile();
@@ -100,19 +115,21 @@ namespace ClassLibraryServices
             await NotifyStateChangedAsync();
         }
 
-        public async Task ClearTotalAmountAsync()
+        public async Task ResetQuantitiesAsync()
         {
             foreach (var item in SelectedItems)
             {
-                item.Price = item.BasePrice;
                 item.Quantity = 1;
+                item.Price = item.BasePrice;
             }
             await NotifyStateChangedAsync();
         }
 
         public async Task UpdateItemAsync(RateItem updatedItem)
         {
-            var item = SelectedItems.FirstOrDefault(i => i.Name == updatedItem.Name);
+            var item = SelectedItems.FirstOrDefault(i =>
+                i.Name?.Equals(updatedItem.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+
             if (item != null)
             {
                 item.Quantity = updatedItem.Quantity;
@@ -123,7 +140,7 @@ namespace ClassLibraryServices
 
         public void UpdateRateItems(List<RateItem> items)
         {
-            RateItems = items;
+            RateItems = items ?? throw new ArgumentNullException(nameof(items));
             SaveRateItemsToFile();
         }
 
@@ -137,27 +154,42 @@ namespace ClassLibraryServices
 
         private void SaveRateItemsToFile()
         {
-            EnsureDirectoryExists();
             var options = new JsonSerializerOptions { WriteIndented = true };
-            var rateItemsJson = JsonSerializer.Serialize(RateItems, options);
-            File.WriteAllText(rateItemsFilePath, rateItemsJson);
+            var json = JsonSerializer.Serialize(RateItems.Where(r => r.IsActive), options);
+            File.WriteAllText(rateItemsFilePath, json);
         }
 
         private void LoadRateItemsFromFile()
         {
-            if (File.Exists(rateItemsFilePath))
+            if (!File.Exists(rateItemsFilePath)) return;
+
+            try
             {
-                var rateItemsJson = File.ReadAllText(rateItemsFilePath);
-                RateItems = JsonSerializer.Deserialize<List<RateItem>>(rateItemsJson) ?? new List<RateItem>();
+                var json = File.ReadAllText(rateItemsFilePath);
+                var items = JsonSerializer.Deserialize<List<RateItem>>(json) ?? new List<RateItem>();
+                RateItems = items.Where(i => i.IsActive).ToList();
+            }
+            catch (Exception)
+            {
+                // Log error here
+                RateItems = new List<RateItem>();
             }
         }
 
         private void EnsureDirectoryExists()
         {
-            string? directoryPath = Path.GetDirectoryName(rateItemsFilePath);
-            if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
+            var directory = Path.GetDirectoryName(rateItemsFilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
-                Directory.CreateDirectory(directoryPath);
+                Directory.CreateDirectory(directory);
+            }
+        }
+        public async Task ClearCart()
+        {
+            if (SelectedItems != null)
+            {
+                SelectedItems.Clear();
+                await NotifyStateChangedAsync(); // Use this instead of directly calling OnChange
             }
         }
     }
