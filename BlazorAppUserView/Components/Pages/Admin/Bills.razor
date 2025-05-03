@@ -65,10 +65,11 @@
         display: flex;
         margin: 3px 0;
         padding: 0 10px;
+        gap:10px;
     }
 
     .col-number {
-        width: 110px;
+        width: 50px;
         text-align: left;
     }
 
@@ -87,12 +88,14 @@
     }
 
     .col-price {
-        width: 160px;
-        text-align: right;
+        width: 170px;
+        text-align: center;
        margin-left:3px;
     }
 
     .qty-control {
+        /* background-color:green; */
+        text-align:left;
         display: flex;
         align-items: center;
         gap: 5px;
@@ -105,7 +108,7 @@
         font-weight: bold;
         padding: 0 5px;
     }
-
+   
     /* Scrollable product list */
     .product-list-container {
         max-height: 25rem; /* Fixed height for product list */
@@ -150,7 +153,7 @@
                 <span class="product-name">Name</span>
                 <span class="product-qty">Qt.</span>
                 <span class="product-price">Price</span>
-                <span style="width: 40px;">Action</span> <!-- Empty column for delete button alignment -->
+                <span >Action</span> <!-- Empty column for delete button alignment -->
             </div>
 
             @if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
