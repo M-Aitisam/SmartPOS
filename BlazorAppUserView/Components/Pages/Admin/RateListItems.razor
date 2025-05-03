@@ -3,9 +3,9 @@
 @inject BillService BillService
 @rendermode InteractiveServer
 
-<div class="container">
+<div class="main-container">
     <div class="search-container">
-        <input type="text" class="search-box" placeholder="Search product..." @bind="SearchQuery" />
+        <input type="text" class="search-box" placeholder="Search product by name " @bind="SearchQuery" />
         <i class="bi bi-search search-icon"></i>
     </div>
 
@@ -19,63 +19,70 @@
         }
     </div>
 
-    <div class="product-grid">
-        @if (FilteredItems.Any())
-        {
-            @foreach (var item in FilteredItems)
+    <div class="product-grid-container">
+        <div class="product-grid">
+            @if (FilteredItems.Any())
             {
-                <div class="product-card" @onclick="() => AddToBill(item)">
-                    <div class="card-image">
-                        @if (!string.IsNullOrEmpty(item.ImageUrl))
-                        {
-                            <img src="@item.ImageUrl" alt="@item.Name" />
-                        }
-                        else
-                        {
-                            <i class="bi bi-box-seam default-icon"></i>
-                        }
-                    </div>
-                    <div class="card-body">
-                        <h5>@item.Name</h5>
-                        <div class="card-footer">
-                            <span class="price">$@item.BasePrice.ToString("0.00")</span>
-                            <div class="add-icon">
-                                <i class="bi bi-plus-circle"></i>
+                @foreach (var item in FilteredItems)
+                {
+                    <div class="product-card" @onclick="() => AddToBill(item)">
+                        <div class="card-image">
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" alt="@item.Name" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-box-seam default-icon"></i>
+                            }
+                        </div>
+                        <div class="card-body">
+                            <h5>@item.Name</h5>
+                            
+                            <div class="card-footer">
+                                <span class="price">$@item.BasePrice.ToString("0.00")</span>
+                                <div class="add-icon">
+                                    <i class="bi bi-plus-circle"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
+                }
+            }
+            else
+            {
+                <div class="no-items">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <p>No products found</p>
                 </div>
             }
-        }
-        else
-        {
-            <div class="no-items">
-                <i class="bi bi-exclamation-circle"></i>
-                <p>No products found</p>
-            </div>
-        }
+        </div>
     </div>
 </div>
 
 <style>
     /* Base Styles */
-    .container {
+    .main-container {
         padding: 1rem;
         max-width: 1200px;
         margin: 0 auto;
+        height: 95vh;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Courier New', monospace;
     }
 
     /* Search */
     .search-container {
         position: relative;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
 
     .search-box {
         width: 100%;
         padding: 0.75rem 1rem 0.75rem 2.5rem;
         border: 1px solid #e0e0e0;
-        border-radius: 50px;
+        border-radius: 4px;
         font-size: 0.9rem;
         transition: all 0.3s ease;
     }
@@ -100,14 +107,19 @@
         gap: 0.5rem;
         overflow-x: auto;
         padding-bottom: 0.5rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
+        scrollbar-width: none; /* For Firefox */
     }
+
+        .category-buttons::-webkit-scrollbar {
+            display: none; /* For Chrome/Safari */
+        }
 
     .category-btn {
         padding: 0.5rem 1rem;
-        border: 1px solid #e0e0e0;
-        border-radius: 50px;
-        background: white;
+        border: none;
+        border-radius: 4px;
+        background: #f1f1f1;
         color: #495057;
         font-size: 0.8rem;
         white-space: nowrap;
@@ -119,29 +131,37 @@
         .category-btn:hover {
             background: #007bff;
             color: white;
-            border-color: #007bff;
         }
+
+    /* Product Grid Container */
+    .product-grid-container {
+        flex: 1;
+        overflow-y: auto;
+        height: 0; /* Allows flex to control height */
+    }
 
     /* Product Grid */
     .product-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 1rem;
+        padding-bottom: 1rem;
     }
 
     /* Product Card */
     .product-card {
         background: white;
-        border-radius: 10px;
+        border-radius: 4px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         transition: all 0.3s ease;
         cursor: pointer;
+        border: 1px solid #e0e0e0;
     }
 
         .product-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
     .card-image {
@@ -175,6 +195,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-align:center;
+            font-family: 'Courier New', monospace;
         }
 
     .card-footer {
@@ -216,7 +238,7 @@
     /* Responsive */
     @@media (max-width: 768px) {
         .product-grid {
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         }
     }
 

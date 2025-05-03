@@ -4,44 +4,53 @@
 <PageTitle>Admin Dashboard</PageTitle>
 
 <div class="admin-container">
-    <div class="main-layout">
-        <Sidebar />
+    <!-- Top Header -->
+    <header class="admin-header">
+        <div class="header-left">
+            <h4>Dashboard</h4>
+        </div>
+        <div class="header-right">
+            <div class="user-profile">
+                <i class="bi bi-person-circle"></i>
+                <span>Admin</span>
+            </div>
+        </div>
+    </header>
 
-        <div class="content-area ">
+        <div class="content-area" >
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-md-7 p-0">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-white">
-                                <h5 class="mb-0">Rate List Items</h5>
-                            </div>
-                            <div class="card-body">
+                    <div class="col-md-8 p-0">
+                            <div class="card-body p-0">
                                 <RateListItems />
-                            </div>
+                            </div>                        
+                    </div>
+                <div class="col-md-4 p-0 ">
+                    <div class=" border-0 shadow-sm">
+                        <div class="card-body">
+                            <Bills />
                         </div>
                     </div>
-                    <div class="col-md-5 p-0 pl-md-3">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body">
-                                <Bills />
-                            </div>
-                        </div>
-                    </div>
+                </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
 
 <style>
     :root {
-        --header-height: 56px;
+        --header-height: 60px;
         --nav-width: 220px;
-        --nav-collapsed-width: 68px;
+        --nav-collapsed-width: 70px;
         --sidebar-bg: #1a1a1a;
         --white-color: #F7F6FB;
+        --primary-color: #4e73df;
+        --header-bg: #ffffff;
+        --shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
     }
 
+    /* Admin Container */
     .admin-container {
         display: flex;
         flex-direction: column;
@@ -49,32 +58,94 @@
         background-color: #f8f9fa;
     }
 
-    .main-layout {
+    /* Header Styles */
+    .admin-header {
+        height: var(--header-height);
+        background: var(--header-bg);
+        box-shadow: var(--shadow);
         display: flex;
-        flex: 1;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .sidebar-toggle {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        color: #6e707e;
+        cursor: pointer;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+    }
+
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6e707e;
+    }
+
+   
     .content-area {
         flex: 1;
-        padding: 1rem;
+        padding: 1.5rem;
         transition: margin-left 0.3s ease;
-        margin-left: var(--nav-width);
+        overflow-y: auto;
+        height: calc(100vh - var(--header-height));
+    }
+
+    /* Card styling */
+    .card {
+        border-radius: 0.35rem;
+        height: 100%;
+    }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,.1);
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+    }
+
+    .card-body {
+        padding: 0;
     }
 
     /* Responsive adjustments */
     @@media (max-width: 768px) {
         .content-area {
             margin-left: 0;
+            padding: 1rem;
+        }
+
+        .admin-header {
+            padding: 0 1rem;
+        }
+
+        .row {
+            flex-direction: column;
+        }
+
+        .col-md-7, .col-md-5 {
+            width: 100%;
+            padding: 0 !important;
+        }
+
+        .col-md-5 {
+            margin-top: 1rem;
         }
     }
-
-    /* Card styling */
-    .card {
-        border-radius: 0.5rem;
-    }
-
-    .card-header {
-        border-bottom: 1px solid rgba(0,0,0,.1);
-        font-weight: 600;
-    }
 </style>
+
