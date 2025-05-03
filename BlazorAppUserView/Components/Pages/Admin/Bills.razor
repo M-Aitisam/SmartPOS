@@ -150,6 +150,7 @@
                 <span class="product-name">Name</span>
                 <span class="product-qty">Qt.</span>
                 <span class="product-price">Price</span>
+                <span style="width: 40px;">Action</span> <!-- Empty column for delete button alignment -->
             </div>
 
             @if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
@@ -167,6 +168,11 @@
                             </div>
                         </div>
                         <div class="col-price">@item.BasePrice.ToString("0")</div>
+                        <div style="width: 40px; text-align: center;">
+                            <button class="btn btn-sm btn-outline-danger delete-btn" @onclick="() => ConfirmDelete(item)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 }
             }
@@ -224,18 +230,29 @@
 @if (ShowDeleteModal)
 {
     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-        <div style="background: white; padding: 20px; max-width: 400px;">
-            <h3>Remove Item</h3>
-            <p>Are you sure you want to remove <strong>@(SelectedItem?.Name)</strong> from the bill?</p>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-                <button @onclick="CancelDelete" style="padding: 5px 10px; background: #ddd; border: none; cursor: pointer;">Cancel</button>
-                <button @onclick="DeleteItem" style="padding: 5px 10px; background: #f44336; color: white; border: none; cursor: pointer;">Remove</button>
+        <div style="background: white; padding: 20px; max-width: 400px; border-radius: 5px;">
+            <h3>Remove Items</h3>
+            <p>What would you like to do with <strong>@(SelectedItem?.Name)</strong>?</p>
+
+            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+                <button @onclick="RemoveOneQuantity"
+                        style="padding: 8px 15px; background: #f44336; color: white; border: none; cursor: pointer; width: 100%;">
+                    Remove 1 Quantity (Current: @SelectedItem?.Quantity)
+                </button>
+
+                <button @onclick="RemoveAllQuantities"
+                        style="padding: 8px 15px; background: #d32f2f; color: white; border: none; cursor: pointer; width: 100%;">
+                    Remove ALL Quantities (Delete Item)
+                </button>
+
+                <button @onclick="CancelDelete"
+                        style="padding: 8px 15px; background: #ddd; border: none; cursor: pointer; width: 100%; margin-top: 10px;">
+                    Cancel
+                </button>
             </div>
         </div>
     </div>
 }
-
-<!-- Payment Modal -->
 @if (ShowPaymentModal)
 {
     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
@@ -326,16 +343,24 @@
         ShowDeleteModal = true;
     }
 
-    private async Task DeleteItem()
+   private async Task RemoveOneQuantity()
     {
         if (SelectedItem != null)
         {
-            await BillService.RemoveItemAsync(SelectedItem);
-            SelectedItem = null;
-            await InvokeAsync(StateHasChanged);
+            await BillService.RemoveItemAsync(SelectedItem); // This decreases quantity by 1
         }
         ShowDeleteModal = false;
     }
+    private async Task RemoveAllQuantities()
+    {
+        if (SelectedItem != null)
+        {
+            await BillService.RemoveItemCompletelyAsync(SelectedItem); // This removes entire item
+        }
+        ShowDeleteModal = false;
+    }
+
+
 
     private void CancelDelete()
     {

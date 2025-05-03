@@ -192,5 +192,18 @@ namespace ClassLibraryServices
                 await NotifyStateChangedAsync(); // Use this instead of directly calling OnChange
             }
         }
+        
+        // Add this method to your BillService class
+        public async Task RemoveItemCompletelyAsync(RateItem item)
+        {
+            var existingItem = SelectedItems.FirstOrDefault(i =>
+                i.Name?.Equals(item.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+
+            if (existingItem != null)
+            {
+                SelectedItems.Remove(existingItem);
+                await NotifyStateChangedAsync();
+            }
+        }
     }
 }
