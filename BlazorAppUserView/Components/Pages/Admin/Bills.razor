@@ -21,6 +21,7 @@
 
     /* Content area that will scroll */
     .receipt-content {
+        /* padding-right:10px; */
         flex: 1;
         overflow-y: auto;
         display: flex;
@@ -62,22 +63,47 @@
 
     .product-row {
         display: flex;
-        justify-content: space-between;
-        margin-bottom: 5px;
+        margin: 3px 0;
+        padding: 0 10px;
     }
 
-    .product-name {
-        flex: 2;
+    .col-number {
+        width: 110px;
+        text-align: left;
     }
 
-    .product-qty {
+    .col-name {
         flex: 1;
+        text-align: left;
+        padding-left: 5px;
+    }
+
+    .col-qty {
+        width: 10px;
         text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
-    .product-price {
-        flex: 1;
+    .col-price {
+        width: 160px;
         text-align: right;
+       margin-left:3px;
+    }
+
+    .qty-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .qty-btn {
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-weight: bold;
+        padding: 0 5px;
     }
 
     /* Scrollable product list */
@@ -85,14 +111,15 @@
         max-height: 25rem; /* Fixed height for product list */
         overflow-y: auto; /* Scroll when content exceeds height */
         margin-bottom: 20px;
-        border: 1px solid #eee;
         padding: 0 5px;
         flex-shrink: 0; /* Prevent shrinking */
     }
 
     .product-list-header {
+        border-bottom: 3px solid #eee;
         font-weight: bold;
         margin-bottom: 5px;
+        padding: 0 10px;
         position: sticky;
         top: 0;
         background: white;
@@ -130,14 +157,16 @@
                 @foreach (var (item, index) in BillService.SelectedItems.Select((item, index) => (item, index + 1)))
                 {
                     <div class="product-row">
-                        <span>@index</span>
-                        <span class="product-name">@item.Name</span>
-                        <span class="product-qty quantity-control">
-                            <button @onclick="() => DecreaseQuantity(item)" style="border: none; background: none; cursor: pointer;">-</button>
-                            @item.Quantity
-                            <button @onclick="() => IncreaseQuantity(item)" style="border: none; background: none; cursor: pointer;">+</button>
-                        </span>
-                        <span class="product-price">@item.BasePrice.ToString("0")</span>
+                        <div class="col-number">@index</div>
+                        <div class="col-name">@item.Name</div>
+                        <div class="col-qty">
+                            <div class="qty-control">
+                                <button class="qty-btn" @onclick="() => DecreaseQuantity(item)">-</button>
+                                @item.Quantity
+                                <button class="qty-btn" @onclick="() => IncreaseQuantity(item)">+</button>
+                            </div>
+                        </div>
+                        <div class="col-price">@item.BasePrice.ToString("0")</div>
                     </div>
                 }
             }
@@ -149,7 +178,7 @@
             }
         </div>
 
-        <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+        @* /* <div style="border-top: 1px dashed #000; margin: 10px 0;"></div> */ *@
 
         <div class="receipt-footer">
             <div class="receipt-line">
