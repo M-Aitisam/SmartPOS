@@ -1,5 +1,7 @@
-﻿using System.Text.Json;
+﻿using System.Net.NetworkInformation;
+using System.Text.Json;
 using ClassLibraryEntities;
+using ClassLibraryServices;
 
 namespace ClassLibraryServices
 {
@@ -16,11 +18,113 @@ namespace ClassLibraryServices
 
         public BillService()
         {
-            rateItemsFilePath = Path.Combine(AppContext.BaseDirectory, "Dal", "RateItems.json");
+            rateItemsFilePath = Path.Combine(AppContext.BaseDirectory, "ClassLibraryDal", "RateItems.json");
             EnsureDirectoryExists();
             LoadRateItemsFromFile();
         }
 
+        // Add this method to notify components of state changes
+        public void NotifyStateChanged()
+        {
+            OnChange?.Invoke();
+        }
+
+        // Add this method to update rate items from Product page
+        public void UpdateRateItemsFromProducts(List<Product> products, List<Category> categories)
+        {
+            var newRateItems = products
+                .Where(p => p.IsActive)
+                .Select(p => new RateItem
+                {
+                    Name = p.ProductTitle,
+                    BasePrice = p.ProductPrice,
+                    ImageUrl = p.ImageUrl,
+                    IsActive = p.IsActive,
+                    Category = categories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName ?? "Uncategorized"
+                })
+                .ToList();
+
+            RateItems = newRateItems;
+            SaveRateItemsToFile();
+            NotifyStateChanged();
+        }
+
+        // Add this method to get all active rate items
+        public List<RateItem> GetActiveRateItems()
+        {
+            return RateItems.Where(i => i.IsActive).ToList();
+        }
+
+        // Add this method to find rate items by category
+        public List<RateItem> GetRateItemsByCategory(string category)
+        {
+            return RateItems
+                .Where(i => i.IsActive &&
+                           (category == "All" || (i.Category ?? "") == category))
+                .ToList();
+        }
+
+        // Add this method to get all unique categories from rate items
+        public List<string> GetAllCategories()
+        {
+            return new List<string> { "All" }
+                .Concat(RateItems
+                    .Where(i => !string.IsNullOrEmpty(i.Category))
+                    .Select(i => i.Category!)
+                    .Distinct())
+                .ToList();
+        }
+
+        // Modified version of your existing AddRateItemAsync
+        public async Task AddRateItemAsync(RateItem item)
+        {
+            ArgumentNullException.ThrowIfNull(item);
+
+            // Check if item already exists (case-insensitive comparison)
+            var existingItem = RateItems.FirstOrDefault(r =>
+                r.Name?.Equals(item.Name, StringComparison.OrdinalIgnoreCase) ?? false);
+
+            if (existingItem != null)
+            {
+                // Update existing item
+                existingItem.BasePrice = item.BasePrice;
+                existingItem.ImageUrl = item.ImageUrl;
+                existingItem.IsActive = item.IsActive;
+                existingItem.Category = item.Category;
+            }
+            else
+            {
+                // Add new item
+                RateItems.Add(item);
+            }
+
+            SaveRateItemsToFile();
+            await NotifyStateChangedAsync();
+        }
+
+        // Modified version of your existing RemoveRateItemAsync
+        public async Task RemoveRateItemAsync(string productName)
+        {
+            var rateItem = RateItems.FirstOrDefault(x =>
+                x.Name?.Equals(productName, StringComparison.OrdinalIgnoreCase) ?? false);
+
+            if (rateItem != null)
+            {
+                RateItems.Remove(rateItem);
+                SaveRateItemsToFile();
+                await NotifyStateChangedAsync();
+            }
+        }
+
+        // Modified version of your existing UpdateRateItems
+        public void UpdateRateItems(List<RateItem> items)
+        {
+            RateItems = items ?? throw new ArgumentNullException(nameof(items));
+            SaveRateItemsToFile();
+            NotifyStateChanged();
+        }
+
+        // Rest of your existing methods remain the same...
         public RateItem? GetRateItemByName(string name) =>
             RateItems.FirstOrDefault(r => r.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
 
@@ -56,12 +160,12 @@ namespace ClassLibraryServices
                     Quantity = 1,
                     Category = item.Category,
                     IsActive = item.IsActive
-                    // Copy all other properties
                 };
                 SelectedItems.Add(newItem);
             }
             await NotifyStateChangedAsync();
         }
+
         public async Task RemoveItemAsync(RateItem item)
         {
             var existingItem = SelectedItems.FirstOrDefault(i =>
@@ -79,34 +183,6 @@ namespace ClassLibraryServices
                 SelectedItems.Remove(existingItem);
             }
             await NotifyStateChangedAsync();
-        }
-
-        public async Task AddRateItemAsync(RateItem item)
-        {
-            ArgumentNullException.ThrowIfNull(item);
-
-            if (RateItems.Any(r =>
-                r.Name?.Equals(item.Name, StringComparison.OrdinalIgnoreCase) ?? false))
-            {
-                throw new InvalidOperationException($"Product '{item.Name}' already exists");
-            }
-
-            RateItems.Add(item);
-            SaveRateItemsToFile();
-            await NotifyStateChangedAsync();
-        }
-
-        public async Task RemoveRateItemAsync(string productName)
-        {
-            var rateItem = RateItems.FirstOrDefault(x =>
-                x.Name?.Equals(productName, StringComparison.OrdinalIgnoreCase) ?? false);
-
-            if (rateItem != null)
-            {
-                RateItems.Remove(rateItem);
-                SaveRateItemsToFile();
-                await NotifyStateChangedAsync();
-            }
         }
 
         public async Task ClearAllItemsAsync()
@@ -138,12 +214,6 @@ namespace ClassLibraryServices
             }
         }
 
-        public void UpdateRateItems(List<RateItem> items)
-        {
-            RateItems = items ?? throw new ArgumentNullException(nameof(items));
-            SaveRateItemsToFile();
-        }
-
         private async Task NotifyStateChangedAsync()
         {
             if (OnChange != null)
@@ -171,7 +241,6 @@ namespace ClassLibraryServices
             }
             catch (Exception)
             {
-                // Log error here
                 RateItems = new List<RateItem>();
             }
         }
@@ -184,16 +253,16 @@ namespace ClassLibraryServices
                 Directory.CreateDirectory(directory);
             }
         }
+
         public async Task ClearCart()
         {
             if (SelectedItems != null)
             {
                 SelectedItems.Clear();
-                await NotifyStateChangedAsync(); // Use this instead of directly calling OnChange
+                await NotifyStateChangedAsync();
             }
         }
-        
-        // Add this method to your BillService class
+
         public async Task RemoveItemCompletelyAsync(RateItem item)
         {
             var existingItem = SelectedItems.FirstOrDefault(i =>

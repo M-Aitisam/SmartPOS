@@ -257,23 +257,33 @@
 
         newProduct.CategoryID = selectedCategoryId;
 
+        // Get the category name for the RateItem
+        var categoryName = StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId)?.CategoryName ?? "Uncategorized";
+
         if (editingProduct == null)
         {
+            // Add to ProductList
             ProductList.Add(newProduct);
+
+            // Add to RateItems with category
             await BillService.AddRateItemAsync(new RateItem
                 {
                     Name = newProduct.ProductTitle,
                     BasePrice = newProduct.ProductPrice,
                     ImageUrl = newProduct.ImageUrl,
-                    IsActive = newProduct.IsActive
+                    IsActive = newProduct.IsActive,
+                    Category = categoryName // Add category information
                 });
         }
         else
         {
+            // Update existing product
             var index = ProductList.IndexOf(editingProduct);
             if (index != -1)
             {
                 ProductList[index] = newProduct;
+
+                // Update RateItem
                 var existingItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
                 if (existingItem != null)
                 {
@@ -281,6 +291,7 @@
                     existingItem.BasePrice = newProduct.ProductPrice;
                     existingItem.ImageUrl = newProduct.ImageUrl;
                     existingItem.IsActive = newProduct.IsActive;
+                    existingItem.Category = categoryName;
                 }
             }
         }
@@ -288,7 +299,9 @@
         await SaveProductsToFile();
         newProduct = new Product();
         editingProduct = null;
-        UpdateRateItems();
+
+        // Notify components that rate items have changed
+        BillService.NotifyStateChanged();
     }
 
     private async Task DeleteProduct(Product product)

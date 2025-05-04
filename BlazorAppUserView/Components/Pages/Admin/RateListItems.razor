@@ -2,6 +2,8 @@
 @using System.Collections.Generic
 @inject BillService BillService
 @rendermode InteractiveServer
+@using ClassLibraryServices
+@inject ClassLibraryServices.StateContainerService StateContainer
 
 <div class="main-container">
     <div class="search-container">
@@ -262,16 +264,19 @@
     private string SearchQuery { get; set; } = "";
     private string SelectedCategory { get; set; } = "All";
 
-    private List<string> Categories = new() { "All", "Drink", "Fast Food", "Indian", "Italian", "Chinese" };
+    private List<string> Categories =>
+         new List<string> { "All" }.Concat(
+             StateContainer.Categories?.Select(c => c.CategoryName) ?? Enumerable.Empty<string>()
+         ).ToList();
 
     private IEnumerable<RateItem> FilteredItems =>
-        (BillService.RateItems ?? new List<RateItem>())
-        .Where(i => i.IsActive &&
-                   (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
-                   (string.IsNullOrEmpty(SearchQuery) ||
-                    (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
-        .OrderBy(i => i.Name)
-        .ToList();
+         (BillService.RateItems ?? new List<RateItem>())
+         .Where(i => i.IsActive &&
+                    (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
+                    (string.IsNullOrEmpty(SearchQuery) ||
+                     (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
+         .OrderBy(i => i.Name)
+         .ToList();
 
     protected override void OnInitialized()
     {
