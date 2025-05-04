@@ -1,0 +1,26 @@
+[
+    {
+        "ProductTitle": "Coffee",
+        "ProductCode": "2001",
+        "ProductPrice": 10,
+        "IsActive": true,
+        "ImageUrl": "/Images/coffee.png",
+        "IsSelected": false
+    },
+    {
+        "ProductTitle": "Coffee",
+        "ProductCode": "23",
+        "ProductPrice": 200,
+        "IsActive": true,
+        "ImageUrl": "/Images/coffee.png",
+        "IsSelected": false
+    },
+    {
+        "ProductTitle": "Coffee",
+        "ProductCode": "2000",
+        "ProductPrice": 22,
+        "IsActive": false,
+        "ImageUrl": "/Images/coffee.png",
+        "IsSelected": false
+    }
+]

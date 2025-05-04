@@ -349,7 +349,7 @@
 
     private async Task LoadProducts()
     {
-        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Dal", "Product.json");
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClassLibraryDal", "Product.json");
         if (File.Exists(filePath))
         {
             var json = await File.ReadAllTextAsync(filePath);
@@ -360,7 +360,7 @@
 
     private async Task SaveProductsToFile()
     {
-        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Dal", "Product.json");
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClassLibraryDal", "Product.json");
         var json = JsonSerializer.Serialize(ProductList);
         await File.WriteAllTextAsync(filePath, json);
     }

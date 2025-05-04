@@ -1,0 +1,26 @@
+[
+    {
+        "Name": "Coffee",
+        "BasePrice": 10,
+        "Price": 0,
+        "Quantity": 1,
+        "IsActive": true,
+        "ImageUrl": "/Images/coffee.png"
+    },
+    {
+        "Name": "Coffee",
+        "BasePrice": 200,
+        "Price": 0,
+        "Quantity": 1,
+        "IsActive": true,
+        "ImageUrl": "/Images/coffee.png"
+    },
+    {
+        "Name": "Coffee",
+        "BasePrice": 22,
+        "Price": 0,
+        "Quantity": 1,
+        "IsActive": true,
+        "ImageUrl": "/Images/coffee.png"
+    }
+]
