@@ -8,7 +8,7 @@ namespace ClassLibraryEntities
         public string? ProductTitle { get; set; }
         public string? ProductCode { get; set; }
         public decimal ProductPrice { get; set; }
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
         public string? ImageUrl { get; set; }
         public bool IsSelected { get; set; }
 

@@ -15,9 +15,12 @@ namespace ClassLibraryServices
 
         public async Task<List<BusinessCategory>> GetCategoriesAsync()
         {
-            return await _context.BusinessCategories.ToListAsync();
+            return await _context.BusinessCategories
+                .Include(c => c.SubItems)
+                    .ThenInclude(s => s.NestedSubItems)
+                .AsNoTracking()
+                .ToListAsync();
         }
-
 
         public async Task<bool> AddCategoryAsync(BusinessCategory category)
         {
@@ -35,10 +38,45 @@ namespace ClassLibraryServices
         {
             foreach (var category in categories)
             {
-                _context.Entry(category).State = EntityState.Modified;
+                var existingCategory = await _context.BusinessCategories
+                    .Include(c => c.SubItems)
+                        .ThenInclude(si => si.NestedSubItems)
+                    .FirstOrDefaultAsync(c => c.CategoryID == category.CategoryID);
+
+                if (existingCategory != null)
+                {
+                    existingCategory.CategoryName = category.CategoryName;
+
+                    foreach (var updatedSub in category.SubItems)
+                    {
+                        var existingSub = existingCategory.SubItems
+                            .FirstOrDefault(s => s.SubItemID == updatedSub.SubItemID);
+
+                        if (existingSub != null)
+                        {
+                            existingSub.SubItemName = updatedSub.SubItemName;
+                            existingSub.Price = updatedSub.Price;
+
+                            foreach (var updatedNested in updatedSub.NestedSubItems)
+                            {
+                                var existingNested = existingSub.NestedSubItems
+                                    .FirstOrDefault(n => n.SubItemID == updatedNested.SubItemID);
+
+                                if (existingNested != null)
+                                {
+                                    existingNested.SubItemName = updatedNested.SubItemName;
+                                    existingNested.Price = updatedNested.Price;
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
             await _context.SaveChangesAsync();
         }
+
+
 
 
 

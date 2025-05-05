@@ -194,6 +194,7 @@
     private bool isDropdownOpen = false;
 
     private List<Product> FilteredProducts => ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadImages();
@@ -207,7 +208,8 @@
         }
 
 
-        UpdateRateItems();
+        await UpdateRateItems();
+        
     }
 
     private async Task LoadImages()
@@ -250,58 +252,60 @@
         newProduct.ImageUrl = imageUrl;
         isDropdownOpen = false;
     }
-
     private async Task AddProduct()
     {
-        if (selectedCategoryId == 0) return;
-
-        newProduct.CategoryID = selectedCategoryId;
-
-        // Get the category name for the RateItem
-        var categoryName = StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId)?.CategoryName ?? "Uncategorized";
-
-        if (editingProduct == null)
+        if (selectedCategoryId > 0)
         {
-            // Add to ProductList
-            ProductList.Add(newProduct);
+            newProduct.CategoryID = selectedCategoryId;
+            var category = StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
 
-            // Add to RateItems with category
-            await BillService.AddRateItemAsync(new RateItem
-                {
-                    Name = newProduct.ProductTitle,
-                    BasePrice = newProduct.ProductPrice,
-                    ImageUrl = newProduct.ImageUrl,
-                    IsActive = newProduct.IsActive,
-                    Category = categoryName // Add category information
-                });
-        }
-        else
-        {
-            // Update existing product
-            var index = ProductList.IndexOf(editingProduct);
-            if (index != -1)
+            if (editingProduct == null)
             {
-                ProductList[index] = newProduct;
+                // Add to product list
+                newProduct.IsActive = true;
+                ProductList.Add(newProduct);
 
-                // Update RateItem
-                var existingItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
-                if (existingItem != null)
+                // Create or update rate item
+                var rateItem = new RateItem
+                    {
+                        Name = newProduct.ProductTitle,
+                        BasePrice = newProduct.ProductPrice,
+                        ImageUrl = newProduct.ImageUrl,
+                        IsActive = newProduct.IsActive,
+                        Category = category?.CategoryName ?? "Uncategorized"
+                    };
+
+                // Add to BillService
+                await BillService.AddRateItemAsync(rateItem);
+            }
+            else
+            {
+                // Update existing product
+                var index = ProductList.IndexOf(editingProduct);
+                if (index != -1)
                 {
-                    existingItem.Name = newProduct.ProductTitle;
-                    existingItem.BasePrice = newProduct.ProductPrice;
-                    existingItem.ImageUrl = newProduct.ImageUrl;
-                    existingItem.IsActive = newProduct.IsActive;
-                    existingItem.Category = categoryName;
+                    ProductList[index] = newProduct;
+
+                    // Update rate item
+                    var existingItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
+                    if (existingItem != null)
+                    {
+                        existingItem.Name = newProduct.ProductTitle;
+                        existingItem.BasePrice = newProduct.ProductPrice;
+                        existingItem.ImageUrl = newProduct.ImageUrl;
+                        existingItem.IsActive = newProduct.IsActive;
+                        existingItem.Category = category?.CategoryName ?? "Uncategorized";
+
+                        // Notify changes
+                        await BillService.NotifyStateChangedAsync();
+                    }
                 }
             }
+
+            await SaveProductsToFile();
+            newProduct = new Product();
+            editingProduct = null;
         }
-
-        await SaveProductsToFile();
-        newProduct = new Product();
-        editingProduct = null;
-
-        // Notify components that rate items have changed
-        BillService.NotifyStateChanged();
     }
 
     private async Task DeleteProduct(Product product)
@@ -314,8 +318,18 @@
 
     private async Task ToggleActiveStatus(Product product)
     {
+        // Toggle the status
+        product.IsActive = !product.IsActive;
+
+        // Save to file
         await SaveProductsToFile();
-        UpdateRateItems();
+
+        // Update rate items
+        await UpdateRateItems();
+
+
+        // Force UI update
+        StateHasChanged();
     }
 
     private void EditProduct(Product product)
@@ -331,8 +345,11 @@
             };
     }
 
-    private void UpdateRateItems()
+   
+    private async Task UpdateRateItems()
     {
+        // Log rate items after update
+        Console.WriteLine($"Rate items updated: {BillService.RateItems.Count}");
         var activeItems = ProductList
             .Where(p => p.IsActive)
             .Select(p => new RateItem
@@ -340,28 +357,51 @@
                     Name = p.ProductTitle,
                     BasePrice = p.ProductPrice,
                     ImageUrl = p.ImageUrl,
-                    IsActive = p.IsActive
+                    IsActive = p.IsActive,
+                    Category = StateContainer.Categories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName ?? "Uncategorized"
                 })
             .ToList();
-
         BillService.UpdateRateItems(activeItems);
+        await BillService.SaveRateItemsToFile();
+        await BillService.NotifyStateChangedAsync();
     }
+
 
     private async Task LoadProducts()
     {
         var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClassLibraryDal", "Product.json");
         if (File.Exists(filePath))
         {
-            var json = await File.ReadAllTextAsync(filePath);
-            ProductList = JsonSerializer.Deserialize<List<Product>>(json) ?? new List<Product>();
-        }
-    }
+            try
+            {
+                var json = await File.ReadAllTextAsync(filePath);
+                ProductList = JsonSerializer.Deserialize<List<Product>>(json) ?? new List<Product>();
 
+                await UpdateRateItems();
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading products: {ex.Message}");
+                ProductList = new List<Product>();
+            }
+        }
+
+    }
 
     private async Task SaveProductsToFile()
     {
         var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClassLibraryDal", "Product.json");
-        var json = JsonSerializer.Serialize(ProductList);
-        await File.WriteAllTextAsync(filePath, json);
+        try
+        {
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            var json = JsonSerializer.Serialize(ProductList, options);
+            await File.WriteAllTextAsync(filePath, json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving products: {ex.Message}");
+            // Consider adding user notification here
+        }
     }
 }

@@ -1,26 +1,20 @@
 [
     {
-        "Name": "Coffee",
+        "Name": "Black Coffee",
         "BasePrice": 10,
-        "Price": 0,
+        "Price": 10,
         "Quantity": 1,
         "IsActive": true,
-        "ImageUrl": "/Images/coffee.png"
+        "ImageUrl": "/Images/coffee.png",
+        "Category": "Hot Drinks"
     },
     {
-        "Name": "Coffee",
+        "Name": "Premium Coffee",
         "BasePrice": 200,
-        "Price": 0,
+        "Price": 200,
         "Quantity": 1,
         "IsActive": true,
-        "ImageUrl": "/Images/coffee.png"
-    },
-    {
-        "Name": "Coffee",
-        "BasePrice": 22,
-        "Price": 0,
-        "Quantity": 1,
-        "IsActive": true,
-        "ImageUrl": "/Images/coffee.png"
+        "ImageUrl": "/Images/premium-coffee.png",
+        "Category": "Hot Drinks"
     }
 ]

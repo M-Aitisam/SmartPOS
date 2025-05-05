@@ -1,26 +1,29 @@
 [
     {
-        "ProductTitle": "Coffee",
+        "ProductTitle": "Black Coffee",
         "ProductCode": "2001",
         "ProductPrice": 10,
         "IsActive": true,
         "ImageUrl": "/Images/coffee.png",
-        "IsSelected": false
+        "IsSelected": false,
+        "CategoryID": 1
     },
     {
-        "ProductTitle": "Coffee",
-        "ProductCode": "23",
+        "ProductTitle": "Premium Coffee",
+        "ProductCode": "2002",
         "ProductPrice": 200,
         "IsActive": true,
-        "ImageUrl": "/Images/coffee.png",
-        "IsSelected": false
+        "ImageUrl": "/Images/premium-coffee.png",
+        "IsSelected": false,
+        "CategoryID": 1
     },
     {
-        "ProductTitle": "Coffee",
-        "ProductCode": "2000",
+        "ProductTitle": "Iced Coffee",
+        "ProductCode": "2003",
         "ProductPrice": 22,
         "IsActive": false,
-        "ImageUrl": "/Images/coffee.png",
-        "IsSelected": false
+        "ImageUrl": "/Images/iced-coffee.png",
+        "IsSelected": false,
+        "CategoryID": 2
     }
 ]
