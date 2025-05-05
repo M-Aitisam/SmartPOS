@@ -1,0 +1,196 @@
+﻿@page "/menu"
+@using ClassLibraryEntities
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+@inject StateContainerService StateContainer
+@rendermode InteractiveServer
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <Sidebar />
+        <div class="card-body">
+            <h3 class="card-title text-primary mb-4">Weekly Menu Management</h3>
+
+            <!-- Days of Week Tabs -->
+            <div class="d-flex mb-4 overflow-auto">
+                @foreach (var day in daysOfWeek)
+                {
+                    <button class="btn @(selectedDay == day ? "btn-primary" : "btn-outline-primary") mx-1"
+                            @onclick="() => SelectDay(day)">
+                        @day
+                    </button>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(selectedDay))
+            {
+                <div class="row g-3">
+                    <!-- Category Selection -->
+                    <div class="col-md-4">
+                        <label class="form-label">Select Category:</label>
+                        <select class="form-select" @bind="selectedCategoryId">
+                            <option value="0">-- Select Category --</option>
+                            @foreach (var category in businessCategories)
+                            {
+                                <option value="@category.CategoryID">@category.CategoryName</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                @if (selectedCategoryId > 0)
+                {
+                    <div class="mt-4">
+                        <h5 class="text-primary mb-3">Products in Category</h5>
+
+                        @if (FilteredProducts.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Active</th>
+                                            <th>Product Name</th>
+                                            <th>Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var product in FilteredProducts)
+                                        {
+                                            var isActiveForDay = IsProductActiveForDay(product.ProductID, selectedDay);
+                                            <tr>
+                                                <td>
+                                                    <div class="form-check form-switch">
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               checked="@isActiveForDay"
+                                                               @onchange="async e => await ToggleProductForDay(product.ProductID, selectedDay, e.Value)" />
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    @product.ProductTitle
+                                                </td>
+                                                <td>
+                                                    @product.ProductPrice.ToString("C")
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">No products found in this category.</div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">Please select a day to manage its menu.</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string selectedDay = "";
+    private int selectedCategoryId = 0;
+    private List<Product> ProductList { get; set; } = new();
+    private List<BusinessCategory> businessCategories { get; set; } = new();
+    private Dictionary<string, Dictionary<int, bool>> dailyMenu = new();
+
+    private List<string> daysOfWeek = new List<string>
+    {
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+    };
+
+    private List<Product> FilteredProducts => ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductsFromDatabase();
+        await LoadBusinessCategories();
+        InitializeDailyMenu();
+    }
+
+    private async Task LoadProductsFromDatabase()
+    {
+        try
+        {
+            ProductList = await ProductService.GetAllProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading products from database: {ex.Message}");
+        }
+    }
+
+    private async Task LoadBusinessCategories()
+    {
+        try
+        {
+            businessCategories = await CategoryService.GetCategoriesAsync();
+            if (StateContainer.Categories == null || !StateContainer.Categories.Any())
+            {
+                // If StateContainer expects BusinessCategory, no conversion needed
+                StateContainer.Categories = businessCategories;
+
+                // OR if you need to convert from BusinessCategory to Category:
+                // StateContainer.Categories = businessCategories
+                //     .Select(bc => new Category
+                //     {
+                //         CategoryID = bc.CategoryID,
+                //         CategoryName = bc.CategoryName
+                //         // Map other properties as needed
+                //     }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading categories: {ex.Message}");
+        }
+    }
+
+    private void InitializeDailyMenu()
+    {
+        foreach (var day in daysOfWeek)
+        {
+            dailyMenu[day] = new Dictionary<int, bool>();
+
+            foreach (var product in ProductList)
+            {
+                dailyMenu[day][product.ProductID] = false;
+            }
+        }
+    }
+
+    private void SelectDay(string day)
+    {
+        selectedDay = day;
+        selectedCategoryId = 0;
+    }
+
+    private bool IsProductActiveForDay(int productId, string day)
+    {
+        if (dailyMenu.TryGetValue(day, out var dayProducts))
+        {
+            return dayProducts.TryGetValue(productId, out var isActive) && isActive;
+        }
+        return false;
+    }
+
+    private async Task ToggleProductForDay(int productId, string day, object isChecked)
+    {
+        bool newValue = (bool)isChecked;
+
+        if (dailyMenu.TryGetValue(day, out var dayProducts))
+        {
+            dayProducts[productId] = newValue;
+            // await SaveMenuConfiguration();
+        }
+
+        StateHasChanged();
+    }
+}
