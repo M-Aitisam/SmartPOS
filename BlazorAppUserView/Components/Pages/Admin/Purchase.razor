@@ -32,7 +32,7 @@ else
         {
             <div class="mb-3 border p-2">
                 <p><strong>@product.SubItemName</strong> - ₹@product.Price</p>
-                <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(new Product { Id = product.SubItemID, Name = product.SubItemName, Price = product.Price })">Add to Cart</button>
+                <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(new Product { ProductID = product.SubItemID, Name = product.SubItemName, Price = product.Price })">Add to Cart</button>
 
                 @if (product.NestedSubItems != null && product.NestedSubItems.Any())
                 {
@@ -138,7 +138,7 @@ else
 
     private void AddToCart(Product product)
     {
-        var existingItem = cartItems.FirstOrDefault(i => i.ProductId == product.Id);
+        var existingItem = cartItems.FirstOrDefault(i => i.ProductId == product.ProductID);
         if (existingItem != null)
         {
             existingItem.Quantity++;
@@ -147,7 +147,7 @@ else
         {
             cartItems.Add(new CartItem
                 {
-                    ProductId = product.Id,
+                    ProductId = product.ProductID,
                     ProductName = product.Name,
                     UnitPrice = product.Price,
                     Quantity = 1
@@ -163,7 +163,7 @@ else
             var nested = parentItem.NestedSubItems?.FirstOrDefault(s => s.SubItemID == subId);
             if (nested != null)
             {
-                AddToCart(new Product { Id = nested.SubItemID, Name = $"{parentItem.SubItemName} > {nested.SubItemName}", Price = nested.Price });
+                AddToCart(new Product { ProductID = nested.SubItemID, Name = $"{parentItem.SubItemName} > {nested.SubItemName}", Price = nested.Price });
             }
         }
     }

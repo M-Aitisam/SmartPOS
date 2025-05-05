@@ -12,7 +12,7 @@ namespace ClassLibraryEntities
         public string? ImageUrl { get; set; }
         public bool IsSelected { get; set; }
 
-        public int Id { get; set; }
+        public int ProductID { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
 

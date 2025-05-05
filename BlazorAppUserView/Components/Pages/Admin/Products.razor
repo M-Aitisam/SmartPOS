@@ -7,6 +7,7 @@
 @inject StateContainerService StateContainer
 @inject ICategoryService CategoryService
 @inject IWebHostEnvironment WebHostEnvironment
+@inject IProductService ProductService
 @rendermode InteractiveServer
 
 <div class="container mt-4">
@@ -184,8 +185,8 @@
         </div>
     </div>
 </div>
-@code {
 
+@code {
     private int selectedCategoryId = 0;
     private List<Product> ProductList { get; set; } = new();
     private Product newProduct { get; set; } = new();
@@ -198,18 +199,14 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadImages();
-        await LoadProducts();
-
+        await LoadProductsFromDatabase();
 
         if (StateContainer.Categories == null || !StateContainer.Categories.Any())
         {
-            // Fetch categories from the database
             StateContainer.Categories = await CategoryService.GetCategoriesAsync();
         }
 
-
         await UpdateRateItems();
-        
     }
 
     private async Task LoadImages()
@@ -219,20 +216,13 @@
             var imagesPath = Path.Combine(WebHostEnvironment.WebRootPath, "Images");
             if (Directory.Exists(imagesPath))
             {
-                var imageFiles = Directory.GetFiles(imagesPath, "*.*", SearchOption.AllDirectories)
+                ImageUrls = Directory.GetFiles(imagesPath, "*.*", SearchOption.AllDirectories)
                     .Where(file => file.ToLower().EndsWith(".png") ||
                                    file.ToLower().EndsWith(".jpg") ||
                                    file.ToLower().EndsWith(".jpeg") ||
                                    file.ToLower().EndsWith(".gif"))
-                    .ToList();
-
-                ImageUrls = imageFiles
                     .Select(file => file.Replace(WebHostEnvironment.WebRootPath, "").Replace("\\", "/"))
                     .ToList();
-            }
-            else
-            {
-                Console.WriteLine("Images directory not found.");
             }
         }
         catch (Exception ex)
@@ -241,6 +231,17 @@
         }
     }
 
+    private async Task LoadProductsFromDatabase()
+    {
+        try
+        {
+            ProductList = await ProductService.GetAllProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading products from database: {ex.Message}");
+        }
+    }
 
     private void ToggleDropdown()
     {
@@ -252,107 +253,104 @@
         newProduct.ImageUrl = imageUrl;
         isDropdownOpen = false;
     }
-    private async Task AddProduct()
-    {
-        if (selectedCategoryId > 0)
-        {
-            newProduct.CategoryID = selectedCategoryId;
-            var category = StateContainer.Categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
 
+    private async Task AddProduct()  // Changed from HandleProductSubmit to match your form
+    {
+        if (selectedCategoryId <= 0) return;
+
+        newProduct.CategoryID = selectedCategoryId;
+        
+        try
+        {
             if (editingProduct == null)
             {
-                // Add to product list
-                newProduct.IsActive = true;
-                ProductList.Add(newProduct);
+                // Add new product to database
+                var addedProduct = await ProductService.AddProductAsync(newProduct);
 
-                // Create or update rate item
-                var rateItem = new RateItem
-                    {
-                        Name = newProduct.ProductTitle,
-                        BasePrice = newProduct.ProductPrice,
-                        ImageUrl = newProduct.ImageUrl,
-                        IsActive = newProduct.IsActive,
-                        Category = category?.CategoryName ?? "Uncategorized"
-                    };
-
-                // Add to BillService
-                await BillService.AddRateItemAsync(rateItem);
+                ProductList.Add(addedProduct);
             }
             else
             {
-                // Update existing product
-                var index = ProductList.IndexOf(editingProduct);
+                // Update existing product in database
+                var updatedProduct = await ProductService.UpdateProductAsync(newProduct);
+                var index = ProductList.FindIndex(p => p.ProductID == updatedProduct.ProductID); // Changed from ProductID to Id
                 if (index != -1)
                 {
-                    ProductList[index] = newProduct;
-
-                    // Update rate item
-                    var existingItem = BillService.RateItems.FirstOrDefault(x => x.Name == editingProduct.ProductTitle);
-                    if (existingItem != null)
-                    {
-                        existingItem.Name = newProduct.ProductTitle;
-                        existingItem.BasePrice = newProduct.ProductPrice;
-                        existingItem.ImageUrl = newProduct.ImageUrl;
-                        existingItem.IsActive = newProduct.IsActive;
-                        existingItem.Category = category?.CategoryName ?? "Uncategorized";
-
-                        // Notify changes
-                        await BillService.NotifyStateChangedAsync();
-                    }
+                    ProductList[index] = updatedProduct;
                 }
             }
 
-            await SaveProductsToFile();
-            newProduct = new Product();
-            editingProduct = null;
+            await UpdateRateItems();
+            ResetForm();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving product: {ex.Message}");
         }
     }
 
     private async Task DeleteProduct(Product product)
     {
-        ProductList.Remove(product);
-        await BillService.RemoveRateItemAsync(product.ProductTitle);
-        await SaveProductsToFile();
-        UpdateRateItems();
+        try
+        {
+            // Delete from database
+            bool success = await ProductService.DeleteProductAsync(product.ProductID); // Changed from ProductID to Id
+            
+            if (success)
+            {
+                ProductList.Remove(product);
+                await BillService.RemoveRateItemAsync(product.ProductTitle);
+                await UpdateRateItems();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting product: {ex.Message}");
+        }
     }
 
     private async Task ToggleActiveStatus(Product product)
     {
-        // Toggle the status
-        product.IsActive = !product.IsActive;
-
-        // Save to file
-        await SaveProductsToFile();
-
-        // Update rate items
-        await UpdateRateItems();
-
-
-        // Force UI update
-        StateHasChanged();
+        try
+        {
+            product.IsActive = !product.IsActive;
+            await ProductService.UpdateProductAsync(product);
+            await UpdateRateItems();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error toggling product status: {ex.Message}");
+        }
     }
 
     private void EditProduct(Product product)
     {
         editingProduct = product;
         newProduct = new Product
-            {
-                ProductTitle = product.ProductTitle,
-                ProductPrice = product.ProductPrice,
-                ImageUrl = product.ImageUrl,
-                IsActive = product.IsActive,
-                CategoryID = product.CategoryID
-            };
+        {
+                ProductID = product.ProductID, // Changed from ProductID to Id
+            ProductTitle = product.ProductTitle,
+            ProductPrice = product.ProductPrice,
+            ImageUrl = product.ImageUrl,
+            IsActive = product.IsActive,
+            CategoryID = product.CategoryID
+        };
     }
 
-   
+    private void ResetForm()
+    {
+        newProduct = new Product();
+        editingProduct = null;
+    }
+
     private async Task UpdateRateItems()
     {
-        // Log rate items after update
-        Console.WriteLine($"Rate items updated: {BillService.RateItems.Count}");
-        var activeItems = ProductList
-            .Where(p => p.IsActive)
-            .Select(p => new RateItem
+        try
+        {
+            var activeItems = ProductList
+                .Where(p => p.IsActive)
+                .Select(p => new RateItem
                 {
                     Name = p.ProductTitle,
                     BasePrice = p.ProductPrice,
@@ -360,48 +358,14 @@
                     IsActive = p.IsActive,
                     Category = StateContainer.Categories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName ?? "Uncategorized"
                 })
-            .ToList();
-        BillService.UpdateRateItems(activeItems);
-        await BillService.SaveRateItemsToFile();
-        await BillService.NotifyStateChangedAsync();
-    }
+                .ToList();
 
-
-    private async Task LoadProducts()
-    {
-        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClassLibraryDal", "Product.json");
-        if (File.Exists(filePath))
-        {
-            try
-            {
-                var json = await File.ReadAllTextAsync(filePath);
-                ProductList = JsonSerializer.Deserialize<List<Product>>(json) ?? new List<Product>();
-
-                await UpdateRateItems();
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading products: {ex.Message}");
-                ProductList = new List<Product>();
-            }
-        }
-
-    }
-
-    private async Task SaveProductsToFile()
-    {
-        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClassLibraryDal", "Product.json");
-        try
-        {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(ProductList, options);
-            await File.WriteAllTextAsync(filePath, json);
+            BillService.UpdateRateItems(activeItems);
+            await BillService.NotifyStateChangedAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving products: {ex.Message}");
-            // Consider adding user notification here
+            Console.WriteLine($"Error updating rate items: {ex.Message}");
         }
     }
 }

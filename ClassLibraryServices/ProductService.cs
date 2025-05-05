@@ -10,10 +10,9 @@ namespace ClassLibraryServices
         private readonly AppDbContext _context;
         private readonly StateContainerService _stateContainer;
 
-        // Add StateContainerService to constructor
         public ProductService(IDBOperations dbOperations,
-                            AppDbContext context,
-                            StateContainerService stateContainer)
+                              AppDbContext context,
+                              StateContainerService stateContainer)
         {
             _dbOperations = dbOperations;
             _context = context;
@@ -28,13 +27,12 @@ namespace ClassLibraryServices
                 .AsNoTracking()
                 .ToListAsync();
 
-            _stateContainer.Products = products; // Update state container
+            _stateContainer.Products = products;
             return products;
         }
 
-        public async Task AddProductAsync(Product product)
+        public async Task<Product> AddProductAsync(Product product)
         {
-            // Validate category exists
             var category = await _context.BusinessCategories
                 .FirstOrDefaultAsync(c => c.CategoryID == product.CategoryID);
 
@@ -43,12 +41,45 @@ namespace ClassLibraryServices
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-
-            // Refresh the product list
             await GetAllProductsAsync();
+
+            return product; // Return the added product
         }
 
-        // Optional: Get products by category
+        public async Task<Product> UpdateProductAsync(Product product)
+        {
+            var existingProduct = await _context.Products
+                .FirstOrDefaultAsync(p => p.ProductID == product.ProductID);
+
+            if (existingProduct == null)
+                throw new Exception("Product not found");
+
+            existingProduct.ProductTitle = product.ProductTitle;
+            existingProduct.ProductPrice = product.ProductPrice;
+            existingProduct.ImageUrl = product.ImageUrl;
+            existingProduct.IsActive = product.IsActive;
+            existingProduct.CategoryID = product.CategoryID;
+
+            await _context.SaveChangesAsync();
+            await GetAllProductsAsync();
+
+            return existingProduct; // Return the updated product
+        }
+
+        public async Task<bool> DeleteProductAsync(int productId)
+        {
+            var product = await _context.Products
+                .FirstOrDefaultAsync(p => p.ProductID == productId);
+
+            if (product == null)
+                return false;
+
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync();
+            await GetAllProductsAsync();
+            return true;
+        }
+
         public async Task<List<Product>> GetProductsByCategoryAsync(int categoryId)
         {
             return await _context.Products
