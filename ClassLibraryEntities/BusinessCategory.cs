@@ -6,7 +6,7 @@ namespace ClassLibraryEntities
     {
         [Key] 
         public int CategoryID { get; set; }
-
+        public string? UrduName { get; set; }
         public string CategoryName { get; set; } = string.Empty;
 
         public List<BusinessSubItem> SubItems { get; set; } = new();

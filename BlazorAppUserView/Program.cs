@@ -37,6 +37,12 @@ builder.Services.AddAntiforgery();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddHttpClient("Default", client =>
+{
+    var baseUrl = builder.Configuration["BaseUrl"] ?? builder.Environment.WebRootPath;
+    client.BaseAddress = new Uri(baseUrl);
+});
+
 var app = builder.Build();
 
 // ✅ Ensure the database exists and is migrated properly

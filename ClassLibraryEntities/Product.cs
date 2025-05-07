@@ -4,7 +4,7 @@ namespace ClassLibraryEntities
 {
     public class Product
     {
-
+        public string? ProductUrduName { get; set; }
         public string? ProductTitle { get; set; }
         public string? ProductCode { get; set; }
         public decimal ProductPrice { get; set; }

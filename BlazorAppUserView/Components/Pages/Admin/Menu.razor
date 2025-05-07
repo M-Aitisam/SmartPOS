@@ -2,7 +2,8 @@
 @using ClassLibraryEntities
 @inject IProductService ProductService
 @inject ICategoryService CategoryService
-@inject StateContainerService StateContainer
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <div class="container mt-4">
@@ -11,7 +12,6 @@
         <div class="card-body">
             <h3 class="card-title text-primary mb-4">Weekly Menu Management</h3>
 
-            <!-- Days of Week Tabs -->
             <div class="d-flex mb-4 overflow-auto">
                 @foreach (var day in daysOfWeek)
                 {
@@ -25,14 +25,18 @@
             @if (!string.IsNullOrEmpty(selectedDay))
             {
                 <div class="row g-3">
-                    <!-- Category Selection -->
-                    <div class="col-md-4">
-                        <label class="form-label">Select Category:</label>
+                    <div class="col-md-6">
+                        <label class="form-label">Select Category</label>
                         <select class="form-select" @bind="selectedCategoryId">
                             <option value="0">-- Select Category --</option>
                             @foreach (var category in businessCategories)
                             {
-                                <option value="@category.CategoryID">@category.CategoryName</option>
+                                <option value="@category.CategoryID">
+                                    @category.CategoryName -
+                                    <span style="direction: rtl; unicode-bidi: bidi-override;">
+                                        @category.UrduName
+                                    </span>
+                                </option>
                             }
                         </select>
                     </div>
@@ -50,8 +54,9 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th>Active</th>
-                                            <th>Product Name</th>
+                                            <th>Product Name (English/Urdu)</th>
                                             <th>Price</th>
+                                            <th>Image</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -69,9 +74,25 @@
                                                 </td>
                                                 <td>
                                                     @product.ProductTitle
+                                                    @if (!string.IsNullOrEmpty(product.ProductUrduName))
+                                                    {
+                                                        <text>/</text>
+                                                        <span style="direction: rtl; unicode-bidi: bidi-override;">
+                                                            @product.ProductUrduName
+                                                        </span>
+                                                    }
+                                                    <button class="btn btn-sm btn-link" @onclick="async () => await AutoTranslateProduct(product)">
+                                                        <i class="fas fa-language"></i>
+                                                    </button>
                                                 </td>
                                                 <td>
                                                     @product.ProductPrice.ToString("C")
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                                    {
+                                                        <img src="@product.ImageUrl" alt="@product.ProductTitle" style="max-height: 50px;" />
+                                                    }
                                                 </td>
                                             </tr>
                                         }
@@ -81,14 +102,14 @@
                         }
                         else
                         {
-                            <div class="alert alert-info">No products found in this category.</div>
+                            <div class="alert alert-info">No products found in this category</div>
                         }
                     </div>
                 }
             }
             else
             {
-                <div class="alert alert-info">Please select a day to manage its menu.</div>
+                <div class="alert alert-info">Please select a day to manage its menu</div>
             }
         </div>
     </div>
@@ -100,19 +121,21 @@
     private List<Product> ProductList { get; set; } = new();
     private List<BusinessCategory> businessCategories { get; set; } = new();
     private Dictionary<string, Dictionary<int, bool>> dailyMenu = new();
+    private Product newProduct = new();
 
-    private List<string> daysOfWeek = new List<string>
+    private List<string> daysOfWeek = new()
     {
         "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     };
 
-    private List<Product> FilteredProducts => ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
+    private List<Product> FilteredProducts =>
+        ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProductsFromDatabase();
         await LoadBusinessCategories();
-        InitializeDailyMenu();
+        InitializeDailyMenu(); // <-- CALL THIS ONLY AFTER ProductList is filled
     }
 
     private async Task LoadProductsFromDatabase()
@@ -123,7 +146,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading products from database: {ex.Message}");
+            Console.WriteLine($"Error loading products: {ex.Message}");
         }
     }
 
@@ -132,20 +155,6 @@
         try
         {
             businessCategories = await CategoryService.GetCategoriesAsync();
-            if (StateContainer.Categories == null || !StateContainer.Categories.Any())
-            {
-                // If StateContainer expects BusinessCategory, no conversion needed
-                StateContainer.Categories = businessCategories;
-
-                // OR if you need to convert from BusinessCategory to Category:
-                // StateContainer.Categories = businessCategories
-                //     .Select(bc => new Category
-                //     {
-                //         CategoryID = bc.CategoryID,
-                //         CategoryName = bc.CategoryName
-                //         // Map other properties as needed
-                //     }).ToList();
-            }
         }
         catch (Exception ex)
         {
@@ -158,10 +167,9 @@
         foreach (var day in daysOfWeek)
         {
             dailyMenu[day] = new Dictionary<int, bool>();
-
             foreach (var product in ProductList)
             {
-                dailyMenu[day][product.ProductID] = false;
+                dailyMenu[day][product.ProductID] = true; // Default to active
             }
         }
     }
@@ -174,23 +182,55 @@
 
     private bool IsProductActiveForDay(int productId, string day)
     {
-        if (dailyMenu.TryGetValue(day, out var dayProducts))
-        {
-            return dayProducts.TryGetValue(productId, out var isActive) && isActive;
-        }
-        return false;
+        return dailyMenu.TryGetValue(day, out var dayProducts) &&
+               dayProducts.TryGetValue(productId, out var isActive) &&
+               isActive;
     }
 
     private async Task ToggleProductForDay(int productId, string day, object isChecked)
     {
-        bool newValue = (bool)isChecked;
-
-        if (dailyMenu.TryGetValue(day, out var dayProducts))
+        if (bool.TryParse(isChecked?.ToString(), out var newValue))
         {
-            dayProducts[productId] = newValue;
-            // await SaveMenuConfiguration();
+            if (dailyMenu.TryGetValue(day, out var dayProducts))
+            {
+                dayProducts[productId] = newValue;
+            }
         }
-
         StateHasChanged();
+    }
+
+    private async Task AutoTranslateProduct(Product product)
+    {
+        try
+        {
+            var apiUrl = "https://libretranslate.de/translate";
+            var request = new
+            {
+                q = product.ProductTitle,
+                source = "en",
+                target = "ur"
+            };
+
+            var response = await Http.PostAsJsonAsync(apiUrl, request);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<TranslationResult>();
+                if (!string.IsNullOrEmpty(result?.translatedText))
+                {
+                    product.ProductUrduName = result.translatedText;
+                    await ProductService.UpdateProductAsync(product);
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Translation error: {ex.Message}");
+        }
+    }
+
+    private class TranslationResult
+    {
+        public string? translatedText { get; set; }
     }
 }
