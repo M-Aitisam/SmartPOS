@@ -6,8 +6,19 @@
 @inject ClassLibraryServices.StateContainerService StateContainer
 
 <div class="main-container">
+    <!-- Day Selector -->
+    <div class="day-selector mb-3">
+        @foreach (var day in daysOfWeek)
+        {
+            <button class="btn @(currentViewDay == day ? "btn-primary" : "btn-outline-primary")"
+                    @onclick="() => ChangeViewDay(day)">
+                @day
+            </button>
+        }
+    </div>
+
     <div class="search-container">
-        <input type="text" class="search-box" placeholder="Search product by name " @bind="SearchQuery" />
+        <input type="text" class="search-box" placeholder="Search product by name" @bind="SearchQuery" />
         <i class="bi bi-search search-icon"></i>
     </div>
 
@@ -31,7 +42,7 @@
                         <div class="card-image">
                             @if (!string.IsNullOrEmpty(item.ImageUrl))
                             {
-                                <img src="@item.ImageUrl" alt="@item.Name" />
+                                <img src="@item.ImageUrl" alt="@item.Name" class="product-image" />
                             }
                             else
                             {
@@ -40,9 +51,12 @@
                         </div>
                         <div class="card-body">
                             <h5>@item.Name</h5>
-                            
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <p class="product-description">@item.Description</p>
+                            }
                             <div class="card-footer">
-                                <span class="price">$@item.BasePrice.ToString("0.00")</span>
+                                <span class="price">@item.BasePrice.ToString("C")</span>
                                 <div class="add-icon">
                                     <i class="bi bi-plus-circle"></i>
                                 </div>
@@ -55,7 +69,7 @@
             {
                 <div class="no-items">
                     <i class="bi bi-exclamation-circle"></i>
-                    <p>No products found</p>
+                    <p>No products found for @currentViewDay</p>
                 </div>
             }
         </div>
@@ -66,13 +80,26 @@
     /* Base Styles */
     .main-container {
         padding: 1rem;
-        max-width: 1200px;
-        margin: 0 auto;
+        /* max-width: 1200px; */
+        margin: 0 0;
         height: 95vh;
         display: flex;
         flex-direction: column;
         font-family: 'Courier New', monospace;
     }
+
+    /* Day Selector */
+    .day-selector {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        scrollbar-width: none;
+    }
+
+        .day-selector::-webkit-scrollbar {
+            display: none;
+        }
 
     /* Search */
     .search-container {
@@ -110,11 +137,11 @@
         overflow-x: auto;
         padding-bottom: 0.5rem;
         margin-bottom: 1rem;
-        scrollbar-width: none; /* For Firefox */
+        scrollbar-width: none;
     }
 
         .category-buttons::-webkit-scrollbar {
-            display: none; /* For Chrome/Safari */
+            display: none;
         }
 
     .category-btn {
@@ -139,7 +166,7 @@
     .product-grid-container {
         flex: 1;
         overflow-y: auto;
-        height: 0; /* Allows flex to control height */
+        height: 0;
     }
 
     /* Product Grid */
@@ -159,6 +186,8 @@
         transition: all 0.3s ease;
         cursor: pointer;
         border: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
     }
 
         .product-card:hover {
@@ -181,6 +210,12 @@
             object-fit: contain;
         }
 
+    .product-image {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
     .default-icon {
         font-size: 2rem;
         color: #adb5bd;
@@ -188,6 +223,9 @@
 
     .card-body {
         padding: 0.75rem;
+        flex-grow: 1;
+        /* display: flex; */
+        flex-direction: column;
     }
 
         .card-body h5 {
@@ -197,14 +235,26 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-align:center;
+            text-align: center;
             font-family: 'Courier New', monospace;
         }
+
+    .product-description {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
     .card-footer {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-top: auto;
     }
 
     .price {
@@ -249,39 +299,53 @@
             grid-template-columns: repeat(2, 1fr);
         }
 
+        .day-selector,
         .category-buttons {
             gap: 0.25rem;
         }
 
-        .category-btn {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.7rem;
-        }
+            .day-selector button,
+            .category-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.7rem;
+            }
     }
 </style>
 
 @code {
     private string SearchQuery { get; set; } = "";
     private string SelectedCategory { get; set; } = "All";
+    private string currentViewDay = DateTime.Now.DayOfWeek.ToString();
+
+    private List<string> daysOfWeek = new()
+    {
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+    };
 
     private List<string> Categories =>
-         new List<string> { "All" }.Concat(
-             StateContainer.Categories?.Select(c => c.CategoryName) ?? Enumerable.Empty<string>()
-         ).ToList();
+        new List<string> { "All" }.Concat(
+            StateContainer.Categories?.Select(c => c.CategoryName) ?? Enumerable.Empty<string>()
+        ).ToList();
 
     private IEnumerable<RateItem> FilteredItems =>
-         (BillService.RateItems ?? new List<RateItem>())
-         .Where(i => i.IsActive &&
-                    (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
-                    (string.IsNullOrEmpty(SearchQuery) ||
-                     (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
-         .OrderBy(i => i.Name)
-         .ToList();
-
+        (BillService.RateItems ?? new List<RateItem>())
+        .Where(i => i.IsActive &&
+               (i.ActiveDays?.Split(',').Contains(currentViewDay) ?? false) &&
+               (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
+               (string.IsNullOrEmpty(SearchQuery) ||
+                (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
+        .OrderBy(i => i.Name)
+        .ToList();
 
     protected override void OnInitialized()
     {
         BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
+    }
+
+    private void ChangeViewDay(string day)
+    {
+        currentViewDay = day;
+        StateHasChanged();
     }
 
     private async Task AddToBill(RateItem item)

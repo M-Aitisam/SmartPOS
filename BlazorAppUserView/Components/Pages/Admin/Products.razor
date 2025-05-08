@@ -12,7 +12,7 @@
 
 <div class="container mt-4">
     <div class="card shadow-sm">
-        <Sidebar/>
+        <Sidebar />
         <div class="card-body">
             <h3 class="card-title text-primary mb-4">Product Management</h3>
 
@@ -23,58 +23,9 @@
                         <option value="0">-- Select Category --</option>
                         @foreach (var category in StateContainer.Categories)
                         {
-                            <!-- Use category.CategoryID (database-generated ID) -->
                             <option value="@category.CategoryID">@category.CategoryName</option>
                         }
                     </select>
-
-                    @*    <div class="row"> *@
-                    @*     <div class="col-md-2"> *@
-                    @*         <InputText id="productTitle" class="form-control" placeholder="Enter Product Title" @bind-Value="newProduct.ProductTitle" /> *@
-                    @*     </div> *@
-                    @*     <div class="col-md-2"> *@
-                    @*         <InputText id="productCode" class="form-control" placeholder="Enter Product Code" @bind-Value="newProduct.ProductCode" /> *@
-                    @*     </div> *@
-                    @*     <div class="col-md-2"> *@
-                    @*         <InputNumber id="productPrice" class="form-control" placeholder="Enter Price" @bind-Value="newProduct.ProductPrice" /> *@
-                    @*     </div> *@
-                    @*     <div class="col-md-2"> *@
-                    @*         <div class="dropdown"> *@
-                    @*             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" @onclick="ToggleDropdown"> *@
-                    @*                 @if (string.IsNullOrEmpty(newProduct.ImageUrl)) *@
-                    @*                 { *@
-                    @*                     <span>Select Image</span> *@
-                    @*                 } *@
-                    @*                 else *@
-                    @*                 { *@
-                    @*                     <img src="@newProduct.ImageUrl" alt="Selected Image" style="width: 20px; height: 20px; margin-right: 10px;" /> *@
-                    @*                     <span>@Path.GetFileName(newProduct.ImageUrl)</span> *@
-                    @*                 } *@
-                    @*             </button> *@
-                    @*             <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none"); max-height: 300px; overflow-y: auto;" aria-labelledby="dropdownMenuButton"> *@
-                    @*                 @foreach (var imgUrl in ImageUrls) *@
-                    @*                 { *@
-                    @*                     <li> *@
-                    @*                         <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)"> *@
-                    @*                             <img src="@imgUrl" alt="@Path.GetFileName(imgUrl)" style="width: 25px; height: 25px; margin-right: 10px;" /> *@
-                    @*                             @Path.GetFileName(imgUrl) *@
-                    @*                         </a> *@
-                    @*                     </li> *@
-                    @*                 } *@
-                    @*             </ul> *@
-                    @*         </div> *@
-                    @*     </div> *@
-                    @*     <div class="col-md-2"> *@
-                    @*         <div class="form-check form-switch"> *@
-                    @*             <InputCheckbox @bind-Value="newProduct.IsActive" class="form-check-input" id="flexSwitchCheckChecked" /> *@
-                    @*             <label class="form-check-label" for="flexSwitchCheckChecked">Is Active</label> *@
-                    @*         </div> *@
-                    @*     </div> *@
-                    @*     <div class="col-md-2"> *@
-                    @*         <button type="submit" class="btn btn-success">Add Product</button> *@
-
-                    @*     </div> *@
-                    @* </div> *@
 
                     @if (selectedCategoryId > 0)
                     {
@@ -154,7 +105,8 @@
                                                     </td>
                                                     <td>
                                                         <div class="form-check form-switch">
-                                                            <InputCheckbox @bind-Value="product.IsActive" class="form-check-input" @onchange="async e => await ToggleActiveStatus(product)" />
+                                                            <InputCheckbox @bind-Value="product.IsActive" class="form-check-input"
+                                                                           @onchange="async e => await ToggleProductStatus(product)" />
                                                             <label class="form-check-label">
                                                                 @(product.IsActive ? "Active" : "Inactive")
                                                             </label>
@@ -164,7 +116,7 @@
                                                         <button class="btn btn-sm btn-warning me-2" @onclick="() => EditProduct(product)">
                                                             <i class="bi bi-pencil"></i>
                                                         </button>
-                                                        <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteProduct(product)" disabled="@product.IsActive">
+                                                        <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteProduct(product)">
                                                             <i class="bi bi-trash"></i>
                                                         </button>
                                                     </td>
@@ -205,8 +157,6 @@
         {
             StateContainer.Categories = await CategoryService.GetCategoriesAsync();
         }
-
-        await UpdateRateItems();
     }
 
     private async Task LoadImages()
@@ -218,9 +168,9 @@
             {
                 ImageUrls = Directory.GetFiles(imagesPath, "*.*", SearchOption.AllDirectories)
                     .Where(file => file.ToLower().EndsWith(".png") ||
-                                   file.ToLower().EndsWith(".jpg") ||
-                                   file.ToLower().EndsWith(".jpeg") ||
-                                   file.ToLower().EndsWith(".gif"))
+                                 file.ToLower().EndsWith(".jpg") ||
+                                 file.ToLower().EndsWith(".jpeg") ||
+                                 file.ToLower().EndsWith(".gif"))
                     .Select(file => file.Replace(WebHostEnvironment.WebRootPath, "").Replace("\\", "/"))
                     .ToList();
             }
@@ -254,33 +204,31 @@
         isDropdownOpen = false;
     }
 
-    private async Task AddProduct()  // Changed from HandleProductSubmit to match your form
+    private async Task AddProduct()
     {
         if (selectedCategoryId <= 0) return;
 
         newProduct.CategoryID = selectedCategoryId;
-        
+        newProduct.IsActive = false; // Default to inactive
+        newProduct.ActiveDays = ""; // Start with no days selected
+
         try
         {
             if (editingProduct == null)
             {
-                // Add new product to database
                 var addedProduct = await ProductService.AddProductAsync(newProduct);
-
                 ProductList.Add(addedProduct);
             }
             else
             {
-                // Update existing product in database
                 var updatedProduct = await ProductService.UpdateProductAsync(newProduct);
-                var index = ProductList.FindIndex(p => p.ProductID == updatedProduct.ProductID); // Changed from ProductID to Id
+                var index = ProductList.FindIndex(p => p.ProductID == updatedProduct.ProductID);
                 if (index != -1)
                 {
                     ProductList[index] = updatedProduct;
                 }
             }
 
-            await UpdateRateItems();
             ResetForm();
         }
         catch (Exception ex)
@@ -293,14 +241,11 @@
     {
         try
         {
-            // Delete from database
-            bool success = await ProductService.DeleteProductAsync(product.ProductID); // Changed from ProductID to Id
-            
+            bool success = await ProductService.DeleteProductAsync(product.ProductID);
             if (success)
             {
                 ProductList.Remove(product);
                 await BillService.RemoveRateItemAsync(product.ProductTitle);
-                await UpdateRateItems();
             }
         }
         catch (Exception ex)
@@ -309,13 +254,12 @@
         }
     }
 
-    private async Task ToggleActiveStatus(Product product)
+    private async Task ToggleProductStatus(Product product)
     {
         try
         {
             product.IsActive = !product.IsActive;
             await ProductService.UpdateProductAsync(product);
-            await UpdateRateItems();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -328,44 +272,20 @@
     {
         editingProduct = product;
         newProduct = new Product
-        {
-                ProductID = product.ProductID, // Changed from ProductID to Id
-            ProductTitle = product.ProductTitle,
-            ProductPrice = product.ProductPrice,
-            ImageUrl = product.ImageUrl,
-            IsActive = product.IsActive,
-            CategoryID = product.CategoryID
-        };
+            {
+                ProductID = product.ProductID,
+                ProductTitle = product.ProductTitle,
+                ProductPrice = product.ProductPrice,
+                ImageUrl = product.ImageUrl,
+                IsActive = product.IsActive,
+                CategoryID = product.CategoryID,
+                ActiveDays = product.ActiveDays
+            };
     }
 
     private void ResetForm()
     {
         newProduct = new Product();
         editingProduct = null;
-    }
-
-    private async Task UpdateRateItems()
-    {
-        try
-        {
-            var activeItems = ProductList
-                .Where(p => p.IsActive)
-                .Select(p => new RateItem
-                {
-                    Name = p.ProductTitle,
-                    BasePrice = p.ProductPrice,
-                    ImageUrl = p.ImageUrl,
-                    IsActive = p.IsActive,
-                    Category = StateContainer.Categories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName ?? "Uncategorized"
-                })
-                .ToList();
-
-            BillService.UpdateRateItems(activeItems);
-            await BillService.NotifyStateChangedAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error updating rate items: {ex.Message}");
-        }
     }
 }

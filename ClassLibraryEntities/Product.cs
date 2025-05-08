@@ -11,7 +11,7 @@ namespace ClassLibraryEntities
         public bool IsActive { get; set; } = true;
         public string? ImageUrl { get; set; }
         public bool IsSelected { get; set; }
-
+        public string ActiveDays { get; set; } = "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday";
         public int ProductID { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
