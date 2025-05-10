@@ -15,7 +15,14 @@
     <title>Sidebar With Bootstrap</title>
     <style>
 
-
+        .wrapper,
+        #sidebar,
+        .main,
+        .navbar,
+        aside {
+            box-shadow: none !important;
+            filter: none !important; /* Removes any shadow filters */
+        }
         *,
         ::after,
         ::before {
@@ -25,7 +32,7 @@
 
         h3 {
             font-size: 1.2375rem;
-            color: #FFF;
+            color: black;
         }
 
         a {
@@ -44,16 +51,21 @@
             align-items: stretch;
             display: flex;
             width: 100%;
+            box-shadow: none !important;
         }
 
         #sidebar {
             max-width: 264px;
             min-width: 264px;
             transition: all 0.35s ease-in-out;
-            box-shadow: 0 0 35px 0 rgba(49, 57, 66, 0.5);
             z-index: 1111;
+           
+            -webkit-box-shadow: none !important;
+            -moz-box-shadow: none !important;
+            box-shadow: none !important;
+            background: #2c3e50; /* Example dark color */
+            border-right: 1px solid #1a252f; /* Optional: subtle border instead of shadow */
         }
-
             /* Sidebar collapse */
 
             #sidebar.collapsed {
@@ -123,11 +135,7 @@
 
         /* Responsive */
 
-        @@media (min-width:768px) {
-            .content {
-                width: auto;
-            }
-        }
+        
     </style>
 </head>
 
@@ -231,8 +239,9 @@
         <div class="main">
             <nav class="navbar navbar-expand px-3 border-bottom">
                 <!-- Button for sidebar toggle -->
-                <button class="btn" type="button" data-bs-theme="dark">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="btn border-0 shadow-none" type="button" data-bs-theme="dark"
+                        style="outline: none !important; --bs-btn-focus-box-shadow: none;">
+                    <i class="fas fa-bars fs-4"></i>
                 </button>
             </nav>
             <main>
