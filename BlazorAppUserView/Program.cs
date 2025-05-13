@@ -23,7 +23,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddSingleton<BillService>();
-
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IDBOperations, DBOperations>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();

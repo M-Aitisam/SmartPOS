@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClassLibraryDAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250407070619_AddPendingChanges")]
-    partial class AddPendingChanges
+    [Migration("20250513120144_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -28,12 +28,14 @@ namespace ClassLibraryDAL.Migrations
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
-                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UrduName")
                         .HasColumnType("TEXT");
 
                     b.HasKey("CategoryID");
 
-                    b.ToTable("Categories");
+                    b.ToTable("BusinessCategories", (string)null);
                 });
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessSubItem", b =>
@@ -53,7 +55,6 @@ namespace ClassLibraryDAL.Migrations
 
                     b.Property<string>("SubItemName")
                         .IsRequired()
-                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.HasKey("SubItemID");
@@ -67,11 +68,16 @@ namespace ClassLibraryDAL.Migrations
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessTransaction", b =>
                 {
-                    b.Property<int>("TransactionID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AmountReceived")
+                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("ChangeAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CustomerName")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Discount")
@@ -84,7 +90,20 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<decimal>("PaymentAmount")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StaffName")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("SubTotal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TableNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Tax")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Total")
@@ -93,16 +112,23 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("TransactionID");
+                    b.Property<int>("TransactionID")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
 
                     b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("ClassLibraryEntities.Product", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ProductID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("ActiveDays")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("CategoryID")
                         .HasColumnType("INTEGER");
@@ -135,10 +161,14 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<string>("ProductTitle")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ProductUrduName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("SubCategoryID")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                    b.HasKey("ProductID");
 
                     b.HasIndex("CategoryID");
 
@@ -149,7 +179,7 @@ namespace ClassLibraryDAL.Migrations
 
             modelBuilder.Entity("ClassLibraryEntities.TransactionItem", b =>
                 {
-                    b.Property<int>("TransactionItemID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -163,15 +193,16 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("TransactionID")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("TransactionItemID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("TransactionID");
+                    b.HasIndex("TransactionId");
 
                     b.ToTable("TransactionItems");
                 });
@@ -204,8 +235,7 @@ namespace ClassLibraryDAL.Migrations
 
                     b.HasOne("ClassLibraryEntities.BusinessSubItem", "SubCategory")
                         .WithMany("Products")
-                        .HasForeignKey("SubCategoryID")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("SubCategoryID");
 
                     b.Navigation("Category");
 
@@ -214,11 +244,13 @@ namespace ClassLibraryDAL.Migrations
 
             modelBuilder.Entity("ClassLibraryEntities.TransactionItem", b =>
                 {
-                    b.HasOne("ClassLibraryEntities.BusinessTransaction", null)
+                    b.HasOne("ClassLibraryEntities.BusinessTransaction", "Transaction")
                         .WithMany("Items")
-                        .HasForeignKey("TransactionID")
+                        .HasForeignKey("TransactionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Transaction");
                 });
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessCategory", b =>

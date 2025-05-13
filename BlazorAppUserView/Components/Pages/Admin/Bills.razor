@@ -1,6 +1,7 @@
 ﻿@page "/bills"
 @inject BillService BillService
 @inject NavigationManager NavigationManager
+@inject ITransactionService TransactionService
 @rendermode InteractiveServer
 
 <style>
@@ -9,7 +10,7 @@
         font-family: 'Courier New', monospace;
         margin: 0 auto;
         max-width: 500px;
-        min-height: 90vh; /* Full viewport height */
+        min-height: 80vh; /* Full viewport height */
         padding: 20px;
         background: white;
         /* border: 1px solid #ddd; */
@@ -390,9 +391,27 @@
 
     private async Task ConfirmPayment()
     {
+        var transaction = new BusinessTransaction
+            {
+                Items = BillService.SelectedItems.Select(i => new TransactionItem
+                {
+                    ProductName = i.Name,
+                    UnitPrice = i.BasePrice,
+                    Quantity = i.Quantity
+                }).ToList(),
+                SubTotal = BillService.TotalAmount,
+                Discount = discountAmount,
+                Tax = taxAmount,
+                Total = totalWithTax,
+                PaymentMethod = selectedPaymentMethod,
+                AmountReceived = amountReceived,
+                ChangeAmount = amountReceived - totalWithTax
+            };
+
+        await TransactionService.SaveTransactionAsync(transaction);
         await BillService.ClearCart();
         ShowPaymentModal = false;
-        NavigationManager.NavigateTo("/orders");
+        NavigationManager.NavigateTo("/order-history");
     }
 
     private async Task HoldOrder()

@@ -65,11 +65,16 @@ namespace ClassLibraryDAL.Migrations
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessTransaction", b =>
                 {
-                    b.Property<int>("TransactionID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AmountReceived")
+                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("ChangeAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CustomerName")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Discount")
@@ -82,7 +87,20 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<decimal>("PaymentAmount")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StaffName")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("SubTotal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TableNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Tax")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Total")
@@ -91,7 +109,10 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("TransactionID");
+                    b.Property<int>("TransactionID")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
 
                     b.ToTable("Transactions");
                 });
@@ -155,11 +176,8 @@ namespace ClassLibraryDAL.Migrations
 
             modelBuilder.Entity("ClassLibraryEntities.TransactionItem", b =>
                 {
-                    b.Property<int>("TransactionItemID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("BusinessTransactionTransactionID")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ProductID")
@@ -172,15 +190,16 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("TransactionID")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("TransactionItemID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("BusinessTransactionTransactionID");
+                    b.HasIndex("TransactionId");
 
                     b.ToTable("TransactionItems");
                 });
@@ -222,9 +241,13 @@ namespace ClassLibraryDAL.Migrations
 
             modelBuilder.Entity("ClassLibraryEntities.TransactionItem", b =>
                 {
-                    b.HasOne("ClassLibraryEntities.BusinessTransaction", null)
+                    b.HasOne("ClassLibraryEntities.BusinessTransaction", "Transaction")
                         .WithMany("Items")
-                        .HasForeignKey("BusinessTransactionTransactionID");
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Transaction");
                 });
 
             modelBuilder.Entity("ClassLibraryEntities.BusinessCategory", b =>

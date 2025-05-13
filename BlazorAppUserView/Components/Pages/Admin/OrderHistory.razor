@@ -1,0 +1,177 @@
+﻿@page "/order-history"
+@using System.Globalization
+@inject ITransactionService TransactionService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@implements IDisposable
+@rendermode InteractiveServer
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Order History</h3>
+        <div>
+            <div class="input-group me-2">
+                <input type="month" class="form-control" @bind="selectedMonth" />
+                <input type="date" class="form-control" @bind="selectedDate" />
+                <button class="btn btn-primary" @onclick="FilterTransactions">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" placeholder="Search orders..."
+                   @bind="searchText" @bind:event="oninput" />
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th class="text-end">Subtotal</th>
+                    <th class="text-end">Discount</th>
+                    <th class="text-end">Tax</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Payment</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (transactions == null)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center">Loading transactions...</td>
+                    </tr>
+                }
+                else if (!filteredTransactions.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center">No orders found</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var transaction in filteredTransactions)
+                    {
+                        <tr @onclick="() => ShowTransactionDetails(transaction)"
+                            style="cursor: pointer;">
+                            <td>@transaction.TransactionDate.ToString("g")</td>
+                            <td>@transaction.Items.Sum(i => i.Quantity)</td>
+                            <td class="text-end">@transaction.SubTotal.ToString("C")</td>
+                            <td class="text-end">@transaction.Discount.ToString("C")</td>
+                            <td class="text-end">@transaction.Tax.ToString("C")</td>
+                            <td class="text-end">@transaction.Total.ToString("C")</td>
+                            <td class="text-end">@transaction.PaymentMethod</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@code {
+    private List<BusinessTransaction> transactions = new();
+    private string searchText = string.Empty;
+    private BusinessTransaction? selectedTransaction;
+    private DateTime? selectedDate;
+    private DateTime? selectedMonth;
+
+    private IEnumerable<BusinessTransaction> filteredTransactions => transactions?
+        .Where(t => string.IsNullOrEmpty(searchText) ||
+                   t.Id.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                   (t.CustomerName != null && t.CustomerName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
+                   t.Items.Any(i => i.ProductName.Contains(searchText, StringComparison.OrdinalIgnoreCase)))
+        .OrderByDescending(t => t.TransactionDate) ?? Enumerable.Empty<BusinessTransaction>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTransactions();
+    }
+
+    private async Task LoadTransactions()
+    {
+        DateTime? startDate = selectedMonth?.Date;
+        DateTime? endDate = selectedMonth?.AddMonths(1).AddDays(-1);
+
+        if (selectedDate.HasValue)
+        {
+            startDate = selectedDate.Value.Date;
+            endDate = selectedDate.Value.Date.AddDays(1).AddTicks(-1);
+        }
+
+        transactions = await TransactionService.GetTransactionsByDateAsync(startDate, endDate);
+    }
+
+    private async Task FilterTransactions()
+    {
+        await LoadTransactions();
+    }
+
+    private void ShowTransactionDetails(BusinessTransaction transaction)
+    {
+        selectedTransaction = transaction;
+    }
+
+    private void CloseModal()
+    {
+        selectedTransaction = null;
+    }
+
+    private async Task PrintReceipt(BusinessTransaction transaction)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("printReceipt", transaction.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error printing receipt: {ex.Message}");
+        }
+    }
+
+    private async Task DownloadBills()
+    {
+        try
+        {
+            var csvContent = "Bill ID,Customer,Date,Items,Subtotal,Discount,Total\n";
+            foreach (var t in filteredTransactions)
+            {
+                csvContent += $"{t.Id},\"{t.CustomerName ?? "Walk-in"}\"," +
+                            $"{t.TransactionDate:dd-MM-yyyy HH:mm}," +
+                            $"{t.Items.Sum(i => i.Quantity)}," +
+                            $"{t.SubTotal}," +
+                            $"{t.Discount}," +
+                            $"{t.Total}\n";
+            }
+
+            var fileName = $"Bills_{DateTime.Now:yyyyMMddHHmmss}.csv";
+            await JS.InvokeVoidAsync("downloadCSV", csvContent, fileName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error downloading bills: {ex.Message}");
+        }
+    }
+
+    private async Task PrintBills()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("printBillsList");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error printing bills: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+}

@@ -230,5 +230,19 @@ namespace ClassLibraryServices
                 await NotifyStateChangedAsync();
             }
         }
+
+        // Add this method to your existing BillService
+        public async Task<decimal> CalculateTotalWithTax(decimal discountAmount, bool isPercentageDiscount)
+        {
+            var totalAmount = SelectedItems?.Sum(i => i.BasePrice * i.Quantity) ?? 0m;
+
+            var actualDiscount = isPercentageDiscount
+                ? totalAmount * (discountAmount / 100m)
+                : discountAmount;
+
+            var subtotal = totalAmount - actualDiscount;
+            var tax = subtotal * 0.15m;
+            return subtotal + tax;
+        }
     }
 }

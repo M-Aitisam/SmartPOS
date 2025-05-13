@@ -44,6 +44,13 @@ namespace ClassLibraryDAL
             modelBuilder.Entity<Product>()
                 .Property(p => p.ProductUrduName)
                 .HasMaxLength(255); // Example
+
+
+            modelBuilder.Entity<TransactionItem>()
+          .HasOne(ti => ti.Transaction)
+          .WithMany(bt => bt.Items)
+          .HasForeignKey(ti => ti.TransactionId)
+          .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
