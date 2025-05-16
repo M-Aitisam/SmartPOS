@@ -1,0 +1,639 @@
+﻿@page "/admin/salesreport"
+@using System.Globalization
+@inject ITransactionService TransactionService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@implements IDisposable
+@using System.Text.Json
+@rendermode InteractiveServer
+
+<PageTitle>Sales Report</PageTitle>
+
+<div class="sales-report-container">
+    <div class="header-section">
+        <div class="date-selector">
+            <div class="month-selector">
+                <span>@DateTime.Now.ToString("MMM. yyyy")</span>
+                <button class="export-btn" @onclick="ExportData">Export v</button>
+            </div>
+            <div>
+                <label class="realtime-toggle">
+                    <input type="checkbox" @bind="enableRealtime" />
+                    Live Updates
+                </label>
+            </div>
+        </div>
+
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Gross Sales</h3>
+                <p>@grossSales.ToString("C")</p>
+            </div>
+            <div class="summary-card">
+                <h3>Returns</h3>
+                <p>@returns.ToString("C")</p>
+            </div>
+            <div class="summary-card">
+                <h3>Discounts</h3>
+                <p>(@Math.Abs(discounts).ToString("C")</p>
+            </div>
+            <div class="summary-card">
+                <h3>Net Sales</h3>
+                <p>@netSales.ToString("C")</p>
+            </div>
+            <div class="summary-card">
+                <h3>Gift Card Sales</h3>
+                <p>@giftCardSales.ToString("C")</p>
+            </div>
+            <div class="summary-card">
+                <h3>Tax</h3>
+                <p>@tax.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-section">
+        <div class="chart-container">
+            <h3>@DateTime.Now.ToString("MMM. yyyy").ToUpper()</h3>
+            <div class="chart-wrapper">
+                <canvas id="monthlySalesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>TIME OF DAY</h3>
+            <div class="chart-wrapper">
+                <canvas id="dailySalesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>DAY OF WEEK</h3>
+            <div class="chart-wrapper">
+                <canvas id="weeklySalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="recent-orders">
+        <h3>Recent Orders</h3>
+        <div class="order-list">
+            @foreach (var order in recentOrders.Take(5))
+            {
+                <div class="order-item @(order.IsReturn ? "return-order" : "")">
+                    <span class="order-time">@order.TransactionDate.ToString("HH:mm")</span>
+                    <span class="order-items">@order.Items.Count items</span>
+                    <span class="order-amount">@order.TotalAmount.ToString("C")</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<BusinessTransaction> transactions = new();
+    private List<BusinessTransaction> recentOrders = new();
+    private decimal grossSales;
+    private decimal returns;
+    private decimal discounts;
+    private decimal netSales;
+    private decimal giftCardSales;
+    private decimal tax;
+    private bool enableRealtime = true;
+    private Timer? refreshTimer;
+    private DotNetObjectReference<SalesReport>? objRef;
+    private bool isInitialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        StartAutoRefresh();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isInitialized)
+        {
+            isInitialized = true;
+            objRef = DotNetObjectReference.Create(this);
+            await InitializeCharts();
+            await InitializeSignalR();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        var startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var endDate = DateTime.Now;
+
+        transactions = await TransactionService.GetTransactionsByDateRangeAsync(startDate, endDate);
+        recentOrders = await TransactionService.GetRecentTransactionsAsync();
+
+        CalculateSummaryData();
+    }
+
+    private void CalculateSummaryData()
+    {
+        grossSales = transactions.Where(t => !t.IsReturn).Sum(t => t.TotalAmount);
+        returns = transactions.Where(t => t.IsReturn).Sum(t => t.TotalAmount);
+        discounts = transactions.Sum(t => t.DiscountAmount);
+        netSales = grossSales - returns - discounts;
+        giftCardSales = transactions.Where(t => t.PaymentMethod == "Gift Card").Sum(t => t.TotalAmount);
+        tax = transactions.Sum(t => t.TaxAmount);
+    }
+
+    private async Task InitializeCharts()
+    {
+        try
+        {
+            // Monthly sales data
+            var monthlyData = transactions
+                .GroupBy(t => t.TransactionDate.Day)
+                .OrderBy(g => g.Key)
+                .Select(g => new { Day = g.Key, Amount = g.Sum(t => t.TotalAmount) })
+                .ToList();
+
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                initializeMonthlyChart(
+                {JsonSerializer.Serialize(monthlyData.Select(d => d.Day.ToString()))},
+                {JsonSerializer.Serialize(monthlyData.Select(d => (double)d.Amount))}
+                );
+            ");
+
+            // Daily sales by time
+            var hourlyData = transactions
+                .GroupBy(t => t.TransactionDate.Hour)
+                .OrderBy(g => g.Key)
+                .Select(g => new { Hour = $"{g.Key}:00", Amount = g.Sum(t => t.TotalAmount) })
+                .ToList();
+
+            var hourlyLabels = JsonSerializer.Serialize(hourlyData.Select(d => d.Hour));
+            var hourlyValues = JsonSerializer.Serialize(hourlyData.Select(d => (double)d.Amount));
+
+            await JSRuntime.InvokeVoidAsync("initializeDailyChart", hourlyLabels, hourlyValues);
+
+
+            // Weekly sales by day of week
+            var weeklyData = transactions
+                .GroupBy(t => t.TransactionDate.DayOfWeek)
+                .OrderBy(g => g.Key)
+                .Select(g => new { Day = g.Key.ToString(), Amount = g.Sum(t => t.TotalAmount) })
+                .ToList();
+
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                initializeWeeklyChart(
+                {JsonSerializer.Serialize(weeklyData.Select(d => d.Day))},
+                {JsonSerializer.Serialize(weeklyData.Select(d => (double)d.Amount))}
+                );
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing charts: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                if (typeof setupRealtimeUpdates === 'function') {{
+                    setupRealtimeUpdates({DotNetObjectReference.Create(this)});
+                }}
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing SignalR: {ex.Message}");
+        }
+    }
+
+    private void StartAutoRefresh()
+    {
+        refreshTimer = new Timer(async _ =>
+        {
+            if (enableRealtime)
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadData();
+                    if (isInitialized)
+                    {
+                        await InitializeCharts();
+                    }
+                    StateHasChanged();
+                });
+            }
+        }, null, 0, 5000); // Update every 5 seconds
+    }
+
+    [JSInvokable]
+    public async Task OnNewOrder(BusinessTransaction transaction)
+    {
+        if (enableRealtime)
+        {
+            await InvokeAsync(async () =>
+            {
+                transactions.Add(transaction);
+                recentOrders.Insert(0, transaction);
+
+                if (recentOrders.Count > 20)
+                    recentOrders.RemoveAt(recentOrders.Count - 1);
+
+                CalculateSummaryData();
+                await InitializeCharts();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task ExportData()
+    {
+        try
+        {
+            var csvContent = "Date,Total Sales,Returns,Discounts,Net Sales\n";
+            var dailyData = transactions
+                .GroupBy(t => t.TransactionDate.Date)
+                .OrderBy(g => g.Key);
+
+            foreach (var day in dailyData)
+            {
+                var daySales = day.Where(t => !t.IsReturn).Sum(t => t.TotalAmount);
+                var dayReturns = day.Where(t => t.IsReturn).Sum(t => t.TotalAmount);
+                var dayDiscounts = day.Sum(t => t.DiscountAmount);
+                var dayNet = daySales - dayReturns - dayDiscounts;
+
+                csvContent += $"{day.Key:yyyy-MM-dd},{daySales},{dayReturns},{dayDiscounts},{dayNet}\n";
+            }
+
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                downloadCSV(
+                {JsonSerializer.Serialize(csvContent)},
+                    'SalesReport_{DateTime.Now:yyyyMMdd}.csv'
+                );
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting data: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+        objRef?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}
+
+<script suppress-error="BL9992">
+    // Setup SignalR connection for real-time updates
+    let connection;
+    let monthlyChart, dailyChart, weeklyChart;
+
+    function setupRealtimeUpdates(dotNetHelper) {
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl("/salesHub")
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        connection.on("NewOrder", (transaction) => {
+            dotNetHelper.invokeMethodAsync('OnNewOrder', transaction);
+        });
+
+        connection.start()
+            .then(() => console.log("SignalR Connected"))
+            .catch(err => console.error("SignalR Connection Error: ", err));
+    }
+
+    // Chart initialization functions
+    function initializeMonthlyChart(labels, data) {
+        const ctx = document.getElementById('monthlySalesChart').getContext('2d');
+        if (monthlyChart) {
+            monthlyChart.destroy();
+        }
+        monthlyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sales',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function initializeDailyChart(labels, data) {
+        const ctx = document.getElementById('dailySalesChart').getContext('2d');
+        if (dailyChart) {
+            dailyChart.destroy();
+        }
+        dailyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sales',
+                    data: data,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function initializeWeeklyChart(labels, data) {
+        const ctx = document.getElementById('weeklySalesChart').getContext('2d');
+        if (weeklyChart) {
+            weeklyChart.destroy();
+        }
+        weeklyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sales',
+                    data: data,
+                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function downloadCSV(content, fileName) {
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Ensure required libraries are loaded
+    function loadRequiredScripts() {
+        if (typeof Chart === 'undefined') {
+            const chartScript = document.createElement('script');
+            chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            document.head.appendChild(chartScript);
+        }
+
+        if (typeof signalR === 'undefined') {
+            const signalRScript = document.createElement('script');
+            signalRScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js';
+            document.head.appendChild(signalRScript);
+        }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadRequiredScripts();
+    });
+</script>
+
+<style>
+    .sales-report-container {
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .header-section {
+        margin-bottom: 30px;
+    }
+
+    .date-selector {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .month-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .month-selector span {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+    .export-btn {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .export-btn:hover {
+            background-color: #e9ecef;
+        }
+
+    .realtime-toggle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+    }
+
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .summary-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .summary-card h3 {
+            margin-top: 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .summary-card p {
+            margin-bottom: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+    .chart-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .chart-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+        .chart-container h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+    .chart-wrapper {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+
+    .recent-orders {
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+        .recent-orders h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+    .order-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+        .order-item:hover {
+            background-color: #e9ecef;
+        }
+
+    .return-order {
+        background-color: #fff3f3;
+    }
+
+    .order-time {
+        font-weight: bold;
+        color: #555;
+    }
+
+    .order-items {
+        color: #666;
+    }
+
+    .order-amount {
+        font-weight: bold;
+        color: #2e7d32;
+    }
+
+    .return-order .order-amount {
+        color: #c62828;
+    }
+</style>

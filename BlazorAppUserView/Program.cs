@@ -1,4 +1,6 @@
-﻿using BlazorAppUserView.Components;
+﻿
+using BlazorAppUserView.Components;
+using BlazorAppUserView.Hubs;
 using ClassLibraryDAL;
 using ClassLibraryServices;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +30,7 @@ builder.Services.AddScoped<IDBOperations, DBOperations>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<StateContainerService>();
-
+builder.Services.AddSignalR();
 
 // ✅ Add Antiforgery Services
 builder.Services.AddAntiforgery();
@@ -71,6 +73,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery(); // ✅ Antiforgery Middleware
+app.MapHub<SalesHub>("/salesHub");
 
 // ✅ Map Razor Components (Fix)
 app.MapRazorComponents<App>()

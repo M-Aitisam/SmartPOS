@@ -87,5 +87,35 @@ namespace ClassLibraryServices
                 throw new Exception($"Error retrieving transaction: {ex.Message}", ex);
             }
         }
+        // TransactionService.cs
+        public async Task<List<BusinessTransaction>> GetTransactionsAsync()
+        {
+            return await _context.Transactions
+                .Include(t => t.Items)
+                .OrderByDescending(t => t.TransactionDate)
+                .ToListAsync();
+        }
+        public async Task<List<BusinessTransaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await _context.Transactions
+                .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate)
+                .Include(t => t.Items)
+                .ToListAsync();
+        }
+
+        public async Task<decimal> GetTotalSalesAsync()
+        {
+            return await _context.Transactions
+                .Where(t => !t.IsReturn)
+                .SumAsync(t => t.TotalAmount);
+        }
+
+        public async Task<decimal> GetTotalReturnsAsync()
+        {
+            return await _context.Transactions
+                .Where(t => t.IsReturn)
+                .SumAsync(t => t.TotalAmount);
+        }
+
     }
 }

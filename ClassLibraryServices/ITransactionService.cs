@@ -12,5 +12,10 @@ namespace ClassLibraryServices
         Task<List<BusinessTransaction>> GetTransactionsByDateAsync(DateTime? startDate, DateTime? endDate);
         Task<List<BusinessTransaction>> GetRecentTransactionsAsync();
         Task<BusinessTransaction?> GetTransactionByIdAsync(string id);
+        Task<List<BusinessTransaction>> GetTransactionsAsync();
+
+        Task<List<BusinessTransaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<decimal> GetTotalSalesAsync();
+        Task<decimal> GetTotalReturnsAsync();
     }
 }

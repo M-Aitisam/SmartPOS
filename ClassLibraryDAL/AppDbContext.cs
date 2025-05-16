@@ -9,10 +9,12 @@ namespace ClassLibraryDAL
 
         // Define DbSets (Tables)
         public DbSet<BusinessCategory> BusinessCategories { get; set; }
+        public DbSet<BusinessModel> Businesses { get; set; }
         public DbSet<BusinessSubItem> SubCategories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<BusinessTransaction> Transactions { get; set; }
         public DbSet<TransactionItem> TransactionItems { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +53,15 @@ namespace ClassLibraryDAL
           .WithMany(bt => bt.Items)
           .HasForeignKey(ti => ti.TransactionId)
           .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BusinessModel>()
+               .HasKey(b => b.BusinessID);
+
+            // Configure other entity properties if needed
+            modelBuilder.Entity<BusinessModel>()
+                .Property(b => b.BusinessName)
+                .IsRequired()
+                .HasMaxLength(100);
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using ClassLibraryDAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClassLibraryDAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250514202455_InitialBusinessRegistrationSchema")]
+    partial class InitialBusinessRegistrationSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
@@ -169,15 +172,9 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<decimal>("Discount")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsReturn")
-                        .HasColumnType("INTEGER");
 
                     b.Property<decimal>("PaymentAmount")
                         .HasColumnType("TEXT");
@@ -198,13 +195,7 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<decimal>("Tax")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("TaxAmount")
-                        .HasColumnType("TEXT");
-
                     b.Property<decimal>("Total")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("TotalAmount")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("TransactionDate")

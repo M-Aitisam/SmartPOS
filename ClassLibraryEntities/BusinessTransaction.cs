@@ -21,5 +21,9 @@ namespace ClassLibraryEntities
         public string? StaffName { get; set; }
         public string? TableNumber { get; set; }
         public decimal Tax { get; set; }
+        public bool IsReturn { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal TaxAmount { get; set; }
+        public decimal DiscountAmount { get; set; }
     }
 }

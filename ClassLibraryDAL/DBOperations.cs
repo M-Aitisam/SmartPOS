@@ -48,5 +48,54 @@ namespace ClassLibraryDAL
         {
             return $"INV-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..4]}";
         }
+        public async Task<List<BusinessModel>> GetAllBusinesses()
+        {
+            return await _context.Businesses.ToListAsync();
+        }
+
+        public async Task<bool> AddBusiness(BusinessModel business)
+        {
+            try
+            {
+                await _context.Businesses.AddAsync(business);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateBusiness(BusinessModel business)
+        {
+            try
+            {
+                _context.Businesses.Update(business);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteBusiness(int id)
+        {
+            try
+            {
+                var business = await _context.Businesses.FindAsync(id);
+                if (business == null) return false;
+
+                _context.Businesses.Remove(business);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
