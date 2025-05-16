@@ -16,6 +16,13 @@
                 <button class="btn btn-primary" @onclick="FilterTransactions">
                     <i class="fas fa-filter"></i> Filter
                 </button>
+                <button class="btn btn-primary" @onclick="DownloadBills">
+                    <i class="fas fa-download"></i> Download
+                </button>
+                <button class="btn btn-secondary" @onclick="PrintBills">
+                    <i class="fas fa-print"></i> Print
+                </button>
+
             </div>
         </div>
     </div>
@@ -149,7 +156,8 @@
                             $"{t.Total}\n";
             }
 
-            var fileName = $"Bills_{DateTime.Now:yyyyMMddHHmmss}.csv";
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+var fileName = $"Bills_{timestamp}.csv";
             await JS.InvokeVoidAsync("downloadCSV", csvContent, fileName);
         }
         catch (Exception ex)
@@ -175,3 +183,52 @@
         // Cleanup if needed
     }
 }
+<script>
+        // wwwroot/js/site.js
+
+    window.downloadCSV = (content, filename) => {
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+
+        const now = new Date();
+        const timeStr = now.toLocaleString(); // Include time in local format
+
+        const fileWithTime = filename.replace(".csv", `_${timeStr.replace(/[^\d]/g, "")}.csv`);
+
+        link.setAttribute("href", URL.createObjectURL(blob));
+        link.setAttribute("download", fileWithTime);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    window.printBillsList = () => {
+        const printContent = document.querySelector(".table-responsive").innerHTML;
+        const printWindow = window.open('', '', 'width=900,height=700');
+        const now = new Date().toLocaleString();
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Order History - ${now}</title>
+                    <style>
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
+                        th { background-color: #333; color: white; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Order History</h2>
+                    <p>Printed on: ${now}</p>
+                    ${printContent}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    };
+
+</script>

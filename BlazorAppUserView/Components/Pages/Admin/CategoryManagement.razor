@@ -133,6 +133,10 @@
                                        placeholder="e.g. Electronics, Clothing" />
                             <ValidationMessage For="@(() => newCategory.CategoryName)"
                                                class="text-danger small mt-2" />
+                            @if (!string.IsNullOrEmpty(duplicateError))
+                            {
+                                <div class="text-danger small mt-1">@duplicateError</div>
+                            }
                         </div>
                         <div class="d-flex justify-content-end gap-3 pt-3">
                             <button type="button" class="btn btn-lg btn-outline-secondary px-4" @onclick="CloseAddModal">
@@ -182,6 +186,8 @@
     private BusinessCategory newCategory = new();
     private bool showAddModal = false;
     private bool confirmDeleteVisible = false;
+    private string duplicateError = string.Empty;
+
     private int? itemToDeleteId = null;
 
     protected override async Task OnInitializedAsync()
@@ -211,10 +217,23 @@
     {
         if (!string.IsNullOrWhiteSpace(newCategory.CategoryName))
         {
+            // Check for duplicate name (case-insensitive)
+            bool isDuplicate = categories.Any(c =>
+                string.Equals(c.CategoryName.Trim(), newCategory.CategoryName.Trim(), StringComparison.OrdinalIgnoreCase));
+
+            if (isDuplicate)
+            {
+                // Optionally show a message to user
+                // You can add a Toast, Alert, or bind a message property
+                duplicateError = "Category with this name already exists.";
+                return;
+            }
+
             await CategoryService.AddCategoryAsync(newCategory);
             newCategory = new BusinessCategory();
             await LoadCategories();
             showAddModal = false;
+            duplicateError = string.Empty; // Clear previous error
         }
     }
 
