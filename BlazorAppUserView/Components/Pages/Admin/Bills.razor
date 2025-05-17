@@ -10,32 +10,22 @@
         font-family: 'Courier New', monospace;
         margin: 0 auto;
         max-width: 500px;
-        min-height: 80vh; /* Full viewport height */
+        min-height: 80vh;
         padding: 20px;
         background: white;
-        /* border: 1px solid #ddd; */
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        overflow: hidden; /* Prevent outer scrolling */
+        overflow: hidden;
     }
 
     /* Content area that will scroll */
     .receipt-content {
-        /* padding-right:10px; */
         flex: 1;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
     }
-
-    /* .receipt-header { */
-    /*     text-align: center; */
-    /*     font-weight: bold; */
-    /*     margin-bottom: 20px; */
-    /*     border-bottom: 1px dashed #000; */
-    /*     padding-bottom: 10px; */
-    /* } */
 
     .receipt-line {
         display: flex;
@@ -44,7 +34,7 @@
     }
 
     .receipt-footer {
-        margin-top: auto; /* Push footer to bottom */
+        margin-top: auto;
         border-top: 1px dashed #000;
         padding-top: 10px;
     }
@@ -66,7 +56,7 @@
         display: flex;
         margin: 3px 0;
         padding: 0 10px;
-        gap:10px;
+        gap: 10px;
     }
 
     .col-number {
@@ -91,12 +81,11 @@
     .col-price {
         width: 170px;
         text-align: center;
-       margin-left:3px;
+        margin-left: 3px;
     }
 
     .qty-control {
-        /* background-color:green; */
-        text-align:left;
+        text-align: left;
         display: flex;
         align-items: center;
         gap: 5px;
@@ -109,14 +98,14 @@
         font-weight: bold;
         padding: 0 5px;
     }
-   
+
     /* Scrollable product list */
     .product-list-container {
-        max-height: 25rem; /* Fixed height for product list */
-        overflow-y: auto; /* Scroll when content exceeds height */
+        max-height: 25rem;
+        overflow-y: auto;
         margin-bottom: 20px;
         padding: 0 5px;
-        flex-shrink: 0; /* Prevent shrinking */
+        flex-shrink: 0;
     }
 
     .product-list-header {
@@ -129,32 +118,17 @@
         background: white;
         z-index: 1;
     }
-
-    /* Prevent body scrolling */
-    body {
-        overflow: hidden;
-        margin: 0;
-        padding: 0;
-    }
 </style>
 
 <div class="receipt-container">
     <div class="receipt-content">
-        @* <div class="receipt-header"> *@
-        @*     Walk in customer *@
-        @* </div> *@
-
-        @* <div style="margin-bottom: 20px;"> *@
-        @*     Scan bar code or enter sku number then hit enter *@
-        @* </div> *@
-
         <div class="product-list-container">
             <div class="product-list-header receipt-line">
                 <span>#</span>
                 <span class="product-name">Name</span>
                 <span class="product-qty">Qt.</span>
                 <span class="product-price">Price</span>
-                <span >Action</span> <!-- Empty column for delete button alignment -->
+                <span>Action</span>
             </div>
 
             @if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
@@ -171,7 +145,7 @@
                                 <button class="qty-btn" @onclick="() => IncreaseQuantity(item)">+</button>
                             </div>
                         </div>
-                        <div class="col-price">@item.BasePrice.ToString("0")</div>
+                        <div class="col-price">@((item.BasePrice * item.Quantity).ToString("0"))</div>
                         <div style="width: 40px; text-align: center;">
                             <button class="btn btn-sm btn-outline-danger delete-btn" @onclick="() => ConfirmDelete(item)">
                                 <i class="bi bi-trash"></i>
@@ -188,17 +162,15 @@
             }
         </div>
 
-        @* /* <div style="border-top: 1px dashed #000; margin: 10px 0;"></div> */ *@
-
         <div class="receipt-footer">
             <div class="receipt-line">
                 <span>Total Item(s) :</span>
-                <span>@BillService.SelectedItems?.Count()</span>
+                <span>@(BillService.SelectedItems?.Count() ?? 0)</span>
             </div>
             <div class="receipt-line">
                 <span>Discount</span>
                 <span>
-                    <input type="number" @bind="discountValue" style="width: 50px; text-align: right;" />
+                    <input type="number" @bind="discountValue" @bind:event="oninput" style="width: 50px; text-align: right;" />
                     @if (isPercentageDiscount)
                     {
                         <span>%</span>
@@ -208,11 +180,11 @@
             </div>
             <div class="receipt-line">
                 <span>Price : :</span>
-                <span>@BillService.TotalAmount.ToString("0")</span>
+                <span>@(BillService.TotalAmount.ToString("0"))</span>
             </div>
             <div class="receipt-line">
                 <span>Gross Price (Inc 15% Tax)</span>
-                <span>@totalWithTax.ToString("0.00")</span>
+                <span>@_totalWithTax.ToString("0.00")</span>
             </div>
         </div>
     </div>
@@ -220,9 +192,6 @@
     <div class="action-buttons">
         <button @onclick="ProcessPayment" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; cursor: pointer;">
             Pay Now
-        </button>
-        <button @onclick="HoldOrder" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())" style="padding: 5px 10px; background: #FFC107; color: black; border: none; cursor: pointer;">
-            Hold Order
         </button>
         <button @onclick="CancelOrder" style="padding: 5px 10px; background: #f44336; color: white; border: none; cursor: pointer;">
             Cancel
@@ -257,6 +226,7 @@
         </div>
     </div>
 }
+
 @if (ShowPaymentModal)
 {
     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
@@ -273,12 +243,12 @@
             </div>
             <div style="margin-bottom: 15px;">
                 <label>Amount Received</label>
-                <input type="number" @bind="amountReceived" min="@totalWithTax" step="0.01" style="width: 100%; padding: 5px;" />
+                <input type="number" @bind="amountReceived" min="@_totalWithTax" step="0.01" style="width: 100%; padding: 5px;" />
             </div>
             @if (amountReceived > 0)
             {
                 <div style="background: #e7f3fe; padding: 10px; margin-bottom: 15px;">
-                    Change: @((amountReceived - totalWithTax).ToString("0.00"))
+                    Change: @((amountReceived - _totalWithTax).ToString("0.00"))
                 </div>
             }
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -297,38 +267,89 @@
     private bool isPercentageDiscount = true;
     private string selectedPaymentMethod = "Cash";
     private decimal amountReceived = 0;
+    private bool isInitialized = false;
+
+    private decimal currentTotalAmount = 0;
+    private decimal currentTotalWithTax = 0;
+
 
     private decimal discountAmount => isPercentageDiscount
         ? BillService.TotalAmount * (discountValue / 100m)
         : discountValue;
 
     private decimal subtotalAfterDiscount => BillService.TotalAmount - discountAmount;
-    private decimal taxAmount => subtotalAfterDiscount * 0.15m;
-    private decimal totalWithTax => subtotalAfterDiscount + taxAmount;
+     private decimal _totalAmount = 0;
+    private decimal _totalWithTax = 0;
 
-    protected override void OnInitialized()
+
+    protected override async Task OnInitializedAsync()
     {
-        BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
+        // Initialize with current values
+        await UpdateTotals();
+
+        // Subscribe to changes
+        BillService.OnChange += async () =>
+        {
+            await UpdateTotals();
+            await InvokeAsync(StateHasChanged);
+        };
+    }
+    private async Task UpdateTotals()
+    {
+        // Calculate base total
+        _totalAmount = BillService.SelectedItems?.Sum(item => item.BasePrice * item.Quantity) ?? 0;
+
+        // Calculate discount
+        var discount = isPercentageDiscount
+            ? _totalAmount * (discountValue / 100m)
+            : discountValue;
+
+        // Calculate subtotal after discount
+        var subtotal = _totalAmount - discount;
+
+        // Calculate final total with tax
+        _totalWithTax = subtotal * 1.15m;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CalculateTotals()
+    {
+        if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
+        {
+            currentTotalAmount = BillService.SelectedItems.Sum(item => item.BasePrice * item.Quantity);
+
+            var discount = isPercentageDiscount
+                ? currentTotalAmount * (discountValue / 100m)
+                : discountValue;
+
+            var subtotal = currentTotalAmount - discount;
+            currentTotalWithTax = subtotal + (subtotal * 0.15m);
+        }
+        else
+        {
+            currentTotalAmount = 0;
+            currentTotalWithTax = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task HandleBillServiceChange()
+    {
+        await CalculateTotals();
     }
 
     public void Dispose()
     {
-        BillService.OnChange -= async () => await InvokeAsync(StateHasChanged);
+        BillService.OnChange -= HandleBillServiceChange;
     }
+
 
     private async Task IncreaseQuantity(RateItem item)
     {
-        if (item.Quantity == 0)
-        {
-            item.Quantity = 1;
-            item.Price = item.BasePrice;
-        }
-        else
-        {
-            item.Quantity++;
-            item.Price = item.BasePrice * item.Quantity;
-        }
+        item.Quantity++;
         await BillService.UpdateItemAsync(item);
+        await UpdateTotals();
     }
 
     private async Task DecreaseQuantity(RateItem item)
@@ -336,8 +357,8 @@
         if (item.Quantity > 1)
         {
             item.Quantity--;
-            item.Price = item.BasePrice * item.Quantity;
             await BillService.UpdateItemAsync(item);
+            await UpdateTotals();
         }
     }
 
@@ -345,52 +366,69 @@
     {
         SelectedItem = item;
         ShowDeleteModal = true;
+        StateHasChanged();
     }
 
-   private async Task RemoveOneQuantity()
+    private async Task RemoveOneQuantity()
     {
         if (SelectedItem != null)
         {
-            await BillService.RemoveItemAsync(SelectedItem); // This decreases quantity by 1
+            await BillService.RemoveItemAsync(SelectedItem);
         }
         ShowDeleteModal = false;
+        StateHasChanged();
     }
+
     private async Task RemoveAllQuantities()
     {
         if (SelectedItem != null)
         {
-            await BillService.RemoveItemCompletelyAsync(SelectedItem); // This removes entire item
+            await BillService.RemoveItemCompletelyAsync(SelectedItem);
         }
         ShowDeleteModal = false;
+        StateHasChanged();
     }
-
-
 
     private void CancelDelete()
     {
         SelectedItem = null;
         ShowDeleteModal = false;
+        StateHasChanged();
     }
 
     private void ToggleDiscountType()
     {
         isPercentageDiscount = !isPercentageDiscount;
         discountValue = 0;
+        StateHasChanged();
     }
 
     private void ProcessPayment()
     {
-        amountReceived = totalWithTax;
+        amountReceived = _totalWithTax;
         ShowPaymentModal = true;
+        StateHasChanged();
     }
 
     private void ClosePaymentModal()
     {
         ShowPaymentModal = false;
+        StateHasChanged();
     }
 
     private async Task ConfirmPayment()
     {
+        // Calculate the discount amount first
+        var discount = isPercentageDiscount
+            ? _totalAmount * (discountValue / 100m)
+            : discountValue;
+
+        // Calculate subtotal after discount
+        var subtotal = _totalAmount - discount;
+
+        // Calculate tax amount
+        var tax = subtotal * 0.15m;
+
         var transaction = new BusinessTransaction
             {
                 Items = BillService.SelectedItems.Select(i => new TransactionItem
@@ -399,13 +437,13 @@
                     UnitPrice = i.BasePrice,
                     Quantity = i.Quantity
                 }).ToList(),
-                SubTotal = BillService.TotalAmount,
-                Discount = discountAmount,
-                Tax = taxAmount,
-                Total = totalWithTax,
+                SubTotal = _totalAmount,
+                Discount = discount,
+                Tax = tax,
+                Total = _totalWithTax,
                 PaymentMethod = selectedPaymentMethod,
                 AmountReceived = amountReceived,
-                ChangeAmount = amountReceived - totalWithTax
+                ChangeAmount = amountReceived - _totalWithTax
             };
 
         await TransactionService.SaveTransactionAsync(transaction);
@@ -414,21 +452,11 @@
         NavigationManager.NavigateTo("/order-history");
     }
 
-    private async Task HoldOrder()
-    {
-        await BillService.ClearCart();
-        NavigationManager.NavigateTo("/orders");
-    }
-
     private async Task CancelOrder()
     {
         if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
         {
-            var itemsToRemove = BillService.SelectedItems.ToList();
-            foreach (var item in itemsToRemove)
-            {
-                await BillService.RemoveItemAsync(item);
-            }
+            await BillService.ClearCart();
         }
         NavigationManager.NavigateTo("/", forceLoad: true);
     }
