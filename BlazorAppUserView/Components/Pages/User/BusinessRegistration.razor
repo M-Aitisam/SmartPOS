@@ -1,1 +1,599 @@
-﻿
+﻿@page "/businessregistration"
+@namespace BlazorAppUserView.Components.Pages.User
+@using Microsoft.AspNetCore.Components.Forms
+@using ClassLibraryEntities
+@using ClassLibraryServices
+@inject IAdminService AdminService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<style>
+    /* Modern styling for the form */
+    .registration-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .progress-container {
+        margin-bottom: 2rem;
+    }
+
+    .progress {
+        height: 10px;
+        border-radius: 5px;
+        background-color: #e9ecef;
+    }
+
+    .progress-bar {
+        background-color: #4e73df;
+        transition: width 0.3s ease;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+    }
+
+    .step {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+        .step.active {
+            font-weight: 600;
+            color: #4e73df;
+        }
+
+    .form-card {
+        border: none;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        margin-bottom: 2rem;
+    }
+
+    .form-card-header {
+        background-color: #4e73df;
+        color: white;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .form-card-body {
+        padding: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #5a5c69;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.35rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #d1d3e2;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #bac8f3;
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+
+    .validation-message {
+        color: #e74a3b;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+    }
+
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+    }
+
+        .btn-primary:hover {
+            background-color: #2e59d9;
+            border-color: #2653d4;
+        }
+
+    .btn-secondary {
+        background-color: #858796;
+        border-color: #858796;
+    }
+
+    .btn-success {
+        background-color: #1cc88a;
+        border-color: #1cc88a;
+    }
+
+    .logo-preview {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 0.35rem;
+        border: 1px solid #e3e6f0;
+        margin-top: 1rem;
+    }
+
+    .review-section {
+        margin-bottom: 2rem;
+    }
+
+    .review-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+    }
+
+    .review-card-body {
+        padding: 1.5rem;
+    }
+
+    .badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 700;
+    }
+
+    .btn-edit {
+        color: #4e73df;
+        border-color: #4e73df;
+    }
+
+        .btn-edit:hover {
+            background-color: #f8f9fc;
+        }
+
+    .navigation-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+
+    .required-field::after {
+        content: " *";
+        color: #e74a3b;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: 0.25rem;
+    }
+
+    .validation-summary {
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<div class="registration-container">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="https://getbootstrap.com/docs/5.3/assets/brand/bootstrap-logo-shadow.png"
+                     alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
+                Business Registration
+            </a>
+        </div>
+    </nav>
+
+    <div class="progress-container">
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: @GetProgressWidth()%"
+                 aria-valuenow="@GetProgressWidth()" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="step-indicator">
+            <span class="step @GetStepClass(1)">General Information</span>
+            <span class="step @GetStepClass(2)">Business Details</span>
+            <span class="step @GetStepClass(3)">Review & Submit</span>
+        </div>
+    </div>
+
+    @if (currentStep == 1)
+    {
+        <!-- Step 1: General Information -->
+        <div class="card form-card">
+            <div class="card-header form-card-header">
+                <h4 class="mb-0">General Information</h4>
+            </div>
+            <div class="card-body form-card-body">
+                <EditForm Model="@generalInfo" OnValidSubmit="HandleStep1Submit" FormName="step1">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="alert alert-danger validation-summary" />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">First Name</label>
+                            <InputText @bind-Value="generalInfo.FirstName" class="form-control" />
+                            <ValidationMessage For="@(() => generalInfo.FirstName)" class="validation-message" />
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Last Name</label>
+                            <InputText @bind-Value="generalInfo.LastName" class="form-control" />
+                            <ValidationMessage For="@(() => generalInfo.LastName)" class="validation-message" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Gender</label>
+                            <InputSelect @bind-Value="generalInfo.Gender" class="form-select">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => generalInfo.Gender)" class="validation-message" />
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Mother/Father's First Name</label>
+                            <InputText @bind-Value="generalInfo.ParentName" class="form-control" />
+                            <ValidationMessage For="@(() => generalInfo.ParentName)" class="validation-message" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label required-field">Email Address</label>
+                        <InputText @bind-Value="generalInfo.Email" class="form-control" />
+                        <ValidationMessage For="@(() => generalInfo.Email)" class="validation-message" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Pin Code</label>
+                            <InputText @bind-Value="generalInfo.PinCode" class="form-control" />
+                            <ValidationMessage For="@(() => generalInfo.PinCode)" class="validation-message" />
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Time Zone</label>
+                            <InputSelect @bind-Value="generalInfo.TimeZone" class="form-select">
+                                <option value="IST - Indian Standard Time - GMT +5:30">IST - Indian Standard Time - GMT +5:30</option>
+                                <option value="GMT - Greenwich Mean Time">GMT - Greenwich Mean Time</option>
+                                <option value="EST - Eastern Standard Time - GMT -5:00">EST - Eastern Standard Time - GMT -5:00</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Date of Birth</label>
+                            <InputDate @bind-Value="generalInfo.DateOfBirth" class="form-control" />
+                            <ValidationMessage For="@(() => generalInfo.DateOfBirth)" class="validation-message" />
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Country</label>
+                            <InputSelect @bind-Value="generalInfo.Country" class="form-select">
+                                <option value="">Select Country</option>
+                                <option value="India">India</option>
+                                <option value="USA">USA</option>
+                                <option value="UK">UK</option>
+                                <option value="Canada">Canada</option>
+                                <option value="Australia">Australia</option>
+                                <option value="Pakistan">Pakistan</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => generalInfo.Country)" class="validation-message" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label required-field">Phone Number (include country code)</label>
+                        <InputText @bind-Value="generalInfo.PhoneNumber" class="form-control" />
+                        <ValidationMessage For="@(() => generalInfo.PhoneNumber)" class="validation-message" />
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Next: Business Details</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+    else if (currentStep == 2)
+    {
+        <!-- Step 2: Business Details -->
+        <div class="card form-card">
+            <div class="card-header form-card-header">
+                <h4 class="mb-0">Business Details</h4>
+            </div>
+            <div class="card-body form-card-body">
+                <EditForm Model="@businessDetails" OnValidSubmit="HandleStep2Submit" FormName="step2">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="alert alert-danger validation-summary" />
+
+                    <div class="mb-4">
+                        <label class="form-label required-field">Business Title</label>
+                        <InputText @bind-Value="businessDetails.BusinessName" class="form-control" />
+                        <ValidationMessage For="@(() => businessDetails.BusinessName)" class="validation-message" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label required-field">Logo</label>
+                        <InputFile class="form-control" OnChange="HandleFileUpload" accept="image/*" />
+                        @if (logoPreviewUrl != null)
+                        {
+                            <div class="mt-3">
+                                <img src="@logoPreviewUrl" alt="Logo Preview" class="logo-preview" />
+                            </div>
+                        }
+                        <ValidationMessage For="@(() => businessDetails.LogoData)" class="validation-message" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label required-field">Business Type</label>
+                        <InputSelect @bind-Value="businessDetails.BusinessType" class="form-select">
+                            <option value="">Select Business Type</option>
+                            <option value="Café">Café</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Retail Store">Retail Store</option>
+                            <option value="Service Provider">Service Provider</option>
+                            <option value="Other">Other</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => businessDetails.BusinessType)" class="validation-message" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label required-field">Address</label>
+                        <InputText @bind-Value="businessDetails.Address" class="form-control" />
+                        <ValidationMessage For="@(() => businessDetails.Address)" class="validation-message" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <label class="form-label required-field">City</label>
+                            <InputText @bind-Value="businessDetails.City" class="form-control" />
+                            <ValidationMessage For="@(() => businessDetails.City)" class="validation-message" />
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="form-label required-field">Area</label>
+                            <InputText @bind-Value="businessDetails.Area" class="form-control" />
+                            <ValidationMessage For="@(() => businessDetails.Area)" class="validation-message" />
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="form-label">Location</label>
+                            <InputText @bind-Value="businessDetails.Location" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Additional Options</label>
+                        <div class="form-check mb-2">
+                            <InputCheckbox @bind-Value="businessDetails.HasWiFi" class="form-check-input" />
+                            <label class="form-check-label">WiFi Available</label>
+                        </div>
+                        <div class="form-check">
+                            <InputCheckbox @bind-Value="businessDetails.HasOutdoorSeating" class="form-check-input" />
+                            <label class="form-check-label">Outdoor Seating</label>
+                        </div>
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn btn-secondary" @onclick="HandleBack">Back</button>
+                        <button type="submit" class="btn btn-primary">Next: Review & Submit</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+    else if (currentStep == 3)
+    {
+        <!-- Step 3: Overview -->
+        <div class="card form-card">
+            <div class="card-header form-card-header">
+                <h4 class="mb-0">Review Your Information</h4>
+            </div>
+            <div class="card-body form-card-body">
+                <div class="review-section">
+                    <h5 class="mb-3">General Information</h5>
+                    <div class="card review-card">
+                        <div class="card-body review-card-body">
+                            <dl class="row">
+                                <dt class="col-sm-3">Name</dt>
+                                <dd class="col-sm-9">@generalInfo.FirstName @generalInfo.LastName</dd>
+
+                                <dt class="col-sm-3">Gender</dt>
+                                <dd class="col-sm-9">@generalInfo.Gender</dd>
+
+                                <dt class="col-sm-3">Parent Name</dt>
+                                <dd class="col-sm-9">@generalInfo.ParentName</dd>
+
+                                <dt class="col-sm-3">Email</dt>
+                                <dd class="col-sm-9">@generalInfo.Email</dd>
+
+                                <dt class="col-sm-3">Phone</dt>
+                                <dd class="col-sm-9">@generalInfo.PhoneNumber</dd>
+
+                                <dt class="col-sm-3">Date of Birth</dt>
+                                <dd class="col-sm-9">@generalInfo.DateOfBirth?.ToString("dd/MM/yyyy")</dd>
+
+                                <dt class="col-sm-3">Country</dt>
+                                <dd class="col-sm-9">@generalInfo.Country</dd>
+
+                                <dt class="col-sm-3">Pin Code</dt>
+                                <dd class="col-sm-9">@generalInfo.PinCode</dd>
+
+                                <dt class="col-sm-3">Time Zone</dt>
+                                <dd class="col-sm-9">@generalInfo.TimeZone</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <h5 class="mb-3">Business Information</h5>
+                    <div class="card review-card">
+                        <div class="card-body review-card-body">
+                            <dl class="row">
+                                <dt class="col-sm-3">Business Name</dt>
+                                <dd class="col-sm-9">@businessDetails.BusinessName</dd>
+
+                                <dt class="col-sm-3">Business Type</dt>
+                                <dd class="col-sm-9">@businessDetails.BusinessType</dd>
+
+                                <dt class="col-sm-3">Address</dt>
+                                <dd class="col-sm-9">@businessDetails.Address</dd>
+
+                                <dt class="col-sm-3">City/Area</dt>
+                                <dd class="col-sm-9">@businessDetails.City, @businessDetails.Area</dd>
+
+                                <dt class="col-sm-3">Location</dt>
+                                <dd class="col-sm-9">@businessDetails.Location</dd>
+
+                                <dt class="col-sm-3">Amenities</dt>
+                                <dd class="col-sm-9">
+                                    @if (businessDetails.HasWiFi)
+                                    {
+                                        <span class="badge bg-info me-1">WiFi</span>
+                                    }
+                                    @if (businessDetails.HasOutdoorSeating)
+                                    {
+                                        <span class="badge bg-info">Outdoor Seating</span>
+                                    }
+                                </dd>
+
+                                @if (logoPreviewUrl != null)
+                                {
+                                    <dt class="col-sm-3">Logo</dt>
+                                    <dd class="col-sm-9">
+                                        <img src="@logoPreviewUrl" alt="Logo Preview" class="logo-preview" />
+                                    </dd>
+                                }
+                            </dl>
+                        </div>
+                    </div>
+                    @if (!hasEditedBusinessDetails)
+                    {
+                        <button class="btn btn-outline-primary btn-edit mt-3" @onclick="() => HandleEdit(2)">
+                            Edit Business Details
+                        </button>
+                    }
+                </div>
+
+                <div class="navigation-buttons mt-4">
+                    <button type="button" class="btn btn-secondary" @onclick="HandleBack">Back</button>
+                    <button type="button" class="btn btn-success" @onclick="HandleSubmit">
+                        Submit Registration
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private int currentStep = 1;
+    private bool hasEditedBusinessDetails = false;
+    private GeneralInformation generalInfo = new();
+    private BusinessDetails businessDetails = new();
+    private string? logoPreviewUrl;
+    private IBrowserFile? logoFile;
+
+    private string GetStepClass(int step)
+    {
+        return currentStep == step ? "step active" : "step";
+    }
+
+    private int GetProgressWidth()
+    {
+        return currentStep * 33;
+    }
+
+    private void HandleEdit(int step)
+    {
+        currentStep = step;
+        if (step == 2)
+        {
+            hasEditedBusinessDetails = true;
+        }
+    }
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        logoFile = e.File;
+        if (logoFile != null)
+        {
+            try
+            {
+                var format = "image/png";
+                var resizedImage = await logoFile.RequestImageFileAsync(format, 500, 500);
+                var buffer = new byte[resizedImage.Size];
+                await resizedImage.OpenReadStream().ReadAsync(buffer);
+                businessDetails.LogoData = buffer;
+                businessDetails.LogoPath = logoFile.Name;
+                logoPreviewUrl = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"Error uploading image: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            // Final validation
+            if (businessDetails.LogoData == null || businessDetails.LogoData.Length == 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Please upload a logo for your business");
+                currentStep = 2;
+                StateHasChanged();
+                return;
+            }
+
+            // Combine data from both models
+            var business = new BusinessModel
+                {
+                    GeneralInformation = generalInfo,
+                    BusinessDetails = businessDetails,
+                    IsActive = true
+                };
+
+            var success = await AdminService.AddBusiness(business);
+
+            if (success)
+            {
+                await JS.InvokeVoidAsync("alert", "Business registered successfully!");
+                Navigation.NavigateTo("/businessdetails");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", "Failed to register business. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
+        }
+    }
+
+    private async Task HandleStep1Submit()
+    {
+        currentStep = 2;
+        await Task.Delay(1); // Allow UI to update
+        StateHasChanged();
+    }
+
+    private async Task HandleStep2Submit()
+    {
+        currentStep = 3;
+        await Task.Delay(1); // Allow UI to update
+        StateHasChanged();
+    }
+
+    private void HandleBack()
+    {
+        if (currentStep > 1)
+        {
+            currentStep--;
+            StateHasChanged();
+        }
+    }
+}

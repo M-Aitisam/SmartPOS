@@ -58,7 +58,7 @@ namespace ClassLibraryDAL
                .HasKey(b => b.BusinessID);
 
             // Configure other entity properties if needed
-            modelBuilder.Entity<BusinessModel>()
+            modelBuilder.Entity<BusinessDetails>()
                 .Property(b => b.BusinessName)
                 .IsRequired()
                 .HasMaxLength(100);
