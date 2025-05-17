@@ -13,6 +13,11 @@ namespace ClassLibraryServices
         {
             _dbOperations = dbOperations;
         }
+        public async Task<BusinessDetails> GetBusinessDetails()
+        {
+            var details = await _dbOperations.GetBusinessDetailsAsync();
+            return details ?? new BusinessDetails(); // Return new instance if null
+        }
 
         public async Task<List<BusinessModel>> GetAllBusinesses()
         {

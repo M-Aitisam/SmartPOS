@@ -33,5 +33,27 @@ namespace ClassLibraryEntities
         public string Location { get; set; } = string.Empty;
         public bool HasWiFi { get; set; }
         public bool HasOutdoorSeating { get; set; }
+
+        [Required]
+        public string ReceiptHeader { get; set; } = @"SUPERMARKET
+
+Lorem ipsum 258
+
+City Index -02025
+
+Tel.: +456-468-987-02
+
+Cashier: #3
+Manager: Eric Steer";
+
+        [Required]
+        public string ReceiptFooter { get; set; } = @"THANK YOU!
+Glad to see you again!
+
+modif.ai";
+
+        public string TaxNumber { get; set; } = "";
+        public decimal DefaultTaxRate { get; set; } = 15.0m;
+        public bool IncludeBarcode { get; set; } = true;
     }
 }

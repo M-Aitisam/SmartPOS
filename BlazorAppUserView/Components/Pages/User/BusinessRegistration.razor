@@ -170,6 +170,20 @@
     .validation-summary {
         margin-bottom: 1.5rem;
     }
+
+    .receipt-settings {
+        margin-top: 2rem;
+        border-top: 1px solid #eee;
+        padding-top: 1.5rem;
+    }
+
+    .barcode-preview {
+        max-width: 200px;
+        height: 80px;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        padding: 5px;
+    }   
 </style>
 
 <div class="registration-container">
@@ -371,6 +385,46 @@
                             <label class="form-check-label">Outdoor Seating</label>
                         </div>
                     </div>
+                    <!-- New Receipt Settings Section -->
+                    <div class="receipt-settings">
+                        <h5>Receipt Settings</h5>
+
+                        <div class="mb-4">
+                            <label class="form-label">Receipt Header Text</label>
+                            <InputTextArea @bind-Value="businessDetails.ReceiptHeader" class="form-control" rows="3"
+                                           placeholder="Enter your business name, address, contact info etc." />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Receipt Footer Text</label>
+                            <InputTextArea @bind-Value="businessDetails.ReceiptFooter" class="form-control" rows="3"
+                                           placeholder="Enter return policy, thank you message etc." />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Tax Identification Number</label>
+                            <InputText @bind-Value="businessDetails.TaxNumber" class="form-control" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Default Tax Rate (%)</label>
+                            <InputNumber @bind-Value="businessDetails.DefaultTaxRate" class="form-control" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Enable Barcode on Receipt</label>
+                            <InputCheckbox @bind-Value="businessDetails.IncludeBarcode" class="form-check-input" />
+                            @if (businessDetails.IncludeBarcode)
+                            {
+                                <div class="mt-2">
+                                    <label class="form-label">Barcode Preview</label>
+                                    <div class="barcode-preview" id="barcodePreview">
+                                        <!-- Barcode will be rendered here -->
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
 
                     <div class="navigation-buttons">
                         <button type="button" class="btn btn-secondary" @onclick="HandleBack">Back</button>
@@ -492,6 +546,21 @@
     private BusinessDetails businessDetails = new();
     private string? logoPreviewUrl;
     private IBrowserFile? logoFile;
+
+
+     protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && businessDetails.IncludeBarcode)
+        {
+            await GenerateBarcodePreview();
+        }
+    }
+    
+    private async Task GenerateBarcodePreview()
+    {
+        // Generate a sample barcode for preview
+        await JS.InvokeVoidAsync("generateBarcode", "barcodePreview", "PREVIEW12345");
+    }
 
     private string GetStepClass(int step)
     {

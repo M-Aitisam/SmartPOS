@@ -5,6 +5,7 @@ namespace ClassLibraryDAL
     public interface IDBOperations
     {
         Task<List<Product>> GetAllProductsAsync();
+        Task<BusinessDetails> GetBusinessDetailsAsync();
         Task<bool> ProcessTransactionAsync(BusinessTransaction transaction);
         Task<List<BusinessModel>> GetAllBusinesses();
         Task<bool> AddBusiness(BusinessModel business);

@@ -97,5 +97,9 @@ namespace ClassLibraryDAL
                 return false;
             }
         }
+        public async Task<BusinessDetails> GetBusinessDetailsAsync()
+        {
+            return await _context.BusinessDetails.FirstOrDefaultAsync();
+        }
     }
 }

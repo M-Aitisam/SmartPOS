@@ -7,6 +7,8 @@ namespace ClassLibraryDAL
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+        public virtual DbSet<BusinessDetails> BusinessDetails { get; set; }
+
         // Define DbSets (Tables)
         public DbSet<BusinessCategory> BusinessCategories { get; set; }
         public DbSet<BusinessModel> Businesses { get; set; }
@@ -62,6 +64,14 @@ namespace ClassLibraryDAL
                 .Property(b => b.BusinessName)
                 .IsRequired()
                 .HasMaxLength(100);
+            modelBuilder.Entity<BusinessDetails>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ReceiptHeader).IsRequired();
+                entity.Property(e => e.ReceiptFooter).IsRequired();
+                entity.Property(e => e.DefaultTaxRate).HasDefaultValue(15.0m);
+                entity.Property(e => e.IncludeBarcode).HasDefaultValue(true);
+            });
         }
     }
 }

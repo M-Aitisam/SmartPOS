@@ -9,6 +9,9 @@ namespace ClassLibraryServices
         Task<bool> UpdateBusiness(BusinessModel business);
         Task<bool> DeleteBusiness(int id);
         event Action OnChange;
+
+        Task<BusinessDetails> GetBusinessDetails();
     }
+
 }
 

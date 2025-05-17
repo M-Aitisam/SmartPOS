@@ -2,6 +2,8 @@
 @inject BillService BillService
 @inject NavigationManager NavigationManager
 @inject ITransactionService TransactionService
+@inject IAdminService AdminService
+@inject IJSRuntime  JS 
 @rendermode InteractiveServer
 
 <style>
@@ -118,6 +120,78 @@
         background: white;
         z-index: 1;
     }
+
+    @@media print {
+        body * {
+            visibility: hidden;
+        }
+
+        .print-receipt, .print-receipt * {
+            visibility: visible;
+        }
+
+        .print-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            box-shadow: none;
+            border: none;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        .barcode-img {
+            max-width: 200px;
+            height: auto;
+        }
+    }
+
+    /* Barcode display */
+    .barcode-container {
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .barcode-img {
+        max-width: 100%;
+        height: 60px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+        .action-buttons button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+            .action-buttons button:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            .action-buttons button i {
+                font-size: 1rem;
+            }
 </style>
 
 <div class="receipt-container">
@@ -190,8 +264,13 @@
     </div>
 
     <div class="action-buttons">
-        <button @onclick="ProcessPayment" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())" style="padding: 5px 10px; background: #4CAF50; color: white; border: none; cursor: pointer;">
+        <button @onclick="ProcessPayment" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())"
+                style="padding: 5px 10px; background: #4CAF50; color: white; border: none; cursor: pointer;">
             Pay Now
+        </button>
+        <button @onclick="ShowPrintPreview" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())"
+                style="padding: 5px 10px; background: #2196F3; color: white; border: none; cursor: pointer;">
+            Print Preview
         </button>
         <button @onclick="CancelOrder" style="padding: 5px 10px; background: #f44336; color: white; border: none; cursor: pointer;">
             Cancel
@@ -258,8 +337,129 @@
         </div>
     </div>
 }
+@if (showReceiptModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Receipt Preview</h5>
+                <button @onclick="CloseReceiptModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="print-receipt" id="receiptToPrint">
+                    <!-- Receipt header from business settings -->
+                    <div style="text-align: center; white-space: pre-line; margin-bottom: 10px;">
+                        @if (businessDetails != null)
+                        {
+                            @businessDetails.ReceiptHeader
+                        }
+                        else
+                        {
+                            <text>My Business<br>123 Business Street<br>City, Country</text>
+                        }
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <div>Transaction # @currentTransactionId</div>
+                        <div>@DateTime.Now.ToString("MMMM d, yyyy")</div>
+                        <div>@DateTime.Now.ToString("h:mm tt")</div>
+                    </div>
+
+                    <hr style="border-top: 1px dashed #000; margin: 5px 0;">
+
+                    <!-- Items list -->
+                    <div style="margin-bottom: 10px;">
+                        @foreach (var item in BillService.SelectedItems)
+                        {
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                                <div>
+                                    @item.Name
+                                    @if (item.Quantity > 1)
+                                    {
+                                        <text>(x@(item.Quantity))</text>
+                                    }
+                                </div>
+                                <div>@((item.BasePrice * item.Quantity).ToString("0.00"))</div>
+                            </div>
+                        }
+                    </div>
+
+                    <hr style="border-top: 1px dashed #000; margin: 5px 0;">
+
+                    <!-- Totals -->
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>Sub Total:</div>
+                            <div>@_totalAmount.ToString("0.00"))</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>Discount:</div>
+                            <div>@discountAmount.ToString("0.00"))</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>Tax (@(businessDetails?.DefaultTaxRate ?? 15)%:</div>
+                            <div>@((_totalWithTax - subtotalAfterDiscount).ToString("0.00"))</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                            <div>Total:</div>
+                            <div>@_totalWithTax.ToString("0.00"))</div>
+                        </div>
+                    </div>
+
+                    <!-- Payment info -->
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>@selectedPaymentMethod:</div>
+                            <div>@amountReceived.ToString("0.00"))</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>Change:</div>
+                            <div>@((amountReceived - _totalWithTax).ToString("0.00"))</div>
+                        </div>
+                    </div>
+
+                    <!-- Barcode -->
+                    @if (businessDetails?.IncludeBarcode == true)
+                    {
+                        <div class="barcode-container">
+                            <img class="barcode-img" id="receiptBarcode" alt="Transaction barcode" />
+                        </div>
+                    }
+
+                    <!-- Footer -->
+                    <div style="text-align: center; white-space: pre-line; margin-top: 10px; font-size: 0.8em;">
+                        @if (businessDetails != null)
+                        {
+                            @businessDetails.ReceiptFooter
+                        }
+                        else
+                        {
+                            <text>Thank you for your business!<br>Items can be returned within 30 days with receipt.</text>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer no-print">
+                <button @onclick="PrintReceipt" class="btn btn-primary">
+                    <i class="bi bi-printer"></i> Print Receipt
+                </button>
+                <button @onclick="CloseReceiptModal" class="btn btn-secondary">Close</button>
+                @if (!ShowPaymentModal)
+                {
+                    <button @onclick="ProcessPaymentFromPreview" class="btn btn-success">
+                        <i class="bi bi-credit-card"></i> Proceed to Payment
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 
 @code {
+    private BusinessDetails? businessDetails;
+    private bool showReceiptModal = false;
+    private string currentTransactionId = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
     private RateItem? SelectedItem;
     private bool ShowDeleteModal = false;
     private bool ShowPaymentModal = false;
@@ -268,7 +468,7 @@
     private string selectedPaymentMethod = "Cash";
     private decimal amountReceived = 0;
     private bool isInitialized = false;
-
+    private bool isLoading = true;
     private decimal currentTotalAmount = 0;
     private decimal currentTotalWithTax = 0;
 
@@ -284,15 +484,45 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Initialize with current values
-        await UpdateTotals();
+        try
+        {
+            businessDetails = await AdminService.GetBusinessDetails();
+        }
+        catch
+        {
+            // Fallback to default values
+            businessDetails = new BusinessDetails();
+        }
+        finally
+        {
+            isLoading = false;
+        }
 
-        // Subscribe to changes
+        // Rest of your initialization...
+        await UpdateTotals();
         BillService.OnChange += async () =>
         {
             await UpdateTotals();
             await InvokeAsync(StateHasChanged);
         };
+    }
+    private void ProcessPaymentFromPreview()
+    {
+        showReceiptModal = false;
+        ProcessPayment();
+    }
+
+    private async Task ShowPrintPreview()
+    {
+        currentTransactionId = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+
+        if (businessDetails?.IncludeBarcode == true)
+        {
+            await JS.InvokeVoidAsync("generateBarcode", "receiptBarcode", currentTransactionId);
+        }
+
+        showReceiptModal = true;
+        StateHasChanged();
     }
     private async Task UpdateTotals()
     {
@@ -445,6 +675,13 @@
                 AmountReceived = amountReceived,
                 ChangeAmount = amountReceived - _totalWithTax
             };
+        showReceiptModal = true;
+
+        // Generate barcode if enabled
+        if (businessDetails?.IncludeBarcode == true)
+        {
+            await JS.InvokeVoidAsync("generateBarcode", "receiptBarcode", currentTransactionId);
+        }
 
         await TransactionService.SaveTransactionAsync(transaction);
         await BillService.ClearCart();
@@ -460,4 +697,57 @@
         }
         NavigationManager.NavigateTo("/", forceLoad: true);
     }
+    private void CloseReceiptModal()
+    {
+        showReceiptModal = false;
+        currentTransactionId = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+    }
+
+    private async Task PrintReceipt()
+    {
+        await JS.InvokeVoidAsync("printReceipt");
+        CloseReceiptModal();
+
+        // Navigate or clear cart as needed
+        NavigationManager.NavigateTo("/order-history");
+    }
 }
+
+
+ <script>
+         // Function to generate barcode using JsBarcode library
+    function generateBarcode(elementId, text) {
+        // Ensure JsBarcode is loaded
+        if (typeof JsBarcode !== 'undefined') {
+            JsBarcode(`#${elementId}`, text, {
+                format: "CODE128",
+                lineColor: "#000",
+                width: 2,
+                height: 50,
+                displayValue: true,
+                fontSize: 12,
+                margin: 5
+            });
+        } else {
+            console.error("JsBarcode library not loaded");
+        }
+    }
+
+    // Function to handle printing
+    function printReceipt() {
+        window.print();
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load JsBarcode library dynamically if not already loaded
+        if (typeof JsBarcode === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+            script.onload = function() {
+                console.log("JsBarcode library loaded");
+            };
+            document.head.appendChild(script);
+        }
+    });
+ </script>
