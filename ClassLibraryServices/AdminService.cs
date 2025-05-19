@@ -1,6 +1,8 @@
-﻿// AdminService.cs
-using ClassLibraryDAL;
+﻿using ClassLibraryDAL;
 using ClassLibraryEntities;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ClassLibraryServices
 {
@@ -13,10 +15,10 @@ namespace ClassLibraryServices
         {
             _dbOperations = dbOperations;
         }
+
         public async Task<BusinessDetails> GetBusinessDetails()
         {
-            var details = await _dbOperations.GetBusinessDetailsAsync();
-            return details ?? new BusinessDetails(); // Return new instance if null
+            return await _dbOperations.GetBusinessDetailsAsync();
         }
 
         public async Task<List<BusinessModel>> GetAllBusinesses()
@@ -26,9 +28,21 @@ namespace ClassLibraryServices
 
         public async Task<bool> AddBusiness(BusinessModel business)
         {
-            var result = await _dbOperations.AddBusiness(business);
-            if (result) NotifyStateChanged();
-            return result;
+            try
+            {
+                if (await _dbOperations.BusinessExists(business.Email))
+                {
+                    return false;
+                }
+
+                var result = await _dbOperations.AddBusiness(business);
+                if (result) NotifyStateChanged();
+                return result;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<bool> UpdateBusiness(BusinessModel business)
@@ -47,9 +61,22 @@ namespace ClassLibraryServices
 
         public async Task<CurrentUser> GetCurrentUserAsync()
         {
-            // Implement your actual user retrieval logic here
             return await Task.FromResult(new CurrentUser { Id = "3", Name = "Cashier" });
         }
+
+        public async Task<BusinessModel?> GetBusinessByEmail(string email)
+        {
+            return await _dbOperations.GetBusinessByEmail(email);
+        }
+
+        public async Task<bool> VerifyCredentials(string email, string password)
+        {
+            var business = await GetBusinessByEmail(email);
+            if (business == null) return false;
+
+            return PasswordHasher.VerifyPassword(password, business.PasswordHash);
+        }
+
         private void NotifyStateChanged() => OnChange?.Invoke();
     }
 }

@@ -1,61 +1,298 @@
 ﻿@page "/login"
+@inject NavigationManager Navigation
+@inject IAdminService AdminService
+@using System.ComponentModel.DataAnnotations;
+@inject IJSRuntime JS
+@rendermode InteractiveServer
 
-<link href="/app.css" rel="stylesheet" />
-
-<div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-    <form class="login-form p-4 p-md-5 bg-white shadow-lg rounded-4 text-center">
-        <!-- Logo Placeholder -->
-        <div class="mx-auto mb-4" style="width: 80px; height: 80px; background: linear-gradient(180deg, rgba(248, 248, 248, 0) 50%, #F8F8F888 100%); border: 1px solid #F7F7F8; border-radius: 11px; filter: drop-shadow(0 0.5px 0.5px #efefef) drop-shadow(0 1px 0.5px rgba(239, 239, 239, 0.5));">
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="/images/logo.png" alt="Company Logo" class="logo" />
+            <h2>Welcome Back</h2>
+            <p>Please enter your credentials to login</p>
         </div>
 
-        <!-- Title -->
-        <h2 class="fs-4 fw-bold text-dark">Login to your Account</h2>
-        <p class="fs-6 text-muted mb-4" style="line-height: 1.4;">
-            Get started with our app, just create an account and enjoy the experience.
-        </p>
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" class="login-form">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="validation-summary" />
 
-        <!-- Email Field -->
-        <div class="mb-3 text-start">
-            <label for="email_field" class="form-label text-muted fw-semibold">Email</label>
-            <div class="position-relative">
-                <span class="position-absolute top-50 start-0 translate-middle-y ps-3">
-                    📧
-                </span>
-                <input type="email" class="form-control ps-5" id="email_field" placeholder="name@mail.com" name="email" required />
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <InputText @bind-Value="loginModel.Email" class="form-control" id="email" />
+                <ValidationMessage For="@(() => loginModel.Email)" class="validation-message" />
             </div>
-        </div>
 
-        <!-- Password Field -->
-        <div class="mb-3 text-start">
-            <label for="password_field" class="form-label text-muted fw-semibold">Password</label>
-            <div class="position-relative">
-                <span class="position-absolute top-50 start-0 translate-middle-y ps-3">
-                    🔒
-                </span>
-                <input type="password" class="form-control ps-5" id="password_field" placeholder="Password" name="password" required />
+            <div class="form-group">
+                <label for="password">Password</label>
+                <InputText type="password" @bind-Value="loginModel.Password" class="form-control" id="password" />
+                <ValidationMessage For="@(() => loginModel.Password)" class="validation-message" />
             </div>
-        </div>
 
-        <!-- Sign In Button -->
-        <button type="submit" class="btn btn-primary w-100 mt-3 rounded-3">Sign In</button>
+            <div class="form-options">
+                <div class="form-check">
+                    <InputCheckbox @bind-Value="loginModel.RememberMe" class="form-check-input" id="remember" />
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                <a href="/forgot-password" class="forgot-password">Forgot password?</a>
+            </div>
 
-        <!-- OR separator -->
-        <div class="d-flex align-items-center justify-content-center gap-3 my-4">
-            <hr class="w-100 text-muted" />
-            <span class="text-muted">Or</span>
-            <hr class="w-100 text-muted" />
-        </div>
+            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Logging in...</span>
+                }
+                else
+                {
+                    <span>Login</span>
+                }
+            </button>
 
-        <!-- Sign in with Google -->
-        <button type="button" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 mb-2 rounded-3">
-            <i class="bi bi-google"></i>
-            <span>Sign in with Google</span>
-        </button>
-
-        <!-- Sign in with Apple -->
-        <button type="button" class="btn btn-dark w-100 d-flex align-items-center justify-content-center gap-2 rounded-3">
-            <i class="bi bi-apple"></i>
-            <span>Sign in with Apple</span>
-        </button>
-    </form>
+            <div class="register-link">
+                Don't have an account? <a href="/businessregistration">Register your business</a>
+            </div>
+        </EditForm>
+    </div>
 </div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 2rem;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 420px;
+        padding: 2.5rem;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+        .login-header .logo {
+            height: 60px;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-header h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .login-header p {
+            color: #7f8c8d;
+            margin-bottom: 0;
+        }
+
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+        .form-group label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 1px solid #dfe6e9;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            border-color: #4a6bff;
+            box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.2);
+        }
+
+    .form-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        margin-top: 0;
+    }
+
+    .forgot-password {
+        color: #4a6bff;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+    .btn-primary {
+        background-color: #4a6bff;
+        border: none;
+        padding: 0.75rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #3a5bef;
+        }
+
+        .btn-primary:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+    .register-link {
+        text-align: center;
+        margin-top: 1rem;
+        color: #7f8c8d;
+    }
+
+        .register-link a {
+            color: #4a6bff;
+            text-decoration: none;
+        }
+
+            .register-link a:hover {
+                text-decoration: underline;
+            }
+
+    .validation-summary {
+        color: #e74c3c;
+        background-color: #fdecea;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .validation-message {
+        color: #e74c3c;
+        font-size: 0.85rem;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border-radius: 6px;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .login-container {
+            padding: 1rem;
+        }
+
+        .login-card {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        StateHasChanged(); // Force UI update to show loading state
+
+        try
+        {
+            if (string.IsNullOrEmpty(loginModel.Email))
+            {
+                errorMessage = "Email is required";
+                return;
+            }
+
+            if (string.IsNullOrEmpty(loginModel.Password))
+            {
+                errorMessage = "Password is required";
+                return;
+            }
+
+            var isValid = await AdminService.VerifyCredentials(loginModel.Email, loginModel.Password);
+
+            if (isValid)
+            {
+                if (loginModel.RememberMe)
+                {
+                    await JS.InvokeVoidAsync("localStorage.setItem", "authToken", "aitisam");
+                }
+
+                Navigation.NavigateTo("/dashboard");
+            }
+            else
+            {
+                errorMessage = "Invalid email or password";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Login failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged(); // Force UI update to hide loading state
+        }
+    }
+
+   
+}

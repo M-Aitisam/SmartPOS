@@ -1,4 +1,4 @@
-﻿@page "/businessregistration"
+﻿@page "/"
 @namespace BlazorAppUserView.Components.Pages.User
 @using Microsoft.AspNetCore.Components.Forms
 @using ClassLibraryEntities
@@ -822,21 +822,14 @@
                 return;
             }
 
-            // Final validation
-            if (businessDetails.LogoData == null || businessDetails.LogoData.Length == 0)
-            {
-                await JS.InvokeVoidAsync("alert", "Please upload a logo for your business");
-                currentStep = 2;
-                StateHasChanged();
-                return;
-            }
-
             // Combine data from both models
             var business = new BusinessModel
                 {
                     GeneralInformation = generalInfo,
                     BusinessDetails = businessDetails,
-                    IsActive = true
+                    IsActive = true,
+                    Email = generalInfo.Email,
+                    PasswordHash = PasswordHasher.HashPassword(businessDetails.Password)
                 };
 
             var success = await AdminService.AddBusiness(business);
@@ -844,7 +837,7 @@
             if (success)
             {
                 await JS.InvokeVoidAsync("alert", "Business registered successfully!");
-                Navigation.NavigateTo("/businessdetails");
+                Navigation.NavigateTo("/login");
             }
             else
             {
@@ -855,6 +848,14 @@
         {
             await JS.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
         }
+    }
+
+
+    private string HashPassword(string password)
+    {
+        // Implement proper password hashing (e.g., using BCrypt)
+        // Example: return BCrypt.Net.BCrypt.HashPassword(password);
+        return password; // In production, use proper hashing!
     }
 
     private async Task HandleStep1Submit()

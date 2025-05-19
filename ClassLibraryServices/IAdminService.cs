@@ -1,4 +1,7 @@
 ﻿using ClassLibraryEntities;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ClassLibraryServices
 {
@@ -9,10 +12,9 @@ namespace ClassLibraryServices
         Task<bool> UpdateBusiness(BusinessModel business);
         Task<bool> DeleteBusiness(int id);
         event Action OnChange;
-
         Task<BusinessDetails> GetBusinessDetails();
         Task<CurrentUser> GetCurrentUserAsync();
-
+        Task<bool> VerifyCredentials(string email, string password);
+        Task<BusinessModel?> GetBusinessByEmail(string email);
     }
 }
-

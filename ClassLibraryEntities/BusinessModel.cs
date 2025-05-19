@@ -13,5 +13,7 @@ namespace ClassLibraryEntities
         public GeneralInformation GeneralInformation { get; set; } = new();
         public BusinessDetails BusinessDetails { get; set; } = new();
         public bool IsActive { get; set; } = true;
+        public string? Email { get; set; }
+        public string? PasswordHash { get; set; }
     }
 }

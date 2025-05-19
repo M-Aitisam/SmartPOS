@@ -15,6 +15,7 @@ namespace ClassLibraryDAL
         public DbSet<BusinessSubItem> SubCategories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<BusinessTransaction> Transactions { get; set; }
+        public DbSet<Category> Categories { get; set; }
         public DbSet<TransactionItem> TransactionItems { get; set; }
 
 
