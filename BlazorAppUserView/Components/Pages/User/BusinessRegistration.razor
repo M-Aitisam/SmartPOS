@@ -11,8 +11,7 @@
 <style>
     /* Modern styling for the form */
     .registration-container {
-        max-width: 1200px;
-        margin: 0 auto;
+        margin: 0 0;
         padding: 2rem;
     }
 
@@ -183,7 +182,29 @@
         margin-top: 10px;
         border: 1px solid #ddd;
         padding: 5px;
-    }   
+    }
+
+    /* Print receipt specific styles */
+    @@media print {
+        body * {
+            visibility: hidden;
+        }
+
+        .print-receipt, .print-receipt * {
+            visibility: visible;
+        }
+
+        .print-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+    }
 </style>
 
 <div class="registration-container">
@@ -385,6 +406,7 @@
                             <label class="form-check-label">Outdoor Seating</label>
                         </div>
                     </div>
+
                     <!-- New Receipt Settings Section -->
                     <div class="receipt-settings">
                         <h5>Receipt Settings</h5>
@@ -418,8 +440,8 @@
                             {
                                 <div class="mt-2">
                                     <label class="form-label">Barcode Preview</label>
-                                    <div class="barcode-preview" id="barcodePreview">
-                                        <!-- Barcode will be rendered here -->
+                                    <div class="barcode-preview">
+                                        <svg id="barcodePreview"></svg>
                                     </div>
                                 </div>
                             }
@@ -528,6 +550,81 @@
                     }
                 </div>
 
+                <!-- Receipt Preview Section -->
+                <div class="review-section">
+                    <h5 class="mb-3">Receipt Preview</h5>
+                    <div class="card review-card print-receipt">
+                        <div class="card-body review-card-body">
+                            <!-- Receipt Header -->
+                            @if (!string.IsNullOrEmpty(businessDetails.ReceiptHeader))
+                            {
+                                <div class="text-center mb-3">
+                                    @((MarkupString)businessDetails.ReceiptHeader.Replace("\n", "<br/>"))
+                                </div>
+                                <hr />
+                            }
+
+                            <!-- Receipt Body -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Sample Item 1</span>
+                                    <span>₹100.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Sample Item 2</span>
+                                    <span>₹200.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Sample Item 3</span>
+                                    <span>₹150.00</span>
+                                </div>
+                            </div>
+
+                            <hr />
+
+                            <!-- Totals -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Subtotal:</span>
+                                    <span>₹450.00</span>
+                                </div>
+                                @if (businessDetails.DefaultTaxRate > 0)
+                                {
+                                    <div class="d-flex justify-content-between">
+                                        <span>Tax (@businessDetails.DefaultTaxRate%):</span>
+                                        <span>₹@(450 * businessDetails.DefaultTaxRate / 100)</span>
+                                    </div>
+                                }
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Total:</span>
+                                    <span>₹@(450 + (450 * businessDetails.DefaultTaxRate / 100))</span>
+                                </div>
+                            </div>
+
+                            <!-- Barcode -->
+                            @if (businessDetails.IncludeBarcode)
+                            {
+                                <div class="text-center mt-3">
+                                    <svg id="receiptBarcode"></svg>
+                                </div>
+                            }
+
+                            <!-- Receipt Footer -->
+                            @if (!string.IsNullOrEmpty(businessDetails.ReceiptFooter))
+                            {
+                                <hr />
+                                <div class="text-center mt-3 small">
+                                    @((MarkupString)businessDetails.ReceiptFooter.Replace("\n", "<br/>"))
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-primary" @onclick="PrintReceipt">Print Receipt</button>
+                    </div>
+                </div>
+
                 <div class="navigation-buttons mt-4">
                     <button type="button" class="btn btn-secondary" @onclick="HandleBack">Back</button>
                     <button type="button" class="btn btn-success" @onclick="HandleSubmit">
@@ -546,20 +643,44 @@
     private BusinessDetails businessDetails = new();
     private string? logoPreviewUrl;
     private IBrowserFile? logoFile;
+    private bool isInitialized = false;
 
-
-     protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && businessDetails.IncludeBarcode)
+        if (firstRender)
         {
-            await GenerateBarcodePreview();
+            isInitialized = true;
+            if (businessDetails.IncludeBarcode)
+            {
+                await GenerateBarcodePreview();
+            }
+        }
+
+        // Always regenerate barcode when step changes to 3
+        if (currentStep == 3 && isInitialized)
+        {
+            await Task.Delay(100); // Small delay to ensure elements are rendered
+            if (businessDetails.IncludeBarcode)
+            {
+                await JS.InvokeVoidAsync("generateBarcode", "receiptBarcode", "RECEIPT" + DateTime.Now.ToString("yyyyMMddHHmmss"));
+            }
         }
     }
-    
+
     private async Task GenerateBarcodePreview()
     {
-        // Generate a sample barcode for preview
-        await JS.InvokeVoidAsync("generateBarcode", "barcodePreview", "PREVIEW12345");
+        try
+        {
+            // Wait for the element to be rendered
+            await Task.Delay(100);
+
+            // Generate a sample barcode for preview
+            await JS.InvokeVoidAsync("generateBarcode", "barcodePreview", "PREVIEW12345");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating barcode: {ex.Message}");
+        }
     }
 
     private string GetStepClass(int step)
@@ -601,6 +722,25 @@
             {
                 await JS.InvokeVoidAsync("alert", $"Error uploading image: {ex.Message}");
             }
+        }
+    }
+
+    private async Task PrintReceipt()
+    {
+        try
+        {
+            // Ensure barcode is generated before printing
+            if (businessDetails.IncludeBarcode)
+            {
+                await JS.InvokeVoidAsync("generateBarcode", "receiptBarcode", "RECEIPT" + DateTime.Now.ToString("yyyyMMddHHmmss"));
+                await Task.Delay(200); // Small delay to ensure barcode is rendered
+            }
+
+            await JS.InvokeVoidAsync("printReceipt");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error printing receipt: {ex.Message}");
         }
     }
 

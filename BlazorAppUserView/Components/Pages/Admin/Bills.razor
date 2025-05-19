@@ -3,7 +3,11 @@
 @inject NavigationManager NavigationManager
 @inject ITransactionService TransactionService
 @inject IAdminService AdminService
-@inject IJSRuntime  JS 
+@inject IJSRuntime JS
+@using QRCoder
+@using ZXing
+@using ZXing.Common
+@using System.IO
 @rendermode InteractiveServer
 
 <style>
@@ -121,6 +125,28 @@
         z-index: 1;
     }
 
+    /* QR and barcode styles */
+    .code-container {
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .qr-code-img, .barcode-img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .barcode-img {
+        height: 60px;
+    }
+
+    .dotted-line {
+        border-top: 1px dashed #000;
+        margin: 5px 0;
+    }
+
     @@media print {
         body * {
             visibility: hidden;
@@ -145,21 +171,10 @@
             display: none !important;
         }
 
-        .barcode-img {
+        .barcode-img, .qr-code-img {
             max-width: 200px;
             height: auto;
         }
-    }
-
-    /* Barcode display */
-    .barcode-container {
-        text-align: center;
-        margin: 10px 0;
-    }
-
-    .barcode-img {
-        max-width: 100%;
-        height: 60px;
     }
 
     .action-buttons {
@@ -258,7 +273,7 @@
             </div>
             <div class="receipt-line">
                 <span>Gross Price (Inc 15% Tax)</span>
-                <span>@_totalWithTax.ToString("0.00")</span>
+                <span>@_totalWithTax.ToString("0.00"))</span>
             </div>
         </div>
     </div>
@@ -337,6 +352,7 @@
         </div>
     </div>
 }
+
 @if (showReceiptModal)
 {
     <div class="modal-overlay">
@@ -347,46 +363,51 @@
             </div>
             <div class="modal-body">
                 <div class="print-receipt" id="receiptToPrint">
-                    <!-- Receipt header from business settings -->
-                    <div style="text-align: center; white-space: pre-line; margin-bottom: 10px;">
-                        @if (businessDetails != null)
-                        {
-                            @businessDetails.ReceiptHeader
-                        }
-                        else
-                        {
-                            <text>My Business<br>123 Business Street<br>City, Country</text>
-                        }
+                    <!-- Store header information -->
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <h3 style="margin-bottom: 5px;">@businessDetails?.BusinessName.ToUpper() ?? "SUPERMARKET"</h3>
+                        <div style="font-size: 0.9em;">@businessDetails?.AddressLine1</div>
+                        <div style="font-size: 0.9em;">@businessDetails?.AddressLine2</div>
+                        <div style="font-size: 0.9em;">Tel: @businessDetails?.PhoneNumber</div>
                     </div>
 
-                    <div style="text-align: center; margin-bottom: 10px;">
+                    <!-- Transaction details -->
+                    <div class="dotted-line"></div>
+                    <div style="text-align: center; margin: 5px 0; font-size: 0.9em;">
                         <div>Transaction # @currentTransactionId</div>
                         <div>@DateTime.Now.ToString("MMMM d, yyyy")</div>
                         <div>@DateTime.Now.ToString("h:mm tt")</div>
                     </div>
+                    <div class="dotted-line"></div>
 
-                    <hr style="border-top: 1px dashed #000; margin: 5px 0;">
+                    <!-- Staff information -->
+                    <div style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 0.9em;">
+                        <div>Cashier: #@(currentUser?.Id ?? "3")</div>
+                        <div>Manager: @(businessDetails?.ManagerName ?? "Eric Steer")</div>
+                    </div>
+
+                    <!-- Items header -->
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; margin: 5px 0;">
+                        <div style="width: 50%;">Name</div>
+                        <div style="width: 15%; text-align: center;">Qty</div>
+                        <div style="width: 35%; text-align: right;">Price</div>
+                    </div>
 
                     <!-- Items list -->
                     <div style="margin-bottom: 10px;">
                         @foreach (var item in BillService.SelectedItems)
                         {
                             <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                                <div>
-                                    @item.Name
-                                    @if (item.Quantity > 1)
-                                    {
-                                        <text>(x@(item.Quantity))</text>
-                                    }
-                                </div>
-                                <div>@((item.BasePrice * item.Quantity).ToString("0.00"))</div>
+                                <div style="width: 50%;">@item.Name</div>
+                                <div style="width: 15%; text-align: center;">@item.Quantity</div>
+                                <div style="width: 35%; text-align: right;">@((item.BasePrice * item.Quantity).ToString("0.00"))</div>
                             </div>
                         }
                     </div>
 
-                    <hr style="border-top: 1px dashed #000; margin: 5px 0;">
+                    <div class="dotted-line"></div>
 
-                    <!-- Totals -->
+                    <!-- Totals section -->
                     <div style="margin-bottom: 10px;">
                         <div style="display: flex; justify-content: space-between;">
                             <div>Sub Total:</div>
@@ -397,7 +418,7 @@
                             <div>@discountAmount.ToString("0.00"))</div>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <div>Tax (@(businessDetails?.DefaultTaxRate ?? 15)%:</div>
+                            <div>Tax (@(businessDetails?.DefaultTaxRate ?? 15)%):</div>
                             <div>@((_totalWithTax - subtotalAfterDiscount).ToString("0.00"))</div>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-weight: bold;">
@@ -418,24 +439,30 @@
                         </div>
                     </div>
 
-                    <!-- Barcode -->
-                    @if (businessDetails?.IncludeBarcode == true)
+                    <div class="dotted-line"></div>
+
+                    <!-- QR Code -->
+                    @if (businessDetails?.IncludeQRCode == true)
                     {
-                        <div class="barcode-container">
-                            <img class="barcode-img" id="receiptBarcode" alt="Transaction barcode" />
+                        <div class="code-container">
+                            <img class="qr-code-img" src="@qrCodeImageSrc" alt="Transaction QR Code" />
                         </div>
                     }
 
-                    <!-- Footer -->
-                    <div style="text-align: center; white-space: pre-line; margin-top: 10px; font-size: 0.8em;">
-                        @if (businessDetails != null)
-                        {
-                            @businessDetails.ReceiptFooter
-                        }
-                        else
-                        {
-                            <text>Thank you for your business!<br>Items can be returned within 30 days with receipt.</text>
-                        }
+                    <!-- Barcode -->
+                    @if (businessDetails?.IncludeBarcode == true)
+                    {
+                        <div class="code-container">
+                            <img class="barcode-img" src="@barcodeImageSrc" alt="Transaction barcode" />
+                        </div>
+                    }
+
+                    <!-- Thank you message -->
+                    <div style="text-align: center; margin-top: 15px; font-weight: bold;">
+                        THANK YOU!
+                    </div>
+                    <div style="text-align: center; font-size: 0.9em;">
+                        Glad to see you again!
                     </div>
                 </div>
             </div>
@@ -455,7 +482,6 @@
     </div>
 }
 
-
 @code {
     private BusinessDetails? businessDetails;
     private bool showReceiptModal = false;
@@ -471,34 +497,169 @@
     private bool isLoading = true;
     private decimal currentTotalAmount = 0;
     private decimal currentTotalWithTax = 0;
-
+    private string qrCodeImageSrc = string.Empty;
+    private string barcodeImageSrc = string.Empty;
+    private CurrentUser? currentUser;
 
     private decimal discountAmount => isPercentageDiscount
         ? BillService.TotalAmount * (discountValue / 100m)
         : discountValue;
 
     private decimal subtotalAfterDiscount => BillService.TotalAmount - discountAmount;
-     private decimal _totalAmount = 0;
+    private decimal _totalAmount = 0;
     private decimal _totalWithTax = 0;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isInitialized = true;
+        }
+
+        // Generate codes whenever receipt modal is shown
+        if (showReceiptModal && isInitialized)
+        {
+            await Task.Delay(100); // Small delay for rendering
+            await GenerateQRCode();
+            await GenerateBarcode();
+        }
+    }
+
+    private async Task GenerateQRCode()
+    {
+        try
+        {
+            if (businessDetails?.IncludeQRCode == true)
+            {
+                var qrData = new
+                {
+                    TransactionId = currentTransactionId,
+                    DateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    TotalAmount = _totalWithTax,
+                    TaxAmount = _totalWithTax - subtotalAfterDiscount,
+                    Items = BillService.SelectedItems?.Select(i => new { i.Name, i.Quantity, i.BasePrice })
+                };
+
+                var jsonData = System.Text.Json.JsonSerializer.Serialize(qrData);
+                qrCodeImageSrc = await GenerateQRCodeImage(jsonData);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating QR code: {ex.Message}");
+        }
+    }
+
+    private async Task<string> GenerateQRCodeImage(string data)
+    {
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrCodeData = qrGenerator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(qrCodeData);
+        var qrCodeBytes = qrCode.GetGraphic(20);
+        return $"data:image/png;base64,{Convert.ToBase64String(qrCodeBytes)}";
+    }
+
+    private async Task GenerateBarcode()
+    {
+        try
+        {
+            if (businessDetails?.IncludeBarcode == true)
+            {
+                barcodeImageSrc = await GenerateBarcodeImage(currentTransactionId);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating barcode: {ex.Message}");
+        }
+    }
+
+    private async Task<string> GenerateBarcodeImage(string data)
+    {
+        try
+        {
+            var writer = new BarcodeWriterPixelData
+                {
+                    Format = BarcodeFormat.CODE_128,
+                    Options = new EncodingOptions
+                    {
+                        Height = 60,
+                        Width = 250,
+                        Margin = 0
+                    }
+                };
+
+            var pixelData = writer.Write(data);
+
+            // Convert to base64
+            using var bitmap = new System.Drawing.Bitmap(pixelData.Width, pixelData.Height, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+            using var ms = new MemoryStream();
+
+            // Lock the bitmap's bits
+            var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, pixelData.Width, pixelData.Height),
+                System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+
+            try
+            {
+                // Copy the data from the pixelData to the bitmap
+                System.Runtime.InteropServices.Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
+            }
+            finally
+            {
+                bitmap.UnlockBits(bitmapData);
+            }
+
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            return $"data:image/png;base64,{Convert.ToBase64String(ms.ToArray())}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Barcode generation error: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    private async Task ShowPrintPreview()
+    {
+        if (BillService.SelectedItems == null || !BillService.SelectedItems.Any())
+            return;
+
+        // Generate a new transaction ID for the preview
+        currentTransactionId = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+        showReceiptModal = true;
+
+        // Ensure UI updates before generating codes
+        StateHasChanged();
+        await Task.Delay(50);
+    }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             businessDetails = await AdminService.GetBusinessDetails();
+            currentUser = await AdminService.GetCurrentUserAsync();
         }
         catch
         {
-            // Fallback to default values
-            businessDetails = new BusinessDetails();
+            // Fallback values
+            businessDetails = new BusinessDetails
+                {
+                    BusinessName = "SUPERMARKET",
+                    ManagerName = "Eric Steer",
+                    IncludeBarcode = true,
+                    IncludeQRCode = true
+                };
+            currentUser = new CurrentUser { Id = "3", Name = "Cashier" };
         }
         finally
         {
             isLoading = false;
         }
 
-        // Rest of your initialization...
         await UpdateTotals();
         BillService.OnChange += async () =>
         {
@@ -506,24 +667,7 @@
             await InvokeAsync(StateHasChanged);
         };
     }
-    private void ProcessPaymentFromPreview()
-    {
-        showReceiptModal = false;
-        ProcessPayment();
-    }
 
-    private async Task ShowPrintPreview()
-    {
-        currentTransactionId = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
-
-        if (businessDetails?.IncludeBarcode == true)
-        {
-            await JS.InvokeVoidAsync("generateBarcode", "receiptBarcode", currentTransactionId);
-        }
-
-        showReceiptModal = true;
-        StateHasChanged();
-    }
     private async Task UpdateTotals()
     {
         // Calculate base total
@@ -538,42 +682,11 @@
         var subtotal = _totalAmount - discount;
 
         // Calculate final total with tax
-        _totalWithTax = subtotal * 1.15m;
+        var taxRate = (businessDetails?.DefaultTaxRate ?? 15) / 100m;
+        _totalWithTax = subtotal * (1 + taxRate);
 
         await InvokeAsync(StateHasChanged);
     }
-
-    private async Task CalculateTotals()
-    {
-        if (BillService.SelectedItems != null && BillService.SelectedItems.Any())
-        {
-            currentTotalAmount = BillService.SelectedItems.Sum(item => item.BasePrice * item.Quantity);
-
-            var discount = isPercentageDiscount
-                ? currentTotalAmount * (discountValue / 100m)
-                : discountValue;
-
-            var subtotal = currentTotalAmount - discount;
-            currentTotalWithTax = subtotal + (subtotal * 0.15m);
-        }
-        else
-        {
-            currentTotalAmount = 0;
-            currentTotalWithTax = 0;
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-    private async Task HandleBillServiceChange()
-    {
-        await CalculateTotals();
-    }
-
-    public void Dispose()
-    {
-        BillService.OnChange -= HandleBillServiceChange;
-    }
-
 
     private async Task IncreaseQuantity(RateItem item)
     {
@@ -657,10 +770,12 @@
         var subtotal = _totalAmount - discount;
 
         // Calculate tax amount
-        var tax = subtotal * 0.15m;
+        var taxRate = (businessDetails?.DefaultTaxRate ?? 15) / 100m;
+        var tax = subtotal * taxRate;
 
         var transaction = new BusinessTransaction
             {
+                TransactionId = currentTransactionId,
                 Items = BillService.SelectedItems.Select(i => new TransactionItem
                 {
                     ProductName = i.Name,
@@ -673,20 +788,24 @@
                 Total = _totalWithTax,
                 PaymentMethod = selectedPaymentMethod,
                 AmountReceived = amountReceived,
-                ChangeAmount = amountReceived - _totalWithTax
+                ChangeAmount = amountReceived - _totalWithTax,
+                TransactionDate = DateTime.Now
             };
+
         showReceiptModal = true;
 
-        // Generate barcode if enabled
-        if (businessDetails?.IncludeBarcode == true)
+        // Generate codes if enabled
+        if (businessDetails?.IncludeBarcode == true || businessDetails?.IncludeQRCode == true)
         {
-            await JS.InvokeVoidAsync("generateBarcode", "receiptBarcode", currentTransactionId);
+            await Task.WhenAll(
+                businessDetails.IncludeQRCode ? GenerateQRCode() : Task.CompletedTask,
+                businessDetails.IncludeBarcode ? GenerateBarcode() : Task.CompletedTask
+            );
         }
 
         await TransactionService.SaveTransactionAsync(transaction);
         await BillService.ClearCart();
         ShowPaymentModal = false;
-        NavigationManager.NavigateTo("/order-history");
     }
 
     private async Task CancelOrder()
@@ -695,8 +814,8 @@
         {
             await BillService.ClearCart();
         }
-        NavigationManager.NavigateTo("/", forceLoad: true);
     }
+
     private void CloseReceiptModal()
     {
         showReceiptModal = false;
@@ -705,49 +824,35 @@
 
     private async Task PrintReceipt()
     {
-        await JS.InvokeVoidAsync("printReceipt");
-        CloseReceiptModal();
+        try
+        {
+            // Ensure codes are generated before printing
+            if (businessDetails?.IncludeBarcode == true || businessDetails?.IncludeQRCode == true)
+            {
+                await Task.WhenAll(
+                    businessDetails.IncludeQRCode ? GenerateQRCode() : Task.CompletedTask,
+                    businessDetails.IncludeBarcode ? GenerateBarcode() : Task.CompletedTask
+                );
+                await Task.Delay(100); // Small delay to ensure codes are rendered
+            }
 
-        // Navigate or clear cart as needed
-        NavigationManager.NavigateTo("/order-history");
+            await JS.InvokeVoidAsync("printReceipt");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error printing receipt: {ex.Message}");
+        }
+        finally
+        {
+            CloseReceiptModal();
+            NavigationManager.NavigateTo("/order-history");
+        }
+    }
+
+    private async Task ProcessPaymentFromPreview()
+    {
+        showReceiptModal = false;
+        await Task.Delay(50); // Small delay for modal transition
+        ProcessPayment();
     }
 }
-
-
- <script>
-         // Function to generate barcode using JsBarcode library
-    function generateBarcode(elementId, text) {
-        // Ensure JsBarcode is loaded
-        if (typeof JsBarcode !== 'undefined') {
-            JsBarcode(`#${elementId}`, text, {
-                format: "CODE128",
-                lineColor: "#000",
-                width: 2,
-                height: 50,
-                displayValue: true,
-                fontSize: 12,
-                margin: 5
-            });
-        } else {
-            console.error("JsBarcode library not loaded");
-        }
-    }
-
-    // Function to handle printing
-    function printReceipt() {
-        window.print();
-    }
-
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        // Load JsBarcode library dynamically if not already loaded
-        if (typeof JsBarcode === 'undefined') {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
-            script.onload = function() {
-                console.log("JsBarcode library loaded");
-            };
-            document.head.appendChild(script);
-        }
-    });
- </script>

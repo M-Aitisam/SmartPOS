@@ -11,7 +11,8 @@ namespace ClassLibraryServices
         event Action OnChange;
 
         Task<BusinessDetails> GetBusinessDetails();
-    }
+        Task<CurrentUser> GetCurrentUserAsync();
 
+    }
 }
 

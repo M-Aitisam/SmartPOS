@@ -3,6 +3,7 @@ using System;
 using ClassLibraryDAL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClassLibraryDAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250518102405_updatebusinessdetail")]
+    partial class updatebusinessdetail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
@@ -45,14 +48,6 @@ namespace ClassLibraryDAL.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("AddressLine1")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AddressLine2")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Area")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -75,9 +70,6 @@ namespace ClassLibraryDAL.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue(15.0m);
 
-                    b.Property<string>("FeedbackUrl")
-                        .HasColumnType("TEXT");
-
                     b.Property<bool>("HasOutdoorSeating")
                         .HasColumnType("INTEGER");
 
@@ -89,9 +81,6 @@ namespace ClassLibraryDAL.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(true);
 
-                    b.Property<bool>("IncludeQRCode")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -101,13 +90,6 @@ namespace ClassLibraryDAL.Migrations
                         .HasColumnType("BLOB");
 
                     b.Property<string>("LogoPath")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ManagerName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -238,9 +220,8 @@ namespace ClassLibraryDAL.Migrations
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TransactionId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("TransactionID")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

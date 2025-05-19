@@ -45,6 +45,11 @@ namespace ClassLibraryServices
             return result;
         }
 
+        public async Task<CurrentUser> GetCurrentUserAsync()
+        {
+            // Implement your actual user retrieval logic here
+            return await Task.FromResult(new CurrentUser { Id = "3", Name = "Cashier" });
+        }
         private void NotifyStateChanged() => OnChange?.Invoke();
     }
 }

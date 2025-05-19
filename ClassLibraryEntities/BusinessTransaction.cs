@@ -6,7 +6,7 @@ namespace ClassLibraryEntities
     {
         [Key]
         public string Id { get; set; } = Guid.NewGuid().ToString();
-        public int TransactionID { get; set; }
+        public string TransactionId { get; set; } = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
         public List<TransactionItem> Items { get; set; } = new();
         public string? CustomerName { get; set; }
         public decimal SubTotal { get; set; }

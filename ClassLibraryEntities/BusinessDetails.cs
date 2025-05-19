@@ -53,7 +53,16 @@ Glad to see you again!
 modif.ai";
 
         public string TaxNumber { get; set; } = "";
-        public decimal DefaultTaxRate { get; set; } = 15.0m;
+     
         public bool IncludeBarcode { get; set; } = true;
+        public bool IncludeQRCode { get; set; } = true;
+        public string? FeedbackUrl { get; set; }
+        public string? ManagerName { get; set; } = "Aitisam Ahmed";
+        public decimal DefaultTaxRate { get; set; } = 15;
+
+        public string AddressLine1 { get; set; } = string.Empty;
+        public string AddressLine2 { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+      
     }
 }

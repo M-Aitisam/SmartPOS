@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@inject IAdminService AdminService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,6 +15,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>POS System</title>
     <style>
+        :root {
+            --sidebar-width: 264px;
+            --sidebar-collapsed-width: 0px;
+            --transition-speed: 0.35s;
+        }
+
         .wrapper,
         #sidebar,
         .main,
@@ -42,26 +51,35 @@
             list-style: none;
         }
 
+        body {
+            overflow-x: hidden;
+        }
+
         /* Layout skeleton */
         .wrapper {
             align-items: stretch;
             display: flex;
             width: 100%;
+            min-height: 100vh;
             box-shadow: none !important;
         }
 
         #sidebar {
-            max-width: 264px;
-            min-width: 264px;
-            transition: all 0.35s ease-in-out;
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            max-width: var(--sidebar-width);
+            transition: all var(--transition-speed) ease-in-out;
             z-index: 1111;
             box-shadow: none !important;
             background: #2c3e50;
             border-right: 1px solid #1a252f;
+            transform: translateX(calc(-1 * var(--sidebar-width)));
+            position: fixed;
+            height: 100vh;
         }
 
-            #sidebar.collapsed {
-                margin-left: -264px;
+            #sidebar.expanded {
+                transform: translateX(0);
             }
 
         .main {
@@ -69,20 +87,41 @@
             flex-direction: column;
             min-height: 100vh;
             width: 100%;
-            overflow: hidden;
-            transition: all 0.35s ease-in-out;
+            transition: margin-left var(--transition-speed) ease-in-out;
+            margin-left: var(--sidebar-collapsed-width);
         }
+
+            .main.expanded {
+                margin-left: var(--sidebar-width);
+            }
 
         /* Navbar styles */
         .navbar {
             background-color: #fff;
             padding: 0.5rem 1rem;
             border-bottom: 1px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .navbar-brand {
             display: flex;
             align-items: center;
+        }
+
+        .business-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            margin-right: 10px;
+            object-fit: contain;
+        }
+
+        .business-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #212529;
         }
 
         .user-dropdown {
@@ -112,12 +151,12 @@
         .user-name {
             font-weight: 600;
             color: #212529;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             margin-bottom: 0;
         }
 
         .user-role {
-            font-size: 0.4rem;
+            font-size: 0.7rem;
             color: #6c757d;
         }
 
@@ -126,12 +165,14 @@
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
             border-radius: 0.5rem;
             padding: 0.5rem 0;
+            min-width: 220px;
         }
 
         .dropdown-item {
             padding: 0.5rem 1.5rem;
             color: #495057;
             transition: all 0.2s;
+            font-size: 0.9rem;
         }
 
             .dropdown-item:hover {
@@ -139,9 +180,23 @@
                 color: #0d6efd;
             }
 
+            .dropdown-item i {
+                width: 20px;
+                text-align: center;
+                margin-right: 8px;
+            }
+
         .dropdown-divider {
             margin: 0.5rem 0;
             border-color: #e9ecef;
+        }
+
+        .dropdown-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            padding: 0.25rem 1.5rem;
+            text-transform: uppercase;
         }
 
         /* Sidebar styles */
@@ -171,7 +226,12 @@
             position: relative;
             display: block;
             font-size: 1rem;
+            transition: all 0.2s;
         }
+
+            a.sidebar-link:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
 
         .sidebar-link[data-bs-toggle="collapse"]::after {
             border: solid;
@@ -191,21 +251,77 @@
             transition: all .2s ease-out;
         }
 
+        .sidebar-dropdown .sidebar-link {
+            padding-left: 2.5rem;
+        }
+
         .content {
             flex: 1;
-            max-width: 100vw;
-            width: 100vw;
+            width: 100%;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            transition: all var(--transition-speed) ease-in-out;
         }
+
+        .sidebar-toggle {
+            transition: transform var(--transition-speed) ease-in-out;
+        }
+
+            .sidebar-toggle.expanded {
+                transform: rotate(90deg);
+            }
+
+        /* Responsive adjustments */
+        @@media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                z-index: 2000;
+            }
+
+            .main.expanded {
+                position: relative;
+                margin-left: 0;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+        }
+
+        /* Overlay for mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            display: none;
+        }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
     </style>
 </head>
 
 <body>
     <div class="wrapper">
+        <!-- Sidebar Overlay (for mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <!-- Sidebar -->
         <aside id="sidebar">
             <div class="h-100">
                 <div class="sidebar-logo">
-                    <a href="#">POS</a>
+                    <a href="#">
+                        @if (businessLogoUrl != null)
+                        {
+                            <img src="@businessLogoUrl" alt="Business Logo" class="me-2" style="height:30px;width:auto;" />
+                        }
+                        POS System
+                    </a>
                 </div>
                 <!-- Sidebar Navigation -->
                 <ul class="sidebar-nav">
@@ -213,79 +329,82 @@
                         Tools & Components
                     </li>
                     <li class="sidebar-item">
-                        <a href="/website" class="sidebar-link">
-                            <i class="fa-solid fa-list pe-2"></i>
+                        <a href="/profile" class="sidebar-link">
+                            <i class="fa-solid fa-user pe-2"></i>
                             Profile
                         </a>
                     </li>
                     <li class="sidebar-item">
                         <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#pages"
                            aria-expanded="false" aria-controls="pages">
-                            <i class="fa-regular fa-file-lines pe-2"></i>
-                            Pages
+                            <i class="fa-solid fa-store pe-2"></i>
+                            Business
                         </a>
                         <ul id="pages" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
                                 <a href="/categories" class="sidebar-link">Categories</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/product" class="sidebar-link">Product</a>
+                                <a href="/products" class="sidebar-link">Products</a>
                             </li>
                             <li class="sidebar-item">
                                 <a href="/menu" class="sidebar-link">Menu</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/adminpage" class="sidebar-link">Ratelist</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="/orderpage" class="sidebar-link">OrderPage</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="/report" class="sidebar-link">Report</a>
+                                <a href="/pricelist" class="sidebar-link">Price List</a>
                             </li>
                         </ul>
                     </li>
                     <li class="sidebar-item">
-                        <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#dashboard"
-                           aria-expanded="false" aria-controls="dashboard">
-                            <i class="fa-solid fa-sliders pe-2"></i>
-                            Dashboard
+                        <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#sales"
+                           aria-expanded="false" aria-controls="sales">
+                            <i class="fa-solid fa-cash-register pe-2"></i>
+                            Sales
                         </a>
-                        <ul id="dashboard" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                        <ul id="sales" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
-                                <a href="/" class="sidebar-link">Website</a>
+                                <a href="/pos" class="sidebar-link">POS</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/dashboard" class="sidebar-link">Dashboard</a>
+                                <a href="/orders" class="sidebar-link">Orders</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="/transactions" class="sidebar-link">Transactions</a>
                             </li>
                         </ul>
                     </li>
                     <li class="sidebar-item">
-                        <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#auth"
-                           aria-expanded="false" aria-controls="auth">
-                            <i class="fa-regular fa-user pe-2"></i>
-                            Auth
+                        <a href="/reports" class="sidebar-link">
+                            <i class="fa-solid fa-chart-bar pe-2"></i>
+                            Reports
                         </a>
-                        <ul id="auth" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
-                            <li class="sidebar-item">
-                                <a href="/login" class="sidebar-link">Login</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="/register" class="sidebar-link">Register</a>
-                            </li>
-                        </ul>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/settings" class="sidebar-link">
+                            <i class="fa-solid fa-cog pe-2"></i>
+                            Settings
+                        </a>
                     </li>
                 </ul>
             </div>
         </aside>
         <!-- Main Component -->
-        <div class="main">
+        <div class="main" id="mainContent">
             <nav class="navbar navbar-expand px-3 border-bottom">
                 <!-- Button for sidebar toggle -->
-                <button class="btn border-0 shadow-none" type="button" data-bs-theme="dark"
-                        style="outline: none !important; --bs-btn-focus-box-shadow: none;">
+                <button class="btn border-0 shadow-none sidebar-toggle" type="button" data-bs-theme="dark"
+                        style="outline: none !important; --bs-btn-focus-box-shadow: none;" @onclick="ToggleSidebar">
                     <i class="fas fa-bars fs-4"></i>
                 </button>
+
+                <!-- Business Info -->
+                <div class="navbar-brand ms-3">
+                    @if (businessLogoUrl != null)
+                    {
+                        <img src="@businessLogoUrl" alt="Business Logo" class="business-logo" />
+                    }
+                    <span class="business-name">@businessName</span>
+                </div>
 
                 <!-- Spacer to push user dropdown to the right -->
                 <div class="ms-auto"></div>
@@ -293,39 +412,240 @@
                 <!-- User dropdown -->
                 <div class="dropdown">
                     <div class="user-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="user-avatar">JD</div>
+                        <div class="user-avatar">@userInitials</div>
                         <div class="user-info">
-                            <span class="user-name">John Doe</span>
-                            <span class="user-role">Admin</span>
+                            <span class="user-name">@userName</span>
+                            <span class="user-role">@userRole</span>
                         </div>
-                        <i class="fas fa-chevron-down ms-2" style="font-size:0.6rem"></i>
+                        <i class="fas fa-chevron-down ms-2"></i>
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header">Account</h6></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-credit-card me-2"></i> Billing Plan</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-tag me-2"></i> Pricing</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-question-circle me-2"></i> FAQ</a></li>
+                        <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a class="dropdown-item" href="/billing"><i class="fas fa-credit-card"></i> Billing Plan</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                        <li><a class="dropdown-item" href="/pricing"><i class="fas fa-tag"></i> Pricing</a></li>
+                        <li><a class="dropdown-item" href="/faq"><i class="fas fa-question-circle"></i> FAQ</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </div>
             </nav>
             <main>
-                <article>
+                <div class="content">
                     @Body
-                </article>
+                </div>
             </main>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.querySelector(".btn").addEventListener("click", function(e){
-            e.preventDefault();
-            document.querySelector("#sidebar").classList.toggle("collapsed");
+        // Function to handle sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarToggle = document.querySelector('.sidebar-toggle');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('expanded');
+            mainContent.classList.toggle('expanded');
+            sidebarToggle.classList.toggle('expanded');
+
+            // Show/hide overlay on mobile
+            if (window.innerWidth <= 768) {
+                if (sidebar.classList.contains('expanded')) {
+                    sidebarOverlay.classList.add('show');
+                } else {
+                    sidebarOverlay.classList.remove('show');
+                }
+            }
+        }
+
+        // Close sidebar when clicking on overlay (mobile)
+        document.getElementById('sidebarOverlay').addEventListener('click', function() {
+            toggleSidebar();
+        });
+
+        // Close sidebar when clicking on a link (mobile)
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Handle window resize
+        function handleResize() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            if (window.innerWidth > 768) {
+                // On desktop, ensure sidebar is visible if expanded
+                if (mainContent.classList.contains('expanded')) {
+                    sidebar.classList.add('expanded');
+                }
+                sidebarOverlay.classList.remove('show');
+            } else {
+                // On mobile, hide sidebar by default
+                if (!mainContent.classList.contains('expanded')) {
+                    sidebar.classList.remove('expanded');
+                }
+            }
+        }
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start with sidebar closed
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            if (window.innerWidth > 768) {
+                // Desktop - start closed but with margin for sidebar
+                sidebar.classList.remove('expanded');
+                mainContent.classList.remove('expanded');
+            } else {
+                // Mobile - start completely closed
+                sidebar.classList.remove('expanded');
+                mainContent.classList.remove('expanded');
+            }
+
+            // Add event listeners
+            document.querySelector('.sidebar-toggle').addEventListener('click', toggleSidebar);
+            window.addEventListener('resize', handleResize);
         });
     </script>
 </body>
 
 </html>
+
+@code {
+    private string? businessLogoUrl;
+    private string businessName = "My Business";
+    private string userName = "John Doe";
+    private string userRole = "Admin";
+    private string userInitials = "JD";
+    private bool isSidebarExpanded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBusinessDetails();
+    }
+
+    private async Task LoadBusinessDetails()
+    {
+        try
+        {
+            // Option 1: If you have a method to get business by ID or name
+            // var business = await AdminService.GetBusinessById(businessId);
+
+            // Option 2: If you have a method to get all businesses and want the first
+            // var businesses = await AdminService.GetAllBusinesses();
+            // var business = businesses.FirstOrDefault();
+
+            // Option 3: If you have a different method name
+            // var business = await AdminService.GetBusiness();
+
+            // TEMPORARY FIX: Using mock data until you implement the service method
+            var business = new BusinessModel
+                {
+                    BusinessDetails = new BusinessDetails
+                    {
+                        BusinessName = "My Business",
+                        LogoData = null // Add actual logo data if available
+                    }
+                };
+
+            if (business?.BusinessDetails != null)
+            {
+                businessName = business.BusinessDetails.BusinessName;
+
+                if (business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0)
+                {
+                    businessLogoUrl = $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}";
+                }
+            }
+
+            // Load user details (you would typically get this from authentication state)
+            userName = "John Doe";
+            userRole = "Admin";
+            userInitials = GetInitials(userName);
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", "Error loading business details:", ex);
+        }
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "US";
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+            return "US";
+
+        if (parts.Length == 1)
+            return parts[0][0].ToString().ToUpper();
+
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
+
+    private void ToggleSidebar()
+    {
+        isSidebarExpanded = !isSidebarExpanded;
+        JS.InvokeVoidAsync("toggleSidebar");
+    }
+}
+
+<script>
+    // Global function to load JsBarcode library
+    window.loadJsBarcode = function() {
+        return new Promise((resolve, reject) => {
+            if (typeof JsBarcode !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    };
+
+    // Function to generate barcode
+    window.generateBarcode = function(elementId, text) {
+        if (typeof JsBarcode === 'undefined') {
+            console.error("JsBarcode not loaded");
+            return;
+        }
+
+        try {
+            JsBarcode(`#${elementId}`, text, {
+                format: "CODE128",
+                lineColor: "#000",
+                width: 2,
+                height: 50,
+                displayValue: true
+            });
+        } catch (e) {
+            console.error("Barcode generation error:", e);
+        }
+    };
+
+    // Function to handle printing
+    window.printReceipt = function() {
+        const printContents = document.getElementById('receiptToPrint').innerHTML;
+        const originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload();
+    };
+</script>
