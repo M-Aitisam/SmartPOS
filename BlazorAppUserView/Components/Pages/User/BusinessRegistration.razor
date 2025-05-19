@@ -9,10 +9,11 @@
 @rendermode InteractiveServer
 
 <style>
-    /* Modern styling for the form */
+    /* Simple, clean styling */
     .registration-container {
-        margin: 0 0;
-        padding: 2rem;
+        max-width: 1000px;
+        margin: 2rem auto;
+        padding: 0 1rem;
     }
 
     .progress-container {
@@ -20,13 +21,13 @@
     }
 
     .progress {
-        height: 10px;
-        border-radius: 5px;
-        background-color: #e9ecef;
+        height: 8px;
+        border-radius: 4px;
+        background-color: #f0f0f0;
     }
 
     .progress-bar {
-        background-color: #4e73df;
+        background-color: #4a6bff;
         transition: width 0.3s ease;
     }
 
@@ -38,82 +39,106 @@
 
     .step {
         font-size: 0.9rem;
-        color: #6c757d;
+        color: #888;
     }
 
         .step.active {
             font-weight: 600;
-            color: #4e73df;
+            color: #4a6bff;
         }
 
     .form-card {
-        border: none;
-        border-radius: 0.5rem;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         margin-bottom: 2rem;
+        background: white;
     }
 
     .form-card-header {
-        background-color: #4e73df;
-        color: white;
-        border-radius: 0.5rem 0.5rem 0 0 !important;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
         padding: 1.25rem 1.5rem;
+        border-radius: 8px 8px 0 0;
     }
 
     .form-card-body {
-        padding: 2rem;
+        padding: 1.5rem;
     }
 
     .form-label {
-        font-weight: 600;
-        color: #5a5c69;
+        font-weight: 500;
+        color: #555;
         margin-bottom: 0.5rem;
+        display: block;
     }
 
     .form-control, .form-select {
-        border-radius: 0.35rem;
-        padding: 0.75rem 1rem;
-        border: 1px solid #d1d3e2;
+        border-radius: 6px;
+        padding: 0.7rem 1rem;
+        border: 1px solid #ddd;
+        width: 100%;
+        font-size: 0.95rem;
     }
 
         .form-control:focus, .form-select:focus {
-            border-color: #bac8f3;
-            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+            border-color: #4a6bff;
+            box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.1);
+            outline: none;
         }
 
     .validation-message {
         color: #e74a3b;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         margin-top: 0.25rem;
     }
 
+    .btn {
+        padding: 0.7rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
     .btn-primary {
-        background-color: #4e73df;
-        border-color: #4e73df;
-        padding: 0.5rem 1.5rem;
-        font-weight: 600;
+        background-color: #4a6bff;
+        border: 1px solid #4a6bff;
+        color: white;
     }
 
         .btn-primary:hover {
-            background-color: #2e59d9;
-            border-color: #2653d4;
+            background-color: #3a5bef;
+            border-color: #3a5bef;
         }
 
     .btn-secondary {
-        background-color: #858796;
-        border-color: #858796;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        color: #555;
     }
 
+        .btn-secondary:hover {
+            background-color: #e9ecef;
+        }
+
     .btn-success {
-        background-color: #1cc88a;
-        border-color: #1cc88a;
+        background-color: #28a745;
+        border: 1px solid #28a745;
+        color: white;
     }
+
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #218838;
+        }
 
     .logo-preview {
         max-width: 200px;
         max-height: 200px;
-        border-radius: 0.35rem;
-        border: 1px solid #e3e6f0;
+        border-radius: 6px;
+        border: 1px solid #eee;
         margin-top: 1rem;
     }
 
@@ -122,33 +147,13 @@
     }
 
     .review-card {
-        border: 1px solid #e3e6f0;
-        border-radius: 0.35rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
     }
 
     .review-card-body {
         padding: 1.5rem;
-    }
-
-    .badge {
-        padding: 0.35em 0.65em;
-        font-size: 0.75em;
-        font-weight: 700;
-    }
-
-    .btn-edit {
-        color: #4e73df;
-        border-color: #4e73df;
-    }
-
-        .btn-edit:hover {
-            background-color: #f8f9fc;
-        }
-
-    .navigation-buttons {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 2rem;
     }
 
     .required-field::after {
@@ -162,8 +167,7 @@
         border-color: #f5c6cb;
         padding: 0.75rem 1.25rem;
         margin-bottom: 1rem;
-        border: 1px solid transparent;
-        border-radius: 0.25rem;
+        border-radius: 6px;
     }
 
     .validation-summary {
@@ -180,8 +184,26 @@
         max-width: 200px;
         height: 80px;
         margin-top: 10px;
-        border: 1px solid #ddd;
+        border: 1px solid #eee;
         padding: 5px;
+        background: white;
+    }
+
+    .password-strength {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .strength-weak {
+        color: #e74a3b;
+    }
+
+    .strength-medium {
+        color: #f39c12;
+    }
+
+    .strength-strong {
+        color: #28a745;
     }
 
     /* Print receipt specific styles */
@@ -208,15 +230,7 @@
 </style>
 
 <div class="registration-container">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <img src="https://getbootstrap.com/docs/5.3/assets/brand/bootstrap-logo-shadow.png"
-                     alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
-                Business Registration
-            </a>
-        </div>
-    </nav>
+    <h2 class="mb-4 text-center">Business Registration</h2>
 
     <div class="progress-container">
         <div class="progress">
@@ -233,11 +247,11 @@
     @if (currentStep == 1)
     {
         <!-- Step 1: General Information -->
-        <div class="card form-card">
-            <div class="card-header form-card-header">
+        <div class="form-card">
+            <div class="form-card-header">
                 <h4 class="mb-0">General Information</h4>
             </div>
-            <div class="card-body form-card-body">
+            <div class="form-card-body">
                 <EditForm Model="@generalInfo" OnValidSubmit="HandleStep1Submit" FormName="step1">
                     <DataAnnotationsValidator />
                     <ValidationSummary class="alert alert-danger validation-summary" />
@@ -332,11 +346,11 @@
     else if (currentStep == 2)
     {
         <!-- Step 2: Business Details -->
-        <div class="card form-card">
-            <div class="card-header form-card-header">
+        <div class="form-card">
+            <div class="form-card-header">
                 <h4 class="mb-0">Business Details</h4>
             </div>
-            <div class="card-body form-card-body">
+            <div class="form-card-body">
                 <EditForm Model="@businessDetails" OnValidSubmit="HandleStep2Submit" FormName="step2">
                     <DataAnnotationsValidator />
                     <ValidationSummary class="alert alert-danger validation-summary" />
@@ -395,6 +409,31 @@
                         </div>
                     </div>
 
+                    <!-- New Password Fields -->
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Password</label>
+                            <InputText type="password" @bind-Value="businessDetails.Password" class="form-control" />
+                            <ValidationMessage For="@(() => businessDetails.Password)" class="validation-message" />
+                            @if (!string.IsNullOrEmpty(businessDetails.Password))
+                            {
+                                <div class="password-strength @GetPasswordStrengthClass(businessDetails.Password)">
+                                    Password strength: @GetPasswordStrength(businessDetails.Password)
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label required-field">Confirm Password</label>
+                            <InputText type="password" @bind-Value="businessDetails.ConfirmPassword" class="form-control" />
+                            <ValidationMessage For="@(() => businessDetails.ConfirmPassword)" class="validation-message" />
+                            @if (!string.IsNullOrEmpty(businessDetails.ConfirmPassword) &&
+                           businessDetails.Password != businessDetails.ConfirmPassword)
+                            {
+                                <div class="validation-message">Passwords do not match</div>
+                            }
+                        </div>
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label">Additional Options</label>
                         <div class="form-check mb-2">
@@ -407,7 +446,7 @@
                         </div>
                     </div>
 
-                    <!-- New Receipt Settings Section -->
+                    <!-- Receipt Settings Section -->
                     <div class="receipt-settings">
                         <h5>Receipt Settings</h5>
 
@@ -459,15 +498,15 @@
     else if (currentStep == 3)
     {
         <!-- Step 3: Overview -->
-        <div class="card form-card">
-            <div class="card-header form-card-header">
+        <div class="form-card">
+            <div class="form-card-header">
                 <h4 class="mb-0">Review Your Information</h4>
             </div>
-            <div class="card-body form-card-body">
+            <div class="form-card-body">
                 <div class="review-section">
                     <h5 class="mb-3">General Information</h5>
-                    <div class="card review-card">
-                        <div class="card-body review-card-body">
+                    <div class="review-card">
+                        <div class="review-card-body">
                             <dl class="row">
                                 <dt class="col-sm-3">Name</dt>
                                 <dd class="col-sm-9">@generalInfo.FirstName @generalInfo.LastName</dd>
@@ -502,8 +541,8 @@
 
                 <div class="review-section">
                     <h5 class="mb-3">Business Information</h5>
-                    <div class="card review-card">
-                        <div class="card-body review-card-body">
+                    <div class="review-card">
+                        <div class="review-card-body">
                             <dl class="row">
                                 <dt class="col-sm-3">Business Name</dt>
                                 <dd class="col-sm-9">@businessDetails.BusinessName</dd>
@@ -519,6 +558,9 @@
 
                                 <dt class="col-sm-3">Location</dt>
                                 <dd class="col-sm-9">@businessDetails.Location</dd>
+
+                                <dt class="col-sm-3">Password</dt>
+                                <dd class="col-sm-9">••••••••</dd>
 
                                 <dt class="col-sm-3">Amenities</dt>
                                 <dd class="col-sm-9">
@@ -544,7 +586,7 @@
                     </div>
                     @if (!hasEditedBusinessDetails)
                     {
-                        <button class="btn btn-outline-primary btn-edit mt-3" @onclick="() => HandleEdit(2)">
+                        <button class="btn btn-outline-primary mt-3" @onclick="() => HandleEdit(2)">
                             Edit Business Details
                         </button>
                     }
@@ -553,8 +595,8 @@
                 <!-- Receipt Preview Section -->
                 <div class="review-section">
                     <h5 class="mb-3">Receipt Preview</h5>
-                    <div class="card review-card print-receipt">
-                        <div class="card-body review-card-body">
+                    <div class="review-card print-receipt">
+                        <div class="review-card-body">
                             <!-- Receipt Header -->
                             @if (!string.IsNullOrEmpty(businessDetails.ReceiptHeader))
                             {
@@ -667,6 +709,20 @@
         }
     }
 
+    private string GetPasswordStrength(string password)
+    {
+        if (password.Length < 6) return "Weak";
+        if (password.Length < 10) return "Medium";
+        return "Strong";
+    }
+
+    private string GetPasswordStrengthClass(string password)
+    {
+        if (password.Length < 6) return "strength-weak";
+        if (password.Length < 10) return "strength-medium";
+        return "strength-strong";
+    }
+
     private async Task GenerateBarcodePreview()
     {
         try
@@ -748,6 +804,24 @@
     {
         try
         {
+            // Validate passwords match
+            if (businessDetails.Password != businessDetails.ConfirmPassword)
+            {
+                await JS.InvokeVoidAsync("alert", "Passwords do not match");
+                currentStep = 2;
+                StateHasChanged();
+                return;
+            }
+
+            // Validate password strength
+            if (businessDetails.Password.Length < 6)
+            {
+                await JS.InvokeVoidAsync("alert", "Password must be at least 6 characters long");
+                currentStep = 2;
+                StateHasChanged();
+                return;
+            }
+
             // Final validation
             if (businessDetails.LogoData == null || businessDetails.LogoData.Length == 0)
             {

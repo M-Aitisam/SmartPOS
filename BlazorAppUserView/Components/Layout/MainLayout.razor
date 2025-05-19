@@ -303,10 +303,19 @@
             .sidebar-overlay.show {
                 display: block;
             }
+        /* Add this to your style section */
+        body.business-registration-page #sidebar,
+        body.business-registration-page .navbar {
+            display: none !important;
+        }
+
+        body.business-registration-page .main {
+            margin-left: 0 !important;
+        }
     </style>
 </head>
 
-<body>
+<body class="@(IsBusinessRegistrationPage() ? "business-registration-page" : "")">
     <div class="wrapper">
         <!-- Sidebar Overlay (for mobile) -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -598,6 +607,34 @@
     {
         isSidebarExpanded = !isSidebarExpanded;
         JS.InvokeVoidAsync("toggleSidebar");
+    }
+    private bool IsBusinessRegistrationPage()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        return uri.AbsolutePath.Contains("businessregistration", StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("eval", @"
+                window.checkBusinessRegistrationPage = function() {
+                    const path = window.location.pathname.toLowerCase();
+                    if (path.includes('businessregistration')) {
+                        document.body.classList.add('business-registration-page');
+                    } else {
+                        document.body.classList.remove('business-registration-page');
+                    }
+                };
+
+                // Initial check
+                window.checkBusinessRegistrationPage();
+
+                // Listen for navigation changes
+                window.addEventListener('popstate', window.checkBusinessRegistrationPage);
+            ");
+        }
     }
 }
 
