@@ -239,14 +239,12 @@
     {
         try
         {
-            // Get all active products for the selected day
+            // Get all active products regardless of day
             var activeProducts = ProductList
-                .Where(p => p.IsActive &&
-                          (string.IsNullOrEmpty(p.ActiveDays) ||
-                           p.ActiveDays.Split(',').Contains(selectedDay)))
+                .Where(p => p.IsActive)
                 .ToList();
 
-            // Convert to RateItems
+            // Convert to RateItems with their ActiveDays
             var rateItems = activeProducts.Select(p => new RateItem
                 {
                     Name = p.ProductTitle,
@@ -254,7 +252,7 @@
                     ImageUrl = p.ImageUrl,
                     IsActive = true,
                     Category = businessCategories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName ?? "Uncategorized",
-                    ActiveDays = p.ActiveDays
+                    ActiveDays = p.ActiveDays // Include full ActiveDays information
                 }).ToList();
 
             // Update BillService

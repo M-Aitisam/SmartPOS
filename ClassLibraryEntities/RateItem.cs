@@ -12,7 +12,7 @@
         public string? ImageUrl { get; set; } = string.Empty;
         public string? Category { get; set; }
         public int Id { get; set; }
-        public string ActiveDays { get; set; } = "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday";
+        public string? ActiveDays { get; set; } = "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday";
 
     }
 }

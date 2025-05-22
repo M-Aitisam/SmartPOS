@@ -303,19 +303,26 @@
             .sidebar-overlay.show {
                 display: block;
             }
-        /* Add this to your style section */
-        body.business-registration-page #sidebar,
-        body.business-registration-page .navbar {
+
+        /* Special page styles */
+        body.hide-navbar-sidebar #sidebar,
+        body.hide-navbar-sidebar .navbar {
             display: none !important;
         }
 
-        body.business-registration-page .main {
+        body.hide-navbar-sidebar .main {
             margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        body.hide-navbar-sidebar .content {
+            padding: 0 !important;
+            background-color: transparent !important;
         }
     </style>
 </head>
 
-<body class="@(IsBusinessRegistrationPage() ? "business-registration-page" : "")">
+<body class="@(ShouldHideNavbarAndSidebar() ? "hide-navbar-sidebar" : "")">
     <div class="wrapper">
         <!-- Sidebar Overlay (for mobile) -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -361,13 +368,19 @@
                                 <a href="/categories" class="sidebar-link">Categories</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/products" class="sidebar-link">Products</a>
+                                <a href="/product" class="sidebar-link">Products</a>
                             </li>
                             <li class="sidebar-item">
                                 <a href="/menu" class="sidebar-link">Menu</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/pricelist" class="sidebar-link">Price List</a>
+                                <a href="/adminpage" class="sidebar-link">Admin Page</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="/order-history" class="sidebar-link">Order History</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="/salesreport" class="sidebar-link"> Sales Report</a>
                             </li>
                         </ul>
                     </li>
@@ -463,6 +476,11 @@
             const mainContent = document.getElementById('mainContent');
             const sidebarToggle = document.querySelector('.sidebar-toggle');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            // Don't toggle if we're on a special page
+            if (document.body.classList.contains('hide-navbar-sidebar')) {
+                return;
+            }
 
             sidebar.classList.toggle('expanded');
             mainContent.classList.toggle('expanded');
@@ -615,33 +633,13 @@
         isSidebarExpanded = !isSidebarExpanded;
         JS.InvokeVoidAsync("toggleSidebar");
     }
-    private bool IsBusinessRegistrationPage()
+
+    private bool ShouldHideNavbarAndSidebar()
     {
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-        return uri.AbsolutePath.Contains("businessregistration", StringComparison.OrdinalIgnoreCase);
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JS.InvokeVoidAsync("eval", @"
-                window.checkBusinessRegistrationPage = function() {
-                    const path = window.location.pathname.toLowerCase();
-                    if (path.includes('businessregistration')) {
-                        document.body.classList.add('business-registration-page');
-                    } else {
-                        document.body.classList.remove('business-registration-page');
-                    }
-                };
-
-                // Initial check
-                window.checkBusinessRegistrationPage();
-
-                // Listen for navigation changes
-                window.addEventListener('popstate', window.checkBusinessRegistrationPage);
-            ");
-        }
+        return uri.AbsolutePath.Contains("businessregistration", StringComparison.OrdinalIgnoreCase) ||
+               uri.AbsolutePath.Equals("/login", StringComparison.OrdinalIgnoreCase) ||
+               uri.AbsolutePath.Equals("/", StringComparison.OrdinalIgnoreCase);
     }
 }
 

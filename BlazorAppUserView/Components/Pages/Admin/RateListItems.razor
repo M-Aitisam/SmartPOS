@@ -328,14 +328,16 @@
         ).ToList();
 
     private IEnumerable<RateItem> FilteredItems =>
-        (BillService.RateItems ?? new List<RateItem>())
-        .Where(i => i.IsActive &&
-               (i.ActiveDays?.Split(',').Contains(currentViewDay) ?? false) &&
-               (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
-               (string.IsNullOrEmpty(SearchQuery) ||
-                (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
-        .OrderBy(i => i.Name)
-        .ToList();
+    (BillService.RateItems ?? new List<RateItem>())
+    .Where(i => i.IsActive &&
+           // Updated day filtering logic
+           (string.IsNullOrEmpty(i.ActiveDays) ||
+            (i.ActiveDays?.Split(',').Contains(currentViewDay) ?? false)) &&
+           (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
+           (string.IsNullOrEmpty(SearchQuery) ||
+            (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
+    .OrderBy(i => i.Name)
+    .ToList();
 
     protected override void OnInitialized()
     {
