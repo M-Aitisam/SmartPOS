@@ -442,7 +442,7 @@
                     <div class="dotted-line"></div>
 
                     <!-- QR Code -->
-                    @if (businessDetails?.IncludeQRCode == true)
+                    @if (businessDetails?.IncludeQRCode == false)
                     {
                         <div class="code-container">
                             <img class="qr-code-img" src="@qrCodeImageSrc" alt="Transaction QR Code" />
@@ -450,7 +450,7 @@
                     }
 
                     <!-- Barcode -->
-                    @if (businessDetails?.IncludeBarcode == true)
+                    @if (businessDetails?.IncludeBarcode == false)
                     {
                         <div class="code-container">
                             <img class="barcode-img" src="@barcodeImageSrc" alt="Transaction barcode" />
@@ -792,7 +792,7 @@
                 TransactionDate = DateTime.Now
             };
 
-        showReceiptModal = true;
+        showReceiptModal = false;
 
         // Generate codes if enabled
         if (businessDetails?.IncludeBarcode == true || businessDetails?.IncludeQRCode == true)
