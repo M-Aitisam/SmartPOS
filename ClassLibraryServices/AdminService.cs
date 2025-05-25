@@ -18,6 +18,19 @@ namespace ClassLibraryServices
         {
             return await _dbOperations.GetActiveBusinessAsync();
         }
+        public async Task<byte[]?> GetBusinessLogo(string email)
+        {
+            try
+            {
+                return await _dbOperations.GetBusinessLogoByEmail(email);
+            }
+            catch (Exception ex)
+            {
+                // Log error if needed
+                Console.WriteLine($"Error getting business logo: {ex.Message}");
+                return null;
+            }
+        }
 
         public AdminService(IDBOperations dbOperations)
         {

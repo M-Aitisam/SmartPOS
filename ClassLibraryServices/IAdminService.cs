@@ -18,5 +18,6 @@ namespace ClassLibraryServices
         Task<BusinessModel?> GetBusinessByEmail(string email);
 
         Task<BusinessModel?> GetCurrentBusiness();
+        Task<byte[]?> GetBusinessLogo(string email);
     }
 }

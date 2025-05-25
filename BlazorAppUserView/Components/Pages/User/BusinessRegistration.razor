@@ -838,6 +838,8 @@
             if (success)
             {
                 StateContainer.CurrentBusiness = business;
+                StateHasChanged();
+                 await Task.Delay(100);
                 await JS.InvokeVoidAsync("alert", "Business registered successfully!");
                 Navigation.NavigateTo("/login");
             }

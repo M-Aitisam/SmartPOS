@@ -8,6 +8,7 @@ namespace ClassLibraryServices
         private List<BusinessCategory>? _categories;
         private List<Product>? _products;
 
+
         public List<BusinessCategory> Categories
         {
             get => _categories ?? new();
@@ -17,7 +18,6 @@ namespace ClassLibraryServices
                 NotifyStateChanged();
             }
         }
-
         public List<Product> Products
         {
             get => _products ?? new();
@@ -27,6 +27,7 @@ namespace ClassLibraryServices
                 NotifyStateChanged();
             }
         }
+
         private BusinessModel? _currentBusiness;
 
         public BusinessModel? CurrentBusiness
@@ -34,8 +35,11 @@ namespace ClassLibraryServices
             get => _currentBusiness;
             set
             {
-                _currentBusiness = value;
-                NotifyStateChanged();
+                if (_currentBusiness != value)
+                {
+                    _currentBusiness = value;
+                    NotifyStateChanged();
+                }
             }
         }
         private void NotifyStateChanged() => OnChange?.Invoke();

@@ -133,5 +133,12 @@ namespace ClassLibraryDAL
                 .Include(b => b.GeneralInformation)
                 .FirstOrDefaultAsync(b => b.IsActive);
         }
+        public async Task<byte[]?> GetBusinessLogoByEmail(string email)
+        {
+            return await _context.Businesses
+                .Where(b => b.Email == email)
+                .Select(b => b.BusinessDetails.LogoData)
+                .FirstOrDefaultAsync();
+        }
     }
 }

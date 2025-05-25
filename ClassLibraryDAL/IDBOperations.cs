@@ -15,6 +15,7 @@ namespace ClassLibraryDAL
         Task<bool> BusinessExists(string email);
 
         Task<BusinessModel?> GetActiveBusinessAsync();
+        Task<byte[]?> GetBusinessLogoByEmail(string email);
         // Existing methods...
     }
 }

@@ -1,6 +1,7 @@
 ﻿@page "/login"
 @inject NavigationManager Navigation
 @inject IAdminService AdminService
+@inject StateContainerService StateContainer;
 @using System.ComponentModel.DataAnnotations;
 @inject IJSRuntime JS
 @rendermode InteractiveServer
@@ -8,7 +9,14 @@
 <div class="login-container">
     <div class="login-card">
         <div class="login-header">
-            <img src="/images/logo.png" alt="Company Logo" class="logo" />
+            @if (!string.IsNullOrEmpty(logoUrl))
+            {
+                <img src="@logoUrl" alt="Business Logo" class="logo" />
+            }
+            else
+            {
+                <img src="/images/logo.png" alt="Company Logo" class="logo" />
+            }
             <h2>Welcome Back</h2>
             <p>Please enter your credentials to login</p>
         </div>
@@ -71,6 +79,13 @@
         padding: 2rem;
     }
 
+    .logo {
+        max-height: 80px;
+        max-width: 100%;
+        object-fit: contain;
+        margin: 0 auto;
+        display: block;
+    }
     .login-card {
         background: white;
         border-radius: 12px;
@@ -246,12 +261,42 @@
     private LoginModel loginModel = new();
     private bool isLoading = false;
     private string errorMessage = string.Empty;
+    private string? logoUrl;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBusinessLogo();
+    }
+
+    private async Task LoadBusinessLogo()
+    {
+        try
+        {
+            // Try to get from StateContainer first
+            if (StateContainer.CurrentBusiness?.BusinessDetails?.LogoData != null)
+            {
+                logoUrl = $"data:image/png;base64,{Convert.ToBase64String(StateContainer.CurrentBusiness.BusinessDetails.LogoData)}";
+                return;
+            }
+
+            // Get logo for the first active business
+            var logoData = await AdminService.GetBusinessLogo("your_default_business_email@example.com");
+            if (logoData != null)
+            {
+                logoUrl = $"data:image/png;base64,{Convert.ToBase64String(logoData)}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading business logo: {ex.Message}");
+            // Fallback to default logo
+        }
+    }
     private async Task HandleLogin()
     {
         isLoading = true;
         errorMessage = string.Empty;
-        StateHasChanged(); // Force UI update to show loading state
+        StateHasChanged();
 
         try
         {
@@ -271,6 +316,13 @@
 
             if (isValid)
             {
+                var business = await AdminService.GetBusinessByEmail(loginModel.Email);
+                if (business != null)
+                {
+                    // Update state container with current business
+                    StateContainer.CurrentBusiness = business;
+                }
+
                 if (loginModel.RememberMe)
                 {
                     await JS.InvokeVoidAsync("localStorage.setItem", "authToken", "aitisam");
@@ -290,9 +342,7 @@
         finally
         {
             isLoading = false;
-            StateHasChanged(); // Force UI update to hide loading state
+            StateHasChanged();
         }
     }
-
-   
 }
