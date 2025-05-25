@@ -574,7 +574,7 @@
     private async void HandleStateChange()
     {
         await LoadBusinessDetails();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
       private async Task LoadBusinessDetails()
@@ -612,6 +612,10 @@
             {
                 businessLogoUrl = $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}";
             }
+            else
+            {
+                businessLogoUrl = null; // Clear previous logo if no new one exists
+            }
         }
 
         if (business?.GeneralInformation != null)
@@ -619,7 +623,13 @@
             userName = $"{business.GeneralInformation.FirstName} {business.GeneralInformation.LastName}";
             userInitials = GetInitials(userName);
         }
+        else
+        {
+            userName = " Aitisam AHmed ";
+            userInitials = "AA";
+        }
 
+        // Force UI update
         StateHasChanged();
     }
 

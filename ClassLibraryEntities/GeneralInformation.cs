@@ -21,18 +21,11 @@ namespace ClassLibraryEntities
         [Required(ErrorMessage = "Gender is required")]
         public string Gender { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Parent Name is required")]
-        public string ParentName { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Pin Code is required")]
-        [RegularExpression(@"^\d{4,6}$", ErrorMessage = "Pin Code must be 4-6 digits")]
-        public string PinCode { get; set; } = string.Empty;
-
-        public string TimeZone { get; set; } = "IST - Indian Standard Time - GMT +5:30";
+        public string TimeZone { get; set; } = "IST - Pakistan Standard Time - GMT +5:30";
 
         [Required(ErrorMessage = "Date of Birth is required")]
         public DateTime? DateOfBirth { get; set; }

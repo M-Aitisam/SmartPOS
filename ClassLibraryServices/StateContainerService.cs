@@ -35,7 +35,7 @@ namespace ClassLibraryServices
             get => _currentBusiness;
             set
             {
-                if (_currentBusiness != value)
+                if (!Equals(_currentBusiness, value))
                 {
                     _currentBusiness = value;
                     NotifyStateChanged();

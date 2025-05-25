@@ -281,11 +281,7 @@
                             </InputSelect>
                             <ValidationMessage For="@(() => generalInfo.Gender)" class="validation-message" />
                         </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label required-field">Mother/Father's First Name</label>
-                            <InputText @bind-Value="generalInfo.ParentName" class="form-control" />
-                            <ValidationMessage For="@(() => generalInfo.ParentName)" class="validation-message" />
-                        </div>
+                       
                     </div>
 
                     <div class="mb-4">
@@ -295,11 +291,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label required-field">Pin Code</label>
-                            <InputText @bind-Value="generalInfo.PinCode" class="form-control" />
-                            <ValidationMessage For="@(() => generalInfo.PinCode)" class="validation-message" />
-                        </div>
+                        
                         <div class="col-md-6 mb-4">
                             <label class="form-label required-field">Time Zone</label>
                             <InputSelect @bind-Value="generalInfo.TimeZone" class="form-select">
@@ -515,9 +507,6 @@
                                 <dt class="col-sm-3">Gender</dt>
                                 <dd class="col-sm-9">@generalInfo.Gender</dd>
 
-                                <dt class="col-sm-3">Parent Name</dt>
-                                <dd class="col-sm-9">@generalInfo.ParentName</dd>
-
                                 <dt class="col-sm-3">Email</dt>
                                 <dd class="col-sm-9">@generalInfo.Email</dd>
 
@@ -529,9 +518,6 @@
 
                                 <dt class="col-sm-3">Country</dt>
                                 <dd class="col-sm-9">@generalInfo.Country</dd>
-
-                                <dt class="col-sm-3">Pin Code</dt>
-                                <dd class="col-sm-9">@generalInfo.PinCode</dd>
 
                                 <dt class="col-sm-3">Time Zone</dt>
                                 <dd class="col-sm-9">@generalInfo.TimeZone</dd>
