@@ -1,5 +1,6 @@
 ﻿using ClassLibraryDAL;
 using ClassLibraryEntities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,7 +10,14 @@ namespace ClassLibraryServices
     public class AdminService : IAdminService
     {
         private readonly IDBOperations _dbOperations;
+       
+
         public event Action OnChange;
+
+        public async Task<BusinessModel?> GetCurrentBusiness()
+        {
+            return await _dbOperations.GetActiveBusinessAsync();
+        }
 
         public AdminService(IDBOperations dbOperations)
         {

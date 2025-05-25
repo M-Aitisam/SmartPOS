@@ -27,7 +27,17 @@ namespace ClassLibraryServices
                 NotifyStateChanged();
             }
         }
+        private BusinessModel? _currentBusiness;
 
+        public BusinessModel? CurrentBusiness
+        {
+            get => _currentBusiness;
+            set
+            {
+                _currentBusiness = value;
+                NotifyStateChanged();
+            }
+        }
         private void NotifyStateChanged() => OnChange?.Invoke();
     }
 }

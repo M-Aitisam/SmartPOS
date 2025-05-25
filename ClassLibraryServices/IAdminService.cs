@@ -16,5 +16,7 @@ namespace ClassLibraryServices
         Task<CurrentUser> GetCurrentUserAsync();
         Task<bool> VerifyCredentials(string email, string password);
         Task<BusinessModel?> GetBusinessByEmail(string email);
+
+        Task<BusinessModel?> GetCurrentBusiness();
     }
 }

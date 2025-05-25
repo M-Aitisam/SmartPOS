@@ -125,5 +125,13 @@ namespace ClassLibraryDAL
         {
             return $"INV-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..4]}";
         }
+
+        public async Task<BusinessModel?> GetActiveBusinessAsync()
+        {
+            return await _context.Businesses
+                .Include(b => b.BusinessDetails)
+                .Include(b => b.GeneralInformation)
+                .FirstOrDefaultAsync(b => b.IsActive);
+        }
     }
 }

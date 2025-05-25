@@ -2,6 +2,7 @@
 @inject IAdminService AdminService
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject StateContainerService StateContainer
 
 <!DOCTYPE html>
 <html lang="en">
@@ -330,13 +331,14 @@
         <!-- Sidebar -->
         <aside id="sidebar">
             <div class="h-100">
-                <div class="sidebar-logo">
+                             <div class="sidebar-logo">
                     <a href="#">
-                        @if (businessLogoUrl != null)
+                        @if (StateContainer.CurrentBusiness?.BusinessDetails?.LogoData != null)
                         {
-                            <img src="@businessLogoUrl" alt="Business Logo" class="me-2" style="height:30px;width:auto;" />
+                            <img src="data:image/png;base64,@Convert.ToBase64String(StateContainer.CurrentBusiness.BusinessDetails.LogoData)"
+                                 alt="Business Logo" class="me-2" style="height:30px;width:auto;" />
                         }
-                        POS System
+                        @(StateContainer.CurrentBusiness?.BusinessDetails?.BusinessName ?? "POS System")
                     </a>
                 </div>
                 <!-- Sidebar Navigation -->
@@ -566,53 +568,52 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadBusinessDetails();
+        StateContainer.OnChange += StateHasChanged;
     }
 
     private async Task LoadBusinessDetails()
     {
         try
         {
-            // Option 1: If you have a method to get business by ID or name
-            // var business = await AdminService.GetBusinessById(businessId);
-
-            // Option 2: If you have a method to get all businesses and want the first
-            // var businesses = await AdminService.GetAllBusinesses();
-            // var business = businesses.FirstOrDefault();
-
-            // Option 3: If you have a different method name
-            // var business = await AdminService.GetBusiness();
-
-            // TEMPORARY FIX: Using mock data until you implement the service method
-            var business = new BusinessModel
-                {
-                    BusinessDetails = new BusinessDetails
-                    {
-                        BusinessName = "My Business",
-                        LogoData = null // Add actual logo data if available
-                    }
-                };
-
-            if (business?.BusinessDetails != null)
+            // Check state container first
+            if (StateContainer.CurrentBusiness?.BusinessDetails != null)
             {
-                businessName = business.BusinessDetails.BusinessName;
-
-                if (business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0)
-                {
-                    businessLogoUrl = $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}";
-                }
+                UpdateFromBusinessModel(StateContainer.CurrentBusiness);
+                return;
             }
 
-            // Load user details (you would typically get this from authentication state)
-            userName = "John Doe";
-            userRole = "Admin";
-            userInitials = GetInitials(userName);
+            // Fallback to service if needed
+            var business = await AdminService.GetCurrentBusiness();
+            if (business != null)
+            {
+                UpdateFromBusinessModel(business);
+            }
         }
         catch (Exception ex)
         {
             await JS.InvokeVoidAsync("console.error", "Error loading business details:", ex);
         }
     }
+    private void UpdateFromBusinessModel(BusinessModel business)
+    {
+        businessName = business.BusinessDetails.BusinessName;
 
+        if (business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0)
+        {
+            businessLogoUrl = $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}";
+        }
+
+        // Update user info from general info
+        if (business.GeneralInformation != null)
+        {
+            userName = $"{business.GeneralInformation.FirstName} {business.GeneralInformation.LastName}";
+            userInitials = GetInitials(userName);
+        }
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadBusinessDetails();
+    }
     private string GetInitials(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

@@ -4,6 +4,7 @@
 @using ClassLibraryEntities
 @using ClassLibraryServices
 @inject IAdminService AdminService
+@inject StateContainerService StateContainer
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -836,6 +837,7 @@
 
             if (success)
             {
+                StateContainer.CurrentBusiness = business;
                 await JS.InvokeVoidAsync("alert", "Business registered successfully!");
                 Navigation.NavigateTo("/login");
             }

@@ -13,6 +13,8 @@ namespace ClassLibraryDAL
         Task<bool> DeleteBusiness(int id);
         Task<BusinessModel?> GetBusinessByEmail(string email);
         Task<bool> BusinessExists(string email);
+
+        Task<BusinessModel?> GetActiveBusinessAsync();
         // Existing methods...
     }
 }
