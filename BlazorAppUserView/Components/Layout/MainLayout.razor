@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @inject IAdminService AdminService
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
@@ -568,25 +569,31 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadBusinessDetails();
-        StateContainer.OnChange += StateHasChanged;
+        StateContainer.OnChange += HandleStateChange;
+    }
+    private async void HandleStateChange()
+    {
+        await LoadBusinessDetails();
+        StateHasChanged();
     }
 
-    private async Task LoadBusinessDetails()
+      private async Task LoadBusinessDetails()
     {
         try
         {
-            // Check state container first
-            if (StateContainer.CurrentBusiness?.BusinessDetails != null)
+            if (StateContainer.CurrentBusiness != null)
             {
                 UpdateFromBusinessModel(StateContainer.CurrentBusiness);
-                return;
             }
-
-            // Fallback to service if needed
-            var business = await AdminService.GetCurrentBusiness();
-            if (business != null)
+            else
             {
-                UpdateFromBusinessModel(business);
+                // Fallback to service if state container doesn't have the business
+                var business = await AdminService.GetCurrentBusiness();
+                if (business != null)
+                {
+                    StateContainer.CurrentBusiness = business;
+                    UpdateFromBusinessModel(business);
+                }
             }
         }
         catch (Exception ex)
@@ -594,22 +601,28 @@
             await JS.InvokeVoidAsync("console.error", "Error loading business details:", ex);
         }
     }
+
     private void UpdateFromBusinessModel(BusinessModel business)
     {
-        businessName = business.BusinessDetails.BusinessName;
-
-        if (business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0)
+        if (business?.BusinessDetails != null)
         {
-            businessLogoUrl = $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}";
+            businessName = business.BusinessDetails.BusinessName ?? "My Business";
+
+            if (business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0)
+            {
+                businessLogoUrl = $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}";
+            }
         }
 
-        // Update user info from general info
-        if (business.GeneralInformation != null)
+        if (business?.GeneralInformation != null)
         {
             userName = $"{business.GeneralInformation.FirstName} {business.GeneralInformation.LastName}";
             userInitials = GetInitials(userName);
         }
+
+        StateHasChanged();
     }
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadBusinessDetails();
@@ -642,6 +655,11 @@
                uri.AbsolutePath.Equals("/login", StringComparison.OrdinalIgnoreCase) ||
                uri.AbsolutePath.Equals("/", StringComparison.OrdinalIgnoreCase);
     }
+    public void Dispose()
+    {
+        StateContainer.OnChange -= HandleStateChange;
+    }
+
 }
 
 <script>
