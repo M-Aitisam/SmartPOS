@@ -35,22 +35,28 @@ namespace ClassLibraryEntities
         public bool HasOutdoorSeating { get; set; }
 
         [Required]
-        public string ReceiptHeader { get; set; } = @"SUPERMARKET
-
-Lorem ipsum 258
-
-City Index -02025
-
-Tel.: +456-468-987-02
-
+        public string ReceiptHeader { get; set; } = @"
+      SUPERMARKET
+  Point of Sale System
+-----------------------------
+Aitisam Ahmed
+Contact: 0347-1536817
+Islamabad, E-9
+Shop No. 258, Lorem Ipsum Plaza
+City Index: 02025
+Tel:  0347-1536817
+-----------------------------
 Cashier: #3
-Manager: Eric Steer";
+Manager: Eric Steer
+-----------------------------";
 
         [Required]
-        public string ReceiptFooter { get; set; } = @"THANK YOU!
-Glad to see you again!
-
-modif.ai";
+        public string ReceiptFooter { get; set; } = @"
+-----------------------------
+THANK YOU FOR SHOPPING!
+We appreciate your business.
+Visit us again soon!
+";
 
         public string TaxNumber { get; set; } = "";
      

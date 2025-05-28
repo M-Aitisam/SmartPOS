@@ -10,147 +10,306 @@
 @rendermode InteractiveServer
 
 <style>
-    /* Simple, clean styling */
+    /* Modern, clean styling with background image */
+    :root {
+        --primary-color: #4361ee;
+        --secondary-color: #3f37c9;
+        --accent-color: #4895ef;
+        --dark-color: #1a1a2e;
+        --light-color: #f8f9fa;
+        --success-color: #4cc9f0;
+        --danger-color: #f72585;
+        --warning-color: #f8961e;
+        --info-color: #7209b7;
+    }
+
     .registration-container {
-        max-width: 1000px;
-        margin: 2rem auto;
-        padding: 0 1rem;
+        background-image: url('/Images/backgroundimg.jpg');
+        background-size: cover;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        margin: 0 auto;
+        padding: 2rem 4rem ;
+        position: relative;
+        overflow: hidden;
     }
 
-    .progress-container {
-        margin-bottom: 2rem;
+    .progress-tracker {
+        margin-bottom: 3rem;
+        padding: 0 20px; /* Add some padding to prevent cutting off the progress bar */
     }
 
-    .progress {
-        height: 8px;
-        border-radius: 4px;
-        background-color: #f0f0f0;
-    }
-
-    .progress-bar {
-        background-color: #4a6bff;
-        transition: width 0.3s ease;
-    }
-
-    .step-indicator {
+    .step-container {
         display: flex;
         justify-content: space-between;
-        margin-top: 1rem;
+        position: relative;
     }
 
-    .step {
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        position: relative;
+    }
+
+    .step-progress {
+        width: 100%;
+        height: 6px;
+        background-color: #e9ecef;
+        position: absolute;
+        top: 15px;
+        left: 0;
+        z-index: 1;
+    }
+
+    .step-item:first-child .step-progress {
+        display: none;
+    }
+
+    .progress-segment {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        transition: width 0.8s cubic-bezier(0.65, 0, 0.35, 1); /* Smooth easing function */
+        position: absolute;
+        left: 0; /* Changed from right:0 to left:0 */
+    }
+
+    .segment-active {
+        width: 100%;
+    }
+
+    .segment-completed {
+        width: 100%;
+        background: var(--success-color);
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        color: #adb5bd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: all 0.5s ease;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-item.active .step-circle {
+        background-color: var(--primary-color);
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .step-item.completed .step-circle {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .step-label {
         font-size: 0.9rem;
-        color: #888;
+        font-weight: 500;
+        color: #adb5bd;
+        text-align: center;
+        max-width: 100px;
+        transition: all 0.3s ease;
     }
 
-        .step.active {
-            font-weight: 600;
-            color: #4a6bff;
+    .step-item.active .step-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .step-item.completed .step-label {
+        color: var(--success-color);
+    }
+
+    /* Connector lines between steps */
+    .step-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: calc(50% + 20px); /* Adjust based on circle size */
+        right: calc(-50% + 20px); /* Adjust based on circle size */
+        height: 6px;
+        background-color: #e9ecef;
+        z-index: 1;
+    }
+
+    .step-item.completed:not(:last-child)::after {
+        background-color: var(--success-color);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .step-label {
+            font-size: 0.8rem;
         }
 
-    .form-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        margin-bottom: 2rem;
-        background: white;
+        .step-circle {
+            width: 35px;
+            height: 35px;
+        }
     }
 
+    @@media (max-width: 576px) {
+        .progress-tracker {
+            padding: 0 10px;
+        }
+
+        .step-label {
+            font-size: 0.7rem;
+            max-width: 80px;
+        }
+
+        .step-circle {
+            width: 30px;
+            height: 30px;
+            font-size: 0.9rem;
+        }
+    }
+
+    .form-card {
+        border: none;
+        margin-bottom: 2.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+
     .form-card-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #e0e0e0;
-        padding: 1.25rem 1.5rem;
-        border-radius: 8px 8px 0 0;
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .form-card-header h4 {
+        margin: 0;
+        font-weight: 600;
     }
 
     .form-card-body {
-        padding: 1.5rem;
+        padding: 2rem;
     }
 
     .form-label {
-        font-weight: 500;
-        color: #555;
+        font-weight: 600;
+        color: #495057;
         margin-bottom: 0.5rem;
         display: block;
+        font-size: 0.95rem;
     }
 
     .form-control, .form-select {
-        border-radius: 6px;
-        padding: 0.7rem 1rem;
-        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
         width: 100%;
-        font-size: 0.95rem;
+        font-size: 1rem;
+        transition: all 0.3s;
     }
 
-        .form-control:focus, .form-select:focus {
-            border-color: #4a6bff;
-            box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.1);
-            outline: none;
-        }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        outline: none;
+    }
+
+    .form-select {
+        appearance: none;
+        background-position: right 0.75rem center;
+
+    }
 
     .validation-message {
-        color: #e74a3b;
+        color: var(--danger-color);
         font-size: 0.85rem;
-        margin-top: 0.25rem;
+        margin-top: 0.5rem;
+        font-weight: 500;
     }
 
     .btn {
-        padding: 0.7rem 1.5rem;
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 0.95rem;
+        padding: 0.75rem 1.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn i {
+        margin-right: 8px;
     }
 
     .btn-primary {
-        background-color: #4a6bff;
-        border: 1px solid #4a6bff;
+        background-color: var(--primary-color);
         color: white;
     }
 
-        .btn-primary:hover {
-            background-color: #3a5bef;
-            border-color: #3a5bef;
-        }
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+    }
 
     .btn-secondary {
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        color: #555;
+        background-color: #e9ecef;
+        color: #495057;
     }
 
-        .btn-secondary:hover {
-            background-color: #e9ecef;
-        }
+    .btn-secondary:hover {
+        background-color: #dee2e6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(108, 117, 125, 0.1);
+    }
 
     .btn-success {
-        background-color: #28a745;
-        border: 1px solid #28a745;
+        background-color: var(--success-color);
         color: white;
     }
 
-        .btn-success:hover {
-            background-color: #218838;
-            border-color: #218838;
-        }
+    .btn-success:hover {
+        background-color: #3aa8d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(76, 201, 240, 0.3);
+    }
 
     .logo-preview {
         max-width: 200px;
         max-height: 200px;
-        border-radius: 6px;
-        border: 1px solid #eee;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
         margin-top: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
     .review-section {
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .review-section h5 {
+        color: var(--dark-color);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
     }
 
     .review-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
+        border: none;
+        border-radius: 12px;
         background: white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
     }
 
     .review-card-body {
@@ -159,52 +318,92 @@
 
     .required-field::after {
         content: " *";
-        color: #e74a3b;
+        color: var(--danger-color);
     }
 
     .alert-danger {
         color: #721c24;
         background-color: #f8d7da;
         border-color: #f5c6cb;
-        padding: 0.75rem 1.25rem;
-        margin-bottom: 1rem;
-        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid var(--danger-color);
     }
 
     .validation-summary {
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
     }
 
     .receipt-settings {
         margin-top: 2rem;
-        border-top: 1px solid #eee;
-        padding-top: 1.5rem;
+        border-top: 2px dashed #e9ecef;
+        padding-top: 2rem;
+    }
+
+    .receipt-settings h5 {
+        color: var(--dark-color);
+        margin-bottom: 1.5rem;
     }
 
     .barcode-preview {
         max-width: 200px;
         height: 80px;
         margin-top: 10px;
-        border: 1px solid #eee;
-        padding: 5px;
+        border: 2px solid #e9ecef;
+        padding: 10px;
         background: white;
+        border-radius: 8px;
     }
 
     .password-strength {
         margin-top: 0.5rem;
         font-size: 0.85rem;
+        font-weight: 600;
     }
 
     .strength-weak {
-        color: #e74a3b;
+        color: var(--danger-color);
     }
 
     .strength-medium {
-        color: #f39c12;
+        color: var(--warning-color);
     }
 
     .strength-strong {
-        color: #28a745;
+        color: var(--success-color);
+    }
+
+    .form-check {
+        margin-bottom: 0.5rem;
+    }
+
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        margin-top: 0.15em;
+        margin-right: 0.5em;
+    }
+
+    .form-check-label {
+        font-weight: 500;
+    }
+
+    .navigation-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+
+    .badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 600;
+        border-radius: 50rem;
+    }
+
+    .bg-info {
+        background-color: var(--accent-color) !important;
     }
 
     /* Print receipt specific styles */
@@ -228,22 +427,216 @@
             display: none !important;
         }
     }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .registration-container {
+            margin: 1rem;
+            padding: 1.5rem;
+        }
+
+        .form-card-body {
+            padding: 1.5rem;
+        }
+
+        .step {
+            font-size: 0.8rem;
+            padding: 0 5px;
+        }
+
+        .step::before {
+            width: 16px;
+            height: 16px;
+        }
+
+        .navigation-buttons {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .registration-container {
+            margin: 0.5rem;
+            padding: 1rem;
+            border-radius: 0;
+        }
+
+        .form-card-header {
+            padding: 1rem;
+        }
+
+        .form-card-body {
+            padding: 1rem;
+        }
+
+        .step-indicator {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .step {
+            flex: 0 0 calc(50% - 1rem);
+            text-align: center;
+        }
+
+        .step-indicator::before {
+            display: none;
+        }
+    }
+
+    /* Animation for form steps */
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .form-card {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    /* Custom radio and checkbox styling */
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .form-check-input:focus {
+        box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+    }
+
+    /* Custom file upload button */
+    .input-file-container {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .input-file-container input[type="file"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .custom-file-button {
+        display: block;
+        padding: 0.75rem 1rem;
+        background-color: #f8f9fa;
+        border: 2px dashed #ced4da;
+        border-radius: 8px;
+        text-align: center;
+        color: #495057;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .input-file-container:hover .custom-file-button {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    /* Review section styling */
+    dl.row {
+        margin: 0;
+    }
+
+    dt.col-sm-3 {
+        font-weight: 600;
+        color: #495057;
+        padding: 0.75rem 0;
+    }
+
+    dd.col-sm-9 {
+        padding: 0.75rem 0;
+        color: #212529;
+    }
+
+    /* Receipt preview styling */
+    .print-receipt {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Additional spacing for better visual hierarchy */
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+
+    .mt-3 {
+        margin-top: 1rem !important;
+    }
+
+    .mt-4 {
+        margin-top: 1.5rem !important;
+    }
+
+    /* Custom scrollbar for the page */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--secondary-color);
+    }
 </style>
 
 <div class="registration-container">
-    <h2 class="mb-4 text-center">Business Registration</h2>
 
-    <div class="progress-container">
-        <div class="progress">
-            <div class="progress-bar" role="progressbar" style="width: @GetProgressWidth()%"
-                 aria-valuenow="@GetProgressWidth()" aria-valuemin="0" aria-valuemax="100"></div>
+  <div class="progress-tracker">
+    <!-- Step Indicators with integrated progress bar -->
+    <div class="step-container">
+        <div class="step-item @GetStepClass(1)">
+            <div class="step-progress">
+                <div class="progress-segment @GetSegmentClass(1)"></div>
+            </div>
+            <div class="step-circle">1</div>
+            <div class="step-label">General Information</div>
         </div>
-        <div class="step-indicator">
-            <span class="step @GetStepClass(1)">General Information</span>
-            <span class="step @GetStepClass(2)">Business Details</span>
-            <span class="step @GetStepClass(3)">Review & Submit</span>
+        
+        <div class="step-item @GetStepClass(2)">
+            <div class="step-progress">
+                <div class="progress-segment @GetSegmentClass(2)"></div>
+            </div>
+            <div class="step-circle">2</div>
+            <div class="step-label">Business Details</div>
+        </div>
+        
+        <div class="step-item @GetStepClass(3)">
+            <div class="step-progress">
+                <div class="progress-segment @GetSegmentClass(3)"></div>
+            </div>
+            <div class="step-circle">3</div>
+            <div class="step-label">Review & Submit</div>
         </div>
     </div>
+</div>
 
     @if (currentStep == 1)
     {
@@ -291,7 +684,7 @@
                     </div>
 
                     <div class="row">
-                        
+                       
                         <div class="col-md-6 mb-4">
                             <label class="form-label required-field">Time Zone</label>
                             <InputSelect @bind-Value="generalInfo.TimeZone" class="form-select">
@@ -338,7 +731,9 @@
                     </div>
 
                     <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary">Next: Business Details</button>
+                        <button type="submit" class="btn btn-primary">
+                            Next: Business Details
+                        </button>
                     </div>
                 </EditForm>
             </div>
@@ -364,7 +759,10 @@
 
                     <div class="mb-4">
                         <label class="form-label required-field">Logo</label>
-                        <InputFile class="form-control" OnChange="HandleFileUpload" accept="image/*" />
+                        <div class="input-file-container">
+                            <InputFile class="form-control" OnChange="HandleFileUpload" accept="image/*" />
+                            <span class="custom-file-button">Choose File</span>
+                        </div>
                         @if (logoPreviewUrl != null)
                         {
                             <div class="mt-3">
@@ -466,7 +864,8 @@
                         <div class="mb-4">
                             <label class="form-label">Tax Identification Number</label>
                             <InputText @bind-Value="businessDetails.TaxNumber" class="form-control" />
-                        </div>
+                        </div> 
+
 
                         <div class="mb-4">
                             <label class="form-label">Default Tax Rate (%)</label>
@@ -601,42 +1000,6 @@
                                 <hr />
                             }
 
-                            <!-- Receipt Body -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between">
-                                    <span>Sample Item 1</span>
-                                    <span>₹100.00</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Sample Item 2</span>
-                                    <span>₹200.00</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Sample Item 3</span>
-                                    <span>₹150.00</span>
-                                </div>
-                            </div>
-
-                            <hr />
-
-                            <!-- Totals -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between">
-                                    <span>Subtotal:</span>
-                                    <span>₹450.00</span>
-                                </div>
-                                @if (businessDetails.DefaultTaxRate > 0)
-                                {
-                                    <div class="d-flex justify-content-between">
-                                        <span>Tax (@businessDetails.DefaultTaxRate%):</span>
-                                        <span>₹@(450 * businessDetails.DefaultTaxRate / 100)</span>
-                                    </div>
-                                }
-                                <div class="d-flex justify-content-between fw-bold">
-                                    <span>Total:</span>
-                                    <span>₹@(450 + (450 * businessDetails.DefaultTaxRate / 100))</span>
-                                </div>
-                            </div>
 
                             <!-- Barcode -->
                             @if (businessDetails.IncludeBarcode)
@@ -657,9 +1020,7 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end mt-3">
-                        <button class="btn btn-primary" @onclick="PrintReceipt">Print Receipt</button>
-                    </div>
+
                 </div>
 
                 <div class="navigation-buttons mt-4">
@@ -672,6 +1033,7 @@
         </div>
     }
 </div>
+
 
 @code {
     private int currentStep = 1;
@@ -734,14 +1096,18 @@
         }
     }
 
+
     private string GetStepClass(int step)
     {
-        return currentStep == step ? "step active" : "step";
+        if (currentStep == step) return "active";
+        if (currentStep > step) return "completed";
+        return "";
     }
-
-    private int GetProgressWidth()
+    private string GetSegmentClass(int segment)
     {
-        return currentStep * 33;
+        if (currentStep == segment) return "segment-active";
+        if (currentStep > segment) return "segment-completed";
+        return "";
     }
 
     private void HandleEdit(int step)
