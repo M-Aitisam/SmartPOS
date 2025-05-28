@@ -1,4 +1,6 @@
 ﻿using ClassLibraryEntities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ClassLibraryServices
 {
@@ -9,7 +11,8 @@ namespace ClassLibraryServices
         Task<bool> AddSubItemAsync(BusinessSubItem subItem);
         Task<bool> DeleteCategoryAsync(int categoryId);
         Task<bool> DeleteSubItemAsync(int subItemId);
-
-        Task UpdateCategoriesAsync(List<BusinessCategory> categories);
+        Task UpdateCategoryAsync(BusinessCategory category);  // Single category update
+        Task UpdateCategoriesAsync(List<BusinessCategory> categories);  // Multiple categories update
+        Task<List<BusinessCategory>> GetCategoriesWithProductsAsync();
     }
 }

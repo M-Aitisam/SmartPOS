@@ -1,6 +1,8 @@
 ﻿using ClassLibraryDAL;
 using ClassLibraryEntities;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ClassLibraryServices
 {
@@ -34,6 +36,25 @@ namespace ClassLibraryServices
             return await _context.SaveChangesAsync() > 0;
         }
 
+        // Single category update
+        public async Task UpdateCategoryAsync(BusinessCategory category)
+        {
+            var existingCategory = await _context.BusinessCategories
+                .Include(c => c.SubItems)
+                    .ThenInclude(si => si.NestedSubItems)
+                .FirstOrDefaultAsync(c => c.CategoryID == category.CategoryID);
+
+            if (existingCategory != null)
+            {
+                existingCategory.CategoryName = category.CategoryName;
+                existingCategory.UrduName = category.UrduName;
+                existingCategory.ImageUrl = category.ImageUrl;
+                existingCategory.Description = category.Description;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        // Multiple categories update
         public async Task UpdateCategoriesAsync(List<BusinessCategory> categories)
         {
             foreach (var category in categories)
@@ -46,6 +67,9 @@ namespace ClassLibraryServices
                 if (existingCategory != null)
                 {
                     existingCategory.CategoryName = category.CategoryName;
+                    existingCategory.UrduName = category.UrduName;
+                    existingCategory.ImageUrl = category.ImageUrl;
+                    existingCategory.Description = category.Description;
 
                     foreach (var updatedSub in category.SubItems)
                     {
@@ -72,13 +96,8 @@ namespace ClassLibraryServices
                     }
                 }
             }
-
             await _context.SaveChangesAsync();
         }
-
-
-
-
 
         public async Task<bool> DeleteCategoryAsync(int categoryId)
         {

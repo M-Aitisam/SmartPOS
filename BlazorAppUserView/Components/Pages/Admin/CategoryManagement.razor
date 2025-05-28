@@ -3,151 +3,173 @@
 @using ClassLibraryDAL
 @using ClassLibraryServices
 @inject ICategoryService CategoryService
+@inject NavigationManager Navigation
 @inject StateContainerService StateContainer
 @rendermode InteractiveServer
 
-<style>
-    /* Modal Animations */
-   
-    /* Category Card */
-    .category-card {
-        transition: all 0.2s ease;
-        border-radius: 10px;
-        border: 1px solid #e9ecef;
-    }
+<h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">Manage Categories</h3>
 
-        .category-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-        }
+<!-- Search + Controls -->
+<div style="display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <input type="text"
+               style="border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; width: 16rem;"
+               placeholder="Search Category"
+               @bind="searchQuery"
+               @bind:event="oninput" />
 
-    /* Floating Button */
-    .fab {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        z-index: 1000;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: all 0.2s ease;
-    }
-
-        .fab:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
-        }
-
-    .modern-modal {
-        max-width: 500px;
-        border-radius: 12px;
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
-    }
-
-    .form-control-lg {
-        padding: 0.75rem 1rem;
-        font-size: 1.05rem;
-    }
-</style>
-
-<!-- Floating Action Button -->
-<button class="fab btn btn-primary d-flex align-items-center justify-content-center" @onclick="OpenAddModal">
-    <i class="bi bi-plus fs-4"></i>
-</button>
-
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary">Category Management</h2>
+        <div style="position: relative;">
+            <button style="color: #6b7280; padding: 0.5rem;">
+                <i class="bi bi-filter"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- Category Grid -->
-    <div class="row g-4">
-        @if (categories == null)
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <select style="border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; color: #4b5563;">
+            <option>7</option>
+            <option>10</option>
+            <option>20</option>
+        </select>
+
+        <button style="background-color: #7e22ce; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem;"
+                @onclick="OpenAddModal">
+            <span style="font-size: 1.125rem;">+</span> Add Category
+        </button>
+    </div>
+</div>
+
+<!-- Delete Selected Button (shown only when items are selected) -->
+@if (selectedCategoryIds.Any())
+{
+    <div style="margin-bottom: 1rem;">
+        <button style="background-color: #dc2626; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem;"
+                @onclick="ConfirmDeleteSelected">
+            Delete Selected (@selectedCategoryIds.Count)
+        </button>
+    </div>
+}
+
+<!-- Categories Table -->
+<table style="width: 100%; background-color: white; border: 1px solid #e5e7eb; border-radius: 0.375rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-collapse: collapse;">
+    <thead style="background-color: #f9fafb; text-align: left; border-bottom: 1px solid #e5e7eb;">
+        <tr>
+            <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 5%;">
+                <input type="checkbox"
+                       @onchange="ToggleSelectAll"
+                       checked="@(selectedCategoryIds.Count == filteredCategories.Count && filteredCategories.Count > 0)" />
+            </th>
+            <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 15%;">CATEGORIES</th>
+            <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 15%;">TOTAL PRODUCTS</th>
+            
+            <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 10%;">ACTIONS</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var category in filteredCategories)
         {
-            <div class="col-12 text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        }
-        else if (!categories.Any())
-        {
-            <div class="col-12">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i> No categories found. Click the + button to add one.
-                </div>
-            </div>
-        }
-        else
-        {
-            @foreach (var category in categories)
-            {
-                <div class="col-md-4 col-sm-6">
-                    <div class="category-card card h-100">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex justify-content-between">
-                                <InputText @bind-Value="category.CategoryName"
-                                           class="form-control border-0 fs-5 fw-bold p-0 bg-transparent" />
-                                <button class="btn btn-sm btn-outline-danger"
-                                        @onclick="() => ConfirmDeleteCategory(category.CategoryID)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+            <tr style="border-bottom: 1px solid #e5e7eb; transition: background-color 0.2s;"
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='transparent'">
+
+                <td style="padding: 1rem; text-align: center;">
+                    <input type="checkbox"
+                           @onchange="e => ToggleCategorySelection(category.CategoryID, e.Value)"
+                           checked="@selectedCategoryIds.Contains(category.CategoryID)" />
+                </td>
+
+                <td style="padding: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="width: 2.5rem; height: 2.5rem; border-radius: 0.375rem; background-color: #f3e8ff; display: flex; align-items: center; justify-content: center;">
+                            <span style="font-size: 1.25rem; color: #7e22ce;">@category.CategoryName.Substring(0, 1)</span>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: #111827;">@category.CategoryName</div>
+                            <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
+                                @GetCategoryDescription(category.CategoryName)
                             </div>
                         </div>
                     </div>
-                </div>
-            }
-        }
-    </div>
+                </td>
 
-    <!-- Save Changes Button -->
-    @if (categories?.Any() == true)
-    {
-        <div class="text-center mt-4">
-            <button class="btn btn-success px-5 py-2" @onclick="SaveChanges">
-                <i class="bi bi-save me-2"></i>Save All Changes
-            </button>
-        </div>
-    }
-</div>
+                <td style="padding: 1rem; color: #111827; font-weight: 500;">
+                    @GetTotalProducts(category.CategoryName)
+                </td>
 
-<!-- Add Category Modal -->
-@if (showAddModal)
-{
-    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center fade-background"
-         style="z-index: 1050; background-color: rgba(0, 0, 0, 0.5);">
-        <div class="modal-enter modern-modal bg-white w-100" style="max-width: 500px;">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Add New Category</h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="CloseAddModal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <EditForm Model="@newCategory" OnValidSubmit="SaveCategory">
-                        <DataAnnotationsValidator />
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold mb-3">Category Name</label>
-                            <InputText @bind-Value="newCategory.CategoryName"
-                                       class="form-control form-control-lg"
-                                       placeholder="e.g. Electronics, Clothing" />
-                            <ValidationMessage For="@(() => newCategory.CategoryName)"
-                                               class="text-danger small mt-2" />
-                            @if (!string.IsNullOrEmpty(duplicateError))
+               
+
+                <td style="padding: 1rem;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button style="color: #2563eb; background: none; border: none; cursor: pointer; font-size: 1.1rem;"
+                                @onclick="() => EditCategory(category)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <div style="position: relative;">
+                            <button style="color: #6b7280; background: none; border: none; cursor: pointer; font-size: 1.1rem;"
+                                    @onclick="() => ToggleDropdown(category.CategoryID)">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+
+                            @if (dropdownVisible == category.CategoryID)
                             {
-                                <div class="text-danger small mt-1">@duplicateError</div>
+                                <div style="position: absolute; top: 100%; right: 0; background-color: white; border: 1px solid #e5e7eb; border-radius: 0.375rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); z-index: 10; display: flex; flex-direction: column;">
+                                    <button style="padding: 0.5rem 1rem; cursor: pointer; white-space: nowrap; text-align: left; background: none; border: none;"
+                                            @onclick="() => EditCategory(category)">
+                                        Edit
+                                    </button>
+                                    <button style="padding: 0.5rem 1rem; cursor: pointer; white-space: nowrap; text-align: left; background: none; border: none; color: #dc2626;"
+                                            @onclick="() => ConfirmDeleteCategory(category.CategoryID)">
+                                        Delete
+                                    </button>
+                                </div>
                             }
                         </div>
-                        <div class="d-flex justify-content-end gap-3 pt-3">
-                            <button type="button" class="btn btn-lg btn-outline-secondary px-4" @onclick="CloseAddModal">
-                                Cancel
-                            </button>
-                            <button type="submit" class="btn btn-lg btn-primary px-4">
-                                <i class="bi bi-plus-circle me-2"></i>Add Category
-                            </button>
-                        </div>
-                    </EditForm>
-                </div>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 1rem; font-size: 0.875rem; color: #6b7280;">
+    <div>Showing 1 to @filteredCategories.Count of @filteredCategories.Count entries</div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button style="color: #9ca3af; background: none; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.75rem;">Previous</button>
+        <button style="background-color: #7e22ce; color: white; border-radius: 0.375rem; padding: 0.25rem 0.75rem;">1</button>
+        <button style="color: #6b7280; background: none; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.75rem;">Next</button>
+    </div>
+</div>
+
+<!-- Add/Edit Category Modal -->
+@if (showAddModal)
+{
+    <div style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 50;">
+        <div style="background-color: white; border-radius: 0.5rem; box-shadow: 0 10px 15px rgba(0,0,0,0.1); width: 100%; max-width: 28rem;">
+            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                <h4 style="font-size: 1.125rem; font-weight: 600;">
+                    @(isEditing ? "Edit Category" : "Add Category")
+                </h4>
+            </div>
+            <div style="padding: 1rem;">
+                <input type="text"
+                       style="border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.75rem; width: 100%;"
+                       placeholder="Category Name"
+                       @bind="newCategory.CategoryName" />
+                @if (!string.IsNullOrWhiteSpace(duplicateError))
+                {
+                    <div style="color: #ef4444; font-size: 0.875rem; margin-top: 0.5rem;">@duplicateError</div>
+                }
+            </div>
+            <div style="padding: 1rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; color: #4b5563;"
+                        @onclick="CloseAddModal">
+                    Cancel
+                </button>
+                <button style="padding: 0.5rem 1rem; background-color: #7e22ce; color: white; border-radius: 0.375rem;"
+                        @onclick="SaveCategory">
+                    @(isEditing ? "Update" : "Save")
+                </button>
             </div>
         </div>
     </div>
@@ -156,26 +178,33 @@
 <!-- Delete Confirmation Modal -->
 @if (confirmDeleteVisible)
 {
-    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center fade-background"
-         style="z-index: 1050; background-color: rgba(0, 0, 0, 0.5);">
-        <div class="modal-enter modern-modal bg-white w-100" style="max-width: 500px;">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">Confirm Deletion</h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="() => confirmDeleteVisible = false"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="lead">Are you sure you want to delete this category?</p>
-                    <p class="text-muted">This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" @onclick="() => confirmDeleteVisible = false">
-                        Cancel
-                    </button>
-                    <button type="button" class="btn btn-danger" @onclick="DeleteConfirmed">
-                        <i class="bi bi-trash me-2"></i>Delete
-                    </button>
-                </div>
+    <div style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 50;">
+        <div style="background-color: white; border-radius: 0.5rem; box-shadow: 0 10px 15px rgba(0,0,0,0.1); width: 100%; max-width: 28rem;">
+            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; background-color: #dc2626; color: white;">
+                <h4 style="font-size: 1.125rem; font-weight: 600;">
+                    @(selectedCategoryIds.Count > 1 ? "Confirm Multiple Deletion" : "Confirm Deletion")
+                </h4>
+            </div>
+            <div style="padding: 1rem;">
+                @if (selectedCategoryIds.Count > 1)
+                {
+                    <p style="color: #374151;">Are you sure you want to delete these @selectedCategoryIds.Count selected categories?</p>
+                }
+                else
+                {
+                    <p style="color: #374151;">Are you sure you want to delete this category?</p>
+                }
+                <p style="color: #9ca3af; font-size: 0.875rem;">This action cannot be undone.</p>
+            </div>
+            <div style="padding: 1rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button style="padding: 0.5rem 1rem; border: 1px solid #ccc; border-radius: 0.375rem;"
+                        @onclick="() => { confirmDeleteVisible = false; selectedCategoryIds.Clear(); }">
+                    Cancel
+                </button>
+                <button style="padding: 0.5rem 1rem; background-color: #dc2626; color: white; border-radius: 0.375rem;"
+                        @onclick="DeleteConfirmed">
+                    Delete
+                </button>
             </div>
         </div>
     </div>
@@ -183,12 +212,27 @@
 
 @code {
     private List<BusinessCategory> categories = new();
+    private List<BusinessCategory> filteredCategories = new();
     private BusinessCategory newCategory = new();
     private bool showAddModal = false;
     private bool confirmDeleteVisible = false;
     private string duplicateError = string.Empty;
+    private HashSet<int> selectedCategoryIds = new();
+    private int? dropdownVisible = null;
+    private string searchQuery = "";
+    private bool isEditing = false;
 
-    private int? itemToDeleteId = null;
+    // Static data to match the design
+    private Dictionary<string, (int Products, string Earning, string Description)> categoryData = new()
+    {
+        { "Travel", (4186, "7912.99", "Choose from wide range of travel accessories from popular brands") },
+        { "Smart Phone", (99129, "99129", "Choose from wide range of smartphones from popular brands") },
+        { "Shoes", (4940, "3612.98", "Explore the latest shoes from Top brands") },
+        { "Jewellery", (4186, "7912.99", "Choose from wide range of Jewellery from popular brands") },
+        { "Home Decor", (9184, "18120.45", "Choose from wide range of home decor from popular brands") },
+        { "Grocery", (4186, "7912.99", "Get fresh groceries delivered at your doorstep") },
+        { "Games", (5764, "29129", "Dive into world of Virtual Reality with latest games") }
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -198,14 +242,75 @@
     private async Task LoadCategories()
     {
         categories = await CategoryService.GetCategoriesAsync();
+        filteredCategories = categories;
         StateContainer.Categories = categories;
         StateHasChanged();
+    }
+
+    private string GetCategoryDescription(string categoryName)
+    {
+        return categoryData.TryGetValue(categoryName, out var data)
+            ? data.Description
+            : "Category description";
+    }
+
+    private int GetTotalProducts(string categoryName)
+    {
+        return categoryData.TryGetValue(categoryName, out var data)
+            ? data.Products
+            : 0;
+    }
+
+    private string GetTotalEarning(string categoryName)
+    {
+        return categoryData.TryGetValue(categoryName, out var data)
+            ? data.Earning
+            : "0.00";
+    }
+
+    private void ToggleDropdown(int categoryId)
+    {
+        dropdownVisible = dropdownVisible == categoryId ? null : categoryId;
+    }
+
+    private void ToggleCategorySelection(int categoryId, object isChecked)
+    {
+        if ((bool)isChecked)
+        {
+            selectedCategoryIds.Add(categoryId);
+        }
+        else
+        {
+            selectedCategoryIds.Remove(categoryId);
+        }
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        if ((bool)e.Value)
+        {
+            selectedCategoryIds = new HashSet<int>(filteredCategories.Select(c => c.CategoryID));
+        }
+        else
+        {
+            selectedCategoryIds.Clear();
+        }
+    }
+
+    private void ConfirmDeleteSelected()
+    {
+        if (selectedCategoryIds.Any())
+        {
+            confirmDeleteVisible = true;
+        }
     }
 
     private void OpenAddModal()
     {
         newCategory = new BusinessCategory();
+        isEditing = false;
         showAddModal = true;
+        duplicateError = string.Empty;
     }
 
     private void CloseAddModal()
@@ -217,46 +322,75 @@
     {
         if (!string.IsNullOrWhiteSpace(newCategory.CategoryName))
         {
-            // Check for duplicate name (case-insensitive)
+            // Check for duplicates (excluding current category when editing)
             bool isDuplicate = categories.Any(c =>
+                c.CategoryID != newCategory.CategoryID &&
                 string.Equals(c.CategoryName.Trim(), newCategory.CategoryName.Trim(), StringComparison.OrdinalIgnoreCase));
 
             if (isDuplicate)
             {
-                // Optionally show a message to user
-                // You can add a Toast, Alert, or bind a message property
                 duplicateError = "Category with this name already exists.";
                 return;
             }
 
-            await CategoryService.AddCategoryAsync(newCategory);
+            if (isEditing)
+            {
+                await CategoryService.UpdateCategoryAsync(newCategory);
+            }
+            else
+            {
+                await CategoryService.AddCategoryAsync(newCategory);
+            }
+
             newCategory = new BusinessCategory();
             await LoadCategories();
             showAddModal = false;
-            duplicateError = string.Empty; // Clear previous error
+            duplicateError = string.Empty;
         }
+    }
+
+    private void EditCategory(BusinessCategory category)
+    {
+        newCategory = new BusinessCategory
+        {
+            CategoryID = category.CategoryID,
+            CategoryName = category.CategoryName
+        };
+        isEditing = true;
+        showAddModal = true;
+        duplicateError = string.Empty;
     }
 
     private void ConfirmDeleteCategory(int categoryId)
     {
-        itemToDeleteId = categoryId;
+        selectedCategoryIds.Clear();
+        selectedCategoryIds.Add(categoryId);
         confirmDeleteVisible = true;
     }
 
     private async Task DeleteConfirmed()
     {
-        if (itemToDeleteId.HasValue)
+        foreach (var id in selectedCategoryIds)
         {
-            await CategoryService.DeleteCategoryAsync(itemToDeleteId.Value);
-            await LoadCategories();
-            confirmDeleteVisible = false;
+            await CategoryService.DeleteCategoryAsync(id);
         }
+
+        selectedCategoryIds.Clear();
+        confirmDeleteVisible = false;
+        await LoadCategories();
     }
 
-    private async Task SaveChanges()
+    private void FilterCategories()
     {
-        await CategoryService.UpdateCategoriesAsync(categories);
-        await LoadCategories();
-        StateContainer.Categories = categories;
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredCategories = categories;
+        }
+        else
+        {
+            filteredCategories = categories
+                .Where(c => c.CategoryName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
     }
 }
