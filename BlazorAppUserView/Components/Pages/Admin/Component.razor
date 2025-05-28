@@ -1,0 +1,14 @@
+@* @using ClassLibraryEntities
+@using System.Text.Json
+@using System.IO
+
+<select class="form-select" @bind="selectedCategoryId" @onchange="OnCategoryChanged">
+    <option value="0">-- Select Category --</option>
+    <select class="form-select" @bind="selectedCategoryId">
+        <option value="0">-- Select Category --</option>
+        @foreach (var category in StateContainer.Categories)
+        {
+            <option value="@category.CategoryID">@category.CategoryName</option>
+        }
+    </select>
+</select> *@

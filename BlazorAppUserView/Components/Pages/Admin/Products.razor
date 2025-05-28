@@ -2,6 +2,7 @@
 @using ClassLibraryEntities
 @using System.Text.Json
 @using System.IO
+@using System.Text
 @inject BillService BillService
 @inject NavigationManager Navigation
 @inject StateContainerService StateContainer
@@ -13,64 +14,67 @@
 <div class="container mt-4">
     <div class="card shadow-sm">
         @* <Sidebar /> *@
-        <div class="card-body">
-            <h3 class="card-title text-primary mb-4">Product Management</h3>
+        <div class="card-body p-4">
+            <h3 class="card-title text-primary mb-4 fw-bold">Product Management</h3>
 
             <div class="row g-3 mb-4">
                 <div>
-                    <label class="form-label">Select Category:</label>
-                    <select class="form-select" @bind="selectedCategoryId">
-                        <option value="0">-- Select Category --</option>
-                        @foreach (var category in StateContainer.Categories)
-                        {
-                            <option value="@category.CategoryID">@category.CategoryName</option>
-                        }
-                    </select>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Select Category:</label>
+                        <select class="form-select form-select-lg" @bind="selectedCategoryId">
+                            <option value="0">-- Select Category --</option>
+                            @foreach (var category in StateContainer.Categories)
+                            {
+                                <option value="@category.CategoryID">@category.CategoryName</option>
+                            }
+                        </select>
+                    </div>
 
                     @if (selectedCategoryId > 0)
                     {
-                        <div class="border p-3 rounded-3 bg-light">
-                            <h5 class="text-primary mb-3">Manage Products</h5>
+                        <div class="border p-4 rounded-4 bg-light-subtle mt-3">
+                            <h5 class="text-primary mb-3 fw-semibold">Manage Products</h5>
                             <EditForm Model="@newProduct" OnValidSubmit="AddProduct">
                                 <DataAnnotationsValidator />
-                                <div class="row g-3 align-items-center">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Product Name:</label>
-                                        <InputText @bind-Value="newProduct.ProductTitle" class="form-control" />
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-5 col-lg-4">
+                                        <label class="form-label fw-semibold">Product Name:</label>
+                                        <InputText @bind-Value="newProduct.ProductTitle" class="form-control form-control-lg" />
                                     </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Price:</label>
-                                        <InputNumber @bind-Value="newProduct.ProductPrice" class="form-control" />
+                                    <div class="col-md-3 col-lg-2">
+                                        <label class="form-label fw-semibold">Price:</label>
+                                        <InputNumber @bind-Value="newProduct.ProductPrice" class="form-control form-control-lg" />
                                     </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Image:</label>
+                                    <div class="col-md-4 col-lg-4">
+                                        <label class="form-label fw-semibold">Image:</label>
                                         <div class="dropdown">
-                                            <button class="btn btn-outline-secondary w-100 text-start" type="button" @onclick="ToggleDropdown">
+                                            <button class="btn btn-outline-secondary w-100 text-start d-flex align-items-center" type="button" @onclick="ToggleDropdown">
                                                 @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
                                                 {
-                                                    <img src="@newProduct.ImageUrl" class="me-2" style="width: 20px; height: 20px;" />
-                                                    @Path.GetFileName(newProduct.ImageUrl)
+                                                    <img src="@newProduct.ImageUrl" class="me-2 rounded-1" style="width: 24px; height: 24px; object-fit: cover;" />
+                                                    <span class="text-truncate">@Path.GetFileName(newProduct.ImageUrl)</span>
                                                 }
                                                 else
                                                 {
                                                     <span>Select Image</span>
                                                 }
+                                                <i class="bi bi-chevron-down ms-auto"></i>
                                             </button>
-                                            <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none");">
+                                            <ul class="dropdown-menu w-100" style="display: @(isDropdownOpen ? "block" : "none"); max-height: 300px; overflow-y: auto;">
                                                 @foreach (var imgUrl in ImageUrls)
                                                 {
                                                     <li>
-                                                        <a class="dropdown-item" @onclick="() => SelectImage(imgUrl)">
-                                                            <img src="@imgUrl" class="me-2" style="width: 20px; height: 20px;" />
-                                                            @Path.GetFileName(imgUrl)
+                                                        <a class="dropdown-item d-flex align-items-center" @onclick="() => SelectImage(imgUrl)">
+                                                            <img src="@imgUrl" class="me-2 rounded-1" style="width: 24px; height: 24px; object-fit: cover;" />
+                                                            <span class="text-truncate">@Path.GetFileName(imgUrl)</span>
                                                         </a>
                                                     </li>
                                                 }
                                             </ul>
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
-                                        <button type="submit" class="btn btn-primary mt-4">
+                                    <div class="col-md-12 col-lg-2">
+                                        <button type="submit" class="btn w-100 mt-md-0 mt-2" style="background-color: #7c6dfa; color: white; height: 46px;">
                                             @(editingProduct == null ? "Add Product" : "Update Product")
                                         </button>
                                     </div>
@@ -78,65 +82,205 @@
                                 <ValidationSummary class="text-danger mt-2" />
                             </EditForm>
                         </div>
-
-                        <div class="mt-4">
-                            <h5 class="text-primary mb-3">Products in Category</h5>
-                            @if (FilteredProducts.Any())
-                            {
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Product Name</th>
-                                                <th>Price</th>
-                                                <th>Image</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var product in FilteredProducts)
-                                            {
-                                                <tr>
-                                                    <td>@product.ProductTitle</td>
-                                                    <td>@product.ProductPrice.ToString("C")</td>
-                                                    <td>
-                                                        <img src="@product.ImageUrl" style="width: 50px; height: 50px;" alt="@product.ProductTitle" />
-                                                    </td>
-                                                    <td>
-                                                        <div class="form-check form-switch">
-                                                            <InputCheckbox @bind-Value="product.IsActive" class="form-check-input"
-                                                                           @onchange="async e => await ToggleProductStatus(product)" />
-                                                            <label class="form-check-label">
-                                                                @(product.IsActive ? "Active" : "Inactive")
-                                                            </label>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-warning me-2" @onclick="() => EditProduct(product)">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteProduct(product)">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="alert alert-info">No products found in this category.</div>
-                            }
-                        </div>
                     }
+
+                    <div class="mt-4">
+                        <h5 class="text-primary mb-3 fw-semibold">
+                            @(selectedCategoryId > 0 ? "Products in Category" : "All Products")
+                        </h5>
+
+                        <div class="mb-3 row g-2 align-items-center">
+                            <!-- Search bar (left) -->
+                            <div class="col-md-6 col-lg-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                                    <input class="form-control form-control-lg"
+                                           placeholder="Search products..."
+                                           @bind="searchTerm"
+                                           @bind:event="oninput" />
+                                </div>
+                            </div>
+                            <!-- Export button and page size dropdown (right) -->
+                            <div class="col-md-6 col-lg-8 d-flex justify-content-md-end mt-md-0 mt-2">
+                                <button class="btn btn-outline-primary me-2 d-flex align-items-center" @onclick="ExportProducts">
+                                    <i class="bi bi-download me-2"></i> Export
+                                </button>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 text-nowrap">Show:</span>
+                                    <select class="form-select form-select-lg" style="width: 80px;" @bind="PageSize">
+                                        <option value="7">7</option>
+                                        <option value="15">15</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (FilteredProducts.Any())
+                        {
+                            <div class="table-responsive rounded-3 border">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Product Name</th>
+                                            <th>Price</th>
+                                            <th>Image</th>
+                                            <th>Status</th>
+                                            <th class="pe-4 text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var product in PagedProducts)
+                                        {
+                                            <tr>
+                                                <td class="ps-4 fw-semibold">@product.ProductTitle</td>
+                                                <td>@product.ProductPrice.ToString("C")</td>
+                                                <td>
+                                                    <img src="@product.ImageUrl" class="rounded-2" style="width: 50px; height: 50px; object-fit: cover;" alt="@product.ProductTitle" />
+                                                </td>
+                                                <td>
+                                                    <div class="form-check form-switch">
+                                                        <InputCheckbox @bind-Value="product.IsActive" class="form-check-input"
+                                                                       @onchange="async e => await ToggleProductStatus(product)" />
+                                                        <label class="form-check-label">
+                                                            @(product.IsActive ? "Active" : "Inactive")
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                                <td class="pe-4 text-end">
+                                                    <button class="btn btn-sm btn-outline-warning me-2" @onclick="() => EditProduct(product)">
+                                                        <i class="bi bi-pencil"></i> Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" @onclick="async () => await DeleteProduct(product)">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="text-muted">
+                                    Showing @((CurrentPage - 1) * PageSize + 1) to @Math.Min(CurrentPage * PageSize, FilteredProducts.Count) of @FilteredProducts.Count items
+                                </div>
+                                <div class="pagination-box">
+                                    @foreach (var row in GetPaginationRows())
+                                    {
+                                        <div class="d-flex justify-content-center mb-1">
+                                            @foreach (var page in row)
+                                            {
+                                                if (page == -1)
+                                                {
+                                                    <span class="pagination-box disabled">...</span>
+                                                }
+                                                else
+                                                {
+                                                    <button class="pagination-box @(CurrentPage == page ? "active" : "")"
+                                                            @onclick="() => GoToPage(page)" disabled="@(CurrentPage == page)">
+                                                        @GetPageLabel(page)
+                                                    </button>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info rounded-3">No products found.</div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .pagination-box {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pagination-box {
+        min-width: 42px;
+        min-height: 42px;
+        margin: 0 4px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        background: #f8f9fa;
+        color: #444;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .pagination-box:hover:not(.active):not(:disabled):not(.disabled) {
+            background: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        .pagination-box.active,
+        .pagination-box:disabled {
+            background: #7c6dfa;
+            color: #fff;
+            border-color: #7c6dfa;
+            cursor: default;
+        }
+
+        .pagination-box.disabled {
+            background: #f8f9fa;
+            color: #adb5bd;
+            border-color: #e9ecef;
+            cursor: default;
+        }
+
+    .btn-outline-primary {
+        color: #7c6dfa;
+        border-color: #7c6dfa;
+    }
+
+        .btn-outline-primary:hover {
+            background-color: #7c6dfa;
+            color: white;
+        }
+
+    .text-primary {
+        color: #7c6dfa !important;
+    }
+
+    .form-control-lg, .form-select-lg {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+
+    .dropdown-menu {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    }
+
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+    }
+
+    .form-check-input:checked {
+        background-color: #7c6dfa;
+        border-color: #7c6dfa;
+    }
+
+</style>
 
 @code {
     private int selectedCategoryId = 0;
@@ -145,8 +289,23 @@
     private Product? editingProduct { get; set; }
     private List<string> ImageUrls { get; set; } = new();
     private bool isDropdownOpen = false;
+    private string searchTerm { get; set; } = string.Empty;
+    private int PageSize { get; set; } = 7;
+    private int CurrentPage { get; set; } = 1;
 
-    private List<Product> FilteredProducts => ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<Product> FilteredProducts =>
+        ProductList
+            .Where(p => (selectedCategoryId == 0 || p.CategoryID == selectedCategoryId) &&
+                        (string.IsNullOrWhiteSpace(searchTerm) ||
+                         (p.ProductTitle?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)))
+            .ToList();
+
+    private int TotalPages => (int)Math.Ceiling((double)FilteredProducts.Count / PageSize);
+
+    private IEnumerable<Product> PagedProducts =>
+        FilteredProducts.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
 
     protected override async Task OnInitializedAsync()
     {
@@ -186,6 +345,7 @@
         try
         {
             ProductList = await ProductService.GetAllProductsAsync();
+            Console.WriteLine($"Loaded {ProductList.Count} products."); // For debugging
         }
         catch (Exception ex)
         {
@@ -209,18 +369,19 @@
         if (selectedCategoryId <= 0) return;
 
         newProduct.CategoryID = selectedCategoryId;
-        newProduct.IsActive = false; // Default to inactive
         newProduct.ActiveDays = ""; // Start with no days selected
 
         try
         {
             if (editingProduct == null)
             {
+                newProduct.IsActive = false; // Only set to inactive for new products
                 var addedProduct = await ProductService.AddProductAsync(newProduct);
                 ProductList.Add(addedProduct);
             }
             else
             {
+                // Do not change IsActive when updating
                 var updatedProduct = await ProductService.UpdateProductAsync(newProduct);
                 var index = ProductList.FindIndex(p => p.ProductID == updatedProduct.ProductID);
                 if (index != -1)
@@ -272,15 +433,15 @@
     {
         editingProduct = product;
         newProduct = new Product
-            {
-                ProductID = product.ProductID,
-                ProductTitle = product.ProductTitle,
-                ProductPrice = product.ProductPrice,
-                ImageUrl = product.ImageUrl,
-                IsActive = product.IsActive,
-                CategoryID = product.CategoryID,
-                ActiveDays = product.ActiveDays
-            };
+        {
+            ProductID = product.ProductID,
+            ProductTitle = product.ProductTitle,
+            ProductPrice = product.ProductPrice,
+            ImageUrl = product.ImageUrl,
+            IsActive = product.IsActive, // preserve status
+            CategoryID = product.CategoryID,
+            ActiveDays = product.ActiveDays
+        };
     }
 
     private void ResetForm()
@@ -288,4 +449,124 @@
         newProduct = new Product();
         editingProduct = null;
     }
+
+  
+    // Export to CSV (simple implementation)
+    private async Task ExportProducts()
+    {
+        var exportList = FilteredProducts;
+        var csv = new StringBuilder();
+        csv.AppendLine("Product Name,Price,Status,Category");
+
+        foreach (var p in exportList)
+        {
+            csv.AppendLine($"\"{p.ProductTitle}\",\"{p.ProductPrice}\",\"{(p.IsActive ? "Active" : "Inactive")}\",\"{p.Category?.CategoryName}\"");
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(csv.ToString());
+        var base64 = Convert.ToBase64String(bytes);
+        var fileName = $"products_{DateTime.Now:yyyyMMddHHmmss}.csv";
+        await JS.InvokeVoidAsync("downloadFileFromBlazor", fileName, base64);
+    }
+
+    private void GoToPage(int page)
+    {
+        switch (page)
+        {
+            case 0: CurrentPage = 1; break;
+            case -2: if (CurrentPage > 1) CurrentPage--; break;
+            case -3: if (CurrentPage < TotalPages) CurrentPage++; break;
+            case -4: CurrentPage = TotalPages; break;
+            default: if (page >= 1 && page <= TotalPages) CurrentPage = page; break;
+        }
+    }
+
+    private void OnSearchTermChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+    }
+
+    private void OnCategoryChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int categoryId))
+        {
+            selectedCategoryId = categoryId;
+            ResetForm();
+            CurrentPage = 1;
+        }
+        StateHasChanged();
+    }
+
+    private void OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int size))
+        {
+            PageSize = size;
+            CurrentPage = 1;
+        }
+    }
+
+    private string GetPageLabel(int page)
+    {
+        return page switch
+        {
+            0 => "«",
+            -2 => "<",
+            -3 => ">",
+            -4 => "»",
+            _ => page.ToString()
+        };
+    }
+
+    // Returns a list of two rows, each row is a list of page numbers or -1 for ellipsis
+    private List<List<int>> GetPaginationRows()
+    {
+        var pages = new List<int>();
+        if (TotalPages <= 10)
+        {
+            pages.Add(0); // First
+            pages.Add(-2); // Prev
+            for (int i = 1; i <= TotalPages; i++)
+                pages.Add(i);
+            pages.Add(-3); // Next
+            pages.Add(-4); // Last
+        }
+        else
+        {
+            pages.Add(0); // First
+            pages.Add(-2); // Prev
+            pages.Add(1);
+            if (CurrentPage > 4)
+                pages.Add(-1); // ellipsis
+
+            int start = Math.Max(2, CurrentPage - 1);
+            int end = Math.Min(TotalPages - 1, CurrentPage + 1);
+
+            for (int i = start; i <= end; i++)
+                pages.Add(i);
+
+            if (CurrentPage < TotalPages - 3)
+                pages.Add(-1); // ellipsis
+
+            pages.Add(TotalPages);
+            pages.Add(-3); // Next
+            pages.Add(-4); // Last
+        }
+
+        // Split into two rows
+        int half = (int)Math.Ceiling(pages.Count / 2.0);
+        return new List<List<int>> { pages.Take(half).ToList(), pages.Skip(half).ToList() };
+    }
 }
+
+<script>
+    window.downloadFileFromBlazor = (fileName, base64) => {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = "data:text/csv;base64," + base64;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+</script>
