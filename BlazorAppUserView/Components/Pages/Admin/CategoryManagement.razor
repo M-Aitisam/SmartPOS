@@ -59,26 +59,25 @@
                        @onchange="ToggleSelectAll"
                        checked="@(selectedCategoryIds.Count == filteredCategories.Count && filteredCategories.Count > 0)" />
             </th>
-            <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 15%;">CATEGORIES</th>
+            <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 25%;">CATEGORIES</th>
             <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 15%;">TOTAL PRODUCTS</th>
-            
             <th style="padding: 0.75rem 1rem; color: #4b5563; font-weight: 500; width: 10%;">ACTIONS</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var category in filteredCategories)
+        @foreach (var category in PagedCategories)
         {
             <tr style="border-bottom: 1px solid #e5e7eb; transition: background-color 0.2s;"
                 onmouseover="this.style.backgroundColor='#f9fafb'"
                 onmouseout="this.style.backgroundColor='transparent'">
 
-                <td style="padding: 1rem; text-align: center;">
+                <td style="padding: 0.75rem 1rem; text-align: center; vertical-align: middle;">
                     <input type="checkbox"
                            @onchange="e => ToggleCategorySelection(category.CategoryID, e.Value)"
                            checked="@selectedCategoryIds.Contains(category.CategoryID)" />
                 </td>
 
-                <td style="padding: 1rem;">
+                <td style="padding: 0.75rem 1rem; vertical-align: middle;">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <div style="width: 2.5rem; height: 2.5rem; border-radius: 0.375rem; background-color: #f3e8ff; display: flex; align-items: center; justify-content: center;">
                             <span style="font-size: 1.25rem; color: #7e22ce;">@category.CategoryName.Substring(0, 1)</span>
@@ -92,13 +91,11 @@
                     </div>
                 </td>
 
-                <td style="padding: 1rem; color: #111827; font-weight: 500;">
+                <td style="padding: 0.75rem 1rem; color: #111827; font-weight: 500; vertical-align: middle;">
                     @GetTotalProducts(category.CategoryName)
                 </td>
 
-               
-
-                <td style="padding: 1rem;">
+                <td style="padding: 0.75rem 1rem; vertical-align: middle;">
                     <div style="display: flex; gap: 0.5rem;">
                         <button style="color: #2563eb; background: none; border: none; cursor: pointer; font-size: 1.1rem;"
                                 @onclick="() => EditCategory(category)">
@@ -133,11 +130,25 @@
 
 <!-- Pagination -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 1rem; font-size: 0.875rem; color: #6b7280;">
-    <div>Showing 1 to @filteredCategories.Count of @filteredCategories.Count entries</div>
+    <div>Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, filteredCategories.Count) of @filteredCategories.Count entries</div>
     <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <button style="color: #9ca3af; background: none; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.75rem;">Previous</button>
-        <button style="background-color: #7e22ce; color: white; border-radius: 0.375rem; padding: 0.25rem 0.75rem;">1</button>
-        <button style="color: #6b7280; background: none; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.75rem;">Next</button>
+        <button style="color: #9ca3af; background: none; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.75rem;"
+                disabled="@(currentPage == 1)"
+                @onclick="PreviousPage">
+            Previous
+        </button>
+        @for (int i = 1; i <= TotalPages; i++)
+        {
+            <button style="@(i == currentPage ? "background-color: #7e22ce; color: white;" : "color: #6b7280; background: none;") border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.75rem;"
+                    @onclick="() => GoToPage(i)">
+                @i
+            </button>
+        }
+        <button style="color: #9ca3af; background: none; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.75rem;"
+                disabled="@(currentPage == TotalPages)"
+                @onclick="NextPage">
+            Next
+        </button>
     </div>
 </div>
 
@@ -197,7 +208,7 @@
                 <p style="color: #9ca3af; font-size: 0.875rem;">This action cannot be undone.</p>
             </div>
             <div style="padding: 1rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
-                <button style="padding: 0.5rem 1rem; border: 1px solid #ccc; border-radius: 0.375rem;"
+                <button style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; color: #4b5563;"
                         @onclick="() => { confirmDeleteVisible = false; selectedCategoryIds.Clear(); }">
                     Cancel
                 </button>
@@ -209,7 +220,6 @@
         </div>
     </div>
 }
-
 @code {
     private List<BusinessCategory> categories = new();
     private List<BusinessCategory> filteredCategories = new();
@@ -222,17 +232,13 @@
     private string searchQuery = "";
     private bool isEditing = false;
 
-    // Static data to match the design
-    private Dictionary<string, (int Products, string Earning, string Description)> categoryData = new()
-    {
-        { "Travel", (4186, "7912.99", "Choose from wide range of travel accessories from popular brands") },
-        { "Smart Phone", (99129, "99129", "Choose from wide range of smartphones from popular brands") },
-        { "Shoes", (4940, "3612.98", "Explore the latest shoes from Top brands") },
-        { "Jewellery", (4186, "7912.99", "Choose from wide range of Jewellery from popular brands") },
-        { "Home Decor", (9184, "18120.45", "Choose from wide range of home decor from popular brands") },
-        { "Grocery", (4186, "7912.99", "Get fresh groceries delivered at your doorstep") },
-        { "Games", (5764, "29129", "Dive into world of Virtual Reality with latest games") }
-    };
+    // Pagination properties
+    private int currentPage = 1;
+    private int pageSize = 7;
+    private int totalItems = 0;
+    private int TotalPages => (int)Math.Ceiling((double)totalItems / pageSize);
+    private IEnumerable<BusinessCategory> PagedCategories =>
+        filteredCategories.Skip((currentPage - 1) * pageSize).Take(pageSize);
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,10 +248,73 @@
     private async Task LoadCategories()
     {
         categories = await CategoryService.GetCategoriesAsync();
-        filteredCategories = categories;
+        totalItems = categories.Count;
+        FilterCategories();
         StateContainer.Categories = categories;
         StateHasChanged();
     }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        currentPage = 1; // Reset to first page when searching
+        FilterCategories();
+    }
+
+    private void FilterCategories()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredCategories = new List<BusinessCategory>(categories);
+        }
+        else
+        {
+            filteredCategories = categories
+                .Where(c => c.CategoryName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        totalItems = filteredCategories.Count;
+        StateHasChanged();
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            currentPage = page;
+            StateHasChanged();
+        }
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < TotalPages)
+        {
+            currentPage++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            StateHasChanged();
+        }
+    }
+
+    // Static data to match the design
+    private Dictionary<string, (int Products, string Description)> categoryData = new()
+{
+    { "Travel", (4186, "Choose from wide range of travel accessories from popular brands") },
+    { "Smart Phone", (99129, "Choose from wide range of smartphones from popular brands") },
+    { "Shoes", (4940, "Explore the latest shoes from Top brands") },
+    { "Jewellery", (4186, "Choose from wide range of Jewellery from popular brands") },
+    { "Home Decor", (9184, "Choose from wide range of home decor from popular brands") },
+    { "Grocery", (4186, "Get fresh groceries delivered at your doorstep") },
+    { "Games", (5764, "Dive into world of Virtual Reality with latest games") }
+};
 
     private string GetCategoryDescription(string categoryName)
     {
@@ -259,13 +328,6 @@
         return categoryData.TryGetValue(categoryName, out var data)
             ? data.Products
             : 0;
-    }
-
-    private string GetTotalEarning(string categoryName)
-    {
-        return categoryData.TryGetValue(categoryName, out var data)
-            ? data.Earning
-            : "0.00";
     }
 
     private void ToggleDropdown(int categoryId)
@@ -289,7 +351,7 @@
     {
         if ((bool)e.Value)
         {
-            selectedCategoryIds = new HashSet<int>(filteredCategories.Select(c => c.CategoryID));
+            selectedCategoryIds = new HashSet<int>(PagedCategories.Select(c => c.CategoryID));
         }
         else
         {
@@ -378,19 +440,5 @@
         selectedCategoryIds.Clear();
         confirmDeleteVisible = false;
         await LoadCategories();
-    }
-
-    private void FilterCategories()
-    {
-        if (string.IsNullOrWhiteSpace(searchQuery))
-        {
-            filteredCategories = categories;
-        }
-        else
-        {
-            filteredCategories = categories
-                .Where(c => c.CategoryName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
     }
 }

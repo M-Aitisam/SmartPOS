@@ -17,12 +17,12 @@ namespace ClassLibraryEntities
        
         public string? ProductCode { get; set; }
 
-       
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0.")]
         public decimal ProductPrice { get; set; }
 
         public bool IsActive { get; set; } = true;
 
-        [Url(ErrorMessage = "Invalid URL format.")]
+       
         public string? ImageUrl { get; set; }
 
         public bool IsSelected { get; set; }
@@ -33,7 +33,7 @@ namespace ClassLibraryEntities
         
         public string Name { get; set; } = string.Empty;
 
-        [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0.")]
+       
         public decimal Price { get; set; }
 
         [Required(ErrorMessage = "Category is required.")]
