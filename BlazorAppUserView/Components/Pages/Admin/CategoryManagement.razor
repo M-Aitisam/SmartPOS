@@ -285,7 +285,7 @@
     private async Task LoadCategories()
     {
         categories = await CategoryService.GetCategoriesAsync();
-        var products = await ProductService.GetAllProductsAsync(); // Correct usage
+        var products = await ProductService.GetAllProductsAsync(); 
 
         foreach (var category in categories)
         {
@@ -311,7 +311,7 @@
     private void OnSearchChanged(ChangeEventArgs e)
     {
         searchQuery = e.Value?.ToString() ?? "";
-        currentPage = 1; // Reset to first page when searching
+        currentPage = 1; 
         FilterCategories();
     }
 
