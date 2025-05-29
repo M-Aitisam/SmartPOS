@@ -26,10 +26,12 @@
     </div>
 
     <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <select style="border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; color: #4b5563;">
-            <option>7</option>
-            <option>10</option>
-            <option>20</option>
+        <select style="border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; color: #4b5563;"
+                @bind="pageSize"
+                @bind:after="OnPageSizeChanged">
+            <option value="7">7</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
         </select>
 
         <button style="background-color: #7e22ce; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem;"
@@ -229,7 +231,20 @@
     private string duplicateError = string.Empty;
     private HashSet<int> selectedCategoryIds = new();
     private int? dropdownVisible = null;
-    private string searchQuery = "";
+    private string _searchQuery = "";
+    private string searchQuery
+    {
+        get => _searchQuery;
+        set
+        {
+            if (_searchQuery != value)
+            {
+                _searchQuery = value;
+                currentPage = 1;
+                FilterCategories();
+            }
+        }
+    }
     private bool isEditing = false;
 
     // Pagination properties
@@ -252,6 +267,16 @@
         FilterCategories();
         StateContainer.Categories = categories;
         StateHasChanged();
+    }
+
+    private void OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int size))
+        {
+            pageSize = size;
+            currentPage = 1;
+            StateHasChanged();
+        }
     }
 
     private void OnSearchChanged(ChangeEventArgs e)
@@ -329,7 +354,12 @@
             ? data.Products
             : 0;
     }
-
+    
+    private void OnPageSizeChanged()
+    {
+        currentPage = 1;
+        StateHasChanged();
+    }
     private void ToggleDropdown(int categoryId)
     {
         dropdownVisible = dropdownVisible == categoryId ? null : categoryId;
