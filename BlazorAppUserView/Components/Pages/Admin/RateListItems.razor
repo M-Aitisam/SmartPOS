@@ -327,18 +327,40 @@
             StateContainer.Categories?.Select(c => c.CategoryName) ?? Enumerable.Empty<string>()
         ).ToList();
 
-    private IEnumerable<RateItem> FilteredItems =>
-    (BillService.RateItems ?? new List<RateItem>())
-    .Where(i => i.IsActive &&
-           // Updated day filtering logic
-           (string.IsNullOrEmpty(i.ActiveDays) ||
-            (i.ActiveDays?.Split(',').Contains(currentViewDay) ?? false)) &&
-           (SelectedCategory == "All" || (i.Category ?? "") == SelectedCategory) &&
-           (string.IsNullOrEmpty(SearchQuery) ||
-            (i.Name ?? "").Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
-    .OrderBy(i => i.Name)
-    .ToList();
+    private IEnumerable<RateItem> FilteredItems
+    {
+        get
+        {
+            if (BillService?.RateItems == null)
+                return Enumerable.Empty<RateItem>();
 
+            // Pre-process currentViewDay for case-insensitive comparison
+            var currentDayNormalized = currentViewDay?.Trim() ?? string.Empty;
+
+            return BillService.RateItems
+                .Where(i => i != null && i.IsActive)
+                .Where(i => ShouldIncludeForDay(i.ActiveDays, currentDayNormalized))
+                .Where(i => SelectedCategory == "All" ||
+                           (i.Category ?? string.Empty).Equals(SelectedCategory, StringComparison.OrdinalIgnoreCase))
+                .Where(i => string.IsNullOrEmpty(SearchQuery) ||
+                           (i.Name ?? string.Empty).Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(i => i.Name)
+                .ToList();
+        }
+    }
+
+    private bool ShouldIncludeForDay(string activeDays, string currentDay)
+    {
+        if (string.IsNullOrWhiteSpace(activeDays))
+            return false; // Changed from original - only show explicitly assigned days
+
+        var days = activeDays.Split(',')
+            .Select(d => d.Trim())
+            .Where(d => !string.IsNullOrEmpty(d));
+
+        return days.Any(d =>
+            string.Equals(d, currentDay, StringComparison.OrdinalIgnoreCase));
+    }
     protected override void OnInitialized()
     {
         BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
