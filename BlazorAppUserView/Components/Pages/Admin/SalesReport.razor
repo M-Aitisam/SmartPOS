@@ -1,108 +1,143 @@
 ﻿@page "/salesreport"
 @using System.Globalization
-@inject ITransactionService TransactionService
 @inject IJSRuntime JSRuntime
-@inject NavigationManager NavigationManager
 @implements IDisposable
 @using System.Text.Json
 @rendermode InteractiveServer
 
 <PageTitle>Sales Report</PageTitle>
 
-<div class="sales-report-container">
-    <div class="header-section">
-        <div class="date-selector">
-            <div class="month-selector">
-                <span>@DateTime.Now.ToString("MMM. yyyy")</span>
-                <button class="export-btn" @onclick="ExportData">Export v</button>
+<div class="sales-dashboard">
+    <div class="dashboard-header">
+        <h2>Sales Dashboard</h2>
+        <div class="header-actions">
+            <div class="time-filter">
+                <span>Last Week</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
             </div>
-            <div>
-                <label class="realtime-toggle">
-                    <input type="checkbox" @bind="enableRealtime" />
-                    Live Updates
-                </label>
+            <button class="export-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export
+            </button>
+        </div>
+    </div>
+
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="card-header">
+                <span>Order</span>
+                <span class="time-label">Last week</span>
+            </div>
+            <div class="card-value">$4,673</div>
+            <div class="card-footer">
+                <span class="growth positive">+18.2%</span>
+                <span>vs last week</span>
             </div>
         </div>
 
-        <div class="summary-cards">
-            <div class="summary-card">
-                <h3>Gross Sales</h3>
-                <p>@grossSales.ToString("C")</p>
+        <div class="summary-card">
+            <div class="card-header">
+                <span>Sales</span>
+                <span class="time-label">Last Year</span>
             </div>
-           
-            <div class="summary-card">
-                <h3>Discounts</h3>
-                <p>(@Math.Abs(discounts).ToString("C")</p>
+            <div class="card-value">1.28k</div>
+            <div class="card-footer">
+                <span class="growth negative">-8.2%</span>
+                <span>vs last year</span>
             </div>
-            <div class="summary-card">
-                <h3>Net Sales</h3>
-                <p>@netSales.ToString("C")</p>
+        </div>
+
+        <div class="summary-card">
+            <div class="card-header">
+                <span>Total Profit</span>
+                <span class="time-label">Last week</span>
             </div>
-            
-            <div class="summary-card">
-                <h3>Tax</h3>
-                <p>@tax.ToString("C")</p>
+            <div class="card-value">1.28k</div>
+            <div class="card-footer">
+                <span class="growth positive">+12.4%</span>
+                <span>vs last week</span>
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="card-header">
+                <span>Revenue Growth</span>
+                <span class="time-label">Weekly Report</span>
+            </div>
+            <div class="card-value">$8,245</div>
+            <div class="card-footer">
+                <span class="growth positive">+21.7%</span>
+                <span>vs last week</span>
             </div>
         </div>
     </div>
 
-    <div class="chart-section">
+    <div class="charts-section">
         <div class="chart-container">
-            <h3>@DateTime.Now.ToString("MMM. yyyy").ToUpper()</h3>
+            <div class="chart-header">
+                <h3>Earning Reports</h3>
+                <span>Yearly Earnings Overview</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="yearlyEarningsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>Sales</h3>
+                <span>Last 6 Months</span>
+            </div>
             <div class="chart-wrapper">
                 <canvas id="monthlySalesChart"></canvas>
             </div>
         </div>
-
-        <div class="chart-container">
-            <h3>TIME OF DAY</h3>
-            <div class="chart-wrapper">
-                <canvas id="dailySalesChart"></canvas>
-            </div>
-        </div>
-
-        <div class="chart-container">
-            <h3>DAY OF WEEK</h3>
-            <div class="chart-wrapper">
-                <canvas id="weeklySalesChart"></canvas>
-            </div>
-        </div>
     </div>
 
-    <div class="recent-orders">
-        <h3>Recent Orders</h3>
-        <div class="order-list">
-            @foreach (var order in recentOrders.Take(5))
-            {
-                <div class="order-item @(order.IsReturn ? "return-order" : "")">
-                    <span class="order-time">@order.TransactionDate.ToString("HH:mm")</span>
-                    <span class="order-items">@order.Items.Count items</span>
-                    <span class="order-amount">@order.TotalAmount.ToString("C")</span>
-                </div>
-            }
+    <div class="data-grid">
+        <div class="grid-header">
+            <h3>Orders</h3>
+            <div class="grid-tabs">
+                <button class="tab active">Orders</button>
+                <button class="tab">Sales</button>
+                <button class="tab">Profit</button>
+                <button class="tab">Income</button>
+            </div>
+        </div>
+        <div class="grid-content">
+            <div class="grid-row header">
+                <div class="grid-cell">Feb</div>
+                <div class="grid-cell">Mar</div>
+                <div class="grid-cell">Apr</div>
+                <div class="grid-cell">May</div>
+                <div class="grid-cell">Jun</div>
+                <div class="grid-cell">Jul</div>
+                <div class="grid-cell">Aug</div>
+                <div class="grid-cell">Sep</div>
+            </div>
+            <div class="grid-row">
+                <div class="grid-cell">$3,200</div>
+                <div class="grid-cell">$4,800</div>
+                <div class="grid-cell">$4,100</div>
+                <div class="grid-cell">$5,700</div>
+                <div class="grid-cell">$7,200</div>
+                <div class="grid-cell">$6,900</div>
+                <div class="grid-cell">$7,500</div>
+                <div class="grid-cell">$8,200</div>
+            </div>
         </div>
     </div>
 </div>
 
 @code {
-    private List<BusinessTransaction> transactions = new();
-    private List<BusinessTransaction> recentOrders = new();
-    private decimal grossSales;
-    private decimal returns;
-    private decimal discounts;
-    private decimal netSales;
-    private decimal giftCardSales;
-    private decimal tax;
-    private bool enableRealtime = true;
-    private Timer? refreshTimer;
-    private DotNetObjectReference<SalesReport>? objRef;
     private bool isInitialized = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-        StartAutoRefresh();
-    }
+    private DotNetObjectReference<SalesReport>? objRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -111,75 +146,24 @@
             isInitialized = true;
             objRef = DotNetObjectReference.Create(this);
             await InitializeCharts();
-            await InitializeSignalR();
         }
-    }
-
-    private async Task LoadData()
-    {
-        var startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-        var endDate = DateTime.Now;
-
-        transactions = await TransactionService.GetTransactionsByDateRangeAsync(startDate, endDate);
-        recentOrders = await TransactionService.GetRecentTransactionsAsync();
-
-        CalculateSummaryData();
-    }
-
-    private void CalculateSummaryData()
-    {
-        grossSales = transactions.Where(t => !t.IsReturn).Sum(t => t.TotalAmount);
-        returns = transactions.Where(t => t.IsReturn).Sum(t => t.TotalAmount);
-        discounts = transactions.Sum(t => t.DiscountAmount);
-        netSales = grossSales - returns - discounts;
-        giftCardSales = transactions.Where(t => t.PaymentMethod == "Gift Card").Sum(t => t.TotalAmount);
-        tax = transactions.Sum(t => t.TaxAmount);
     }
 
     private async Task InitializeCharts()
     {
         try
         {
-            // Monthly sales data
-            var monthlyData = transactions
-                .GroupBy(t => t.TransactionDate.Day)
-                .OrderBy(g => g.Key)
-                .Select(g => new { Day = g.Key, Amount = g.Sum(t => t.TotalAmount) })
-                .ToList();
+            // Yearly Earnings Chart (Line Chart)
+            await JSRuntime.InvokeVoidAsync("initializeYearlyEarningsChart",
+                JsonSerializer.Serialize(new[] { "Jun", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep" }),
+                JsonSerializer.Serialize(new[] { 3500, 4200, 3800, 5100, 6300, 7200, 6800, 7500, 8200 })
+            );
 
-            await JSRuntime.InvokeVoidAsync("eval", $@"
-                initializeMonthlyChart(
-                {JsonSerializer.Serialize(monthlyData.Select(d => d.Day.ToString()))},
-                {JsonSerializer.Serialize(monthlyData.Select(d => (double)d.Amount))}
-                );
-            ");
-
-            // Daily sales by time
-            var hourlyData = transactions
-                .GroupBy(t => t.TransactionDate.Hour)
-                .OrderBy(g => g.Key)
-                .Select(g => new { Hour = $"{g.Key}:00", Amount = g.Sum(t => t.TotalAmount) })
-                .ToList();
-
-            var hourlyLabels = JsonSerializer.Serialize(hourlyData.Select(d => d.Hour));
-            var hourlyValues = JsonSerializer.Serialize(hourlyData.Select(d => (double)d.Amount));
-
-            await JSRuntime.InvokeVoidAsync("initializeDailyChart", hourlyLabels, hourlyValues);
-
-
-            // Weekly sales by day of week
-            var weeklyData = transactions
-                .GroupBy(t => t.TransactionDate.DayOfWeek)
-                .OrderBy(g => g.Key)
-                .Select(g => new { Day = g.Key.ToString(), Amount = g.Sum(t => t.TotalAmount) })
-                .ToList();
-
-            await JSRuntime.InvokeVoidAsync("eval", $@"
-                initializeWeeklyChart(
-                {JsonSerializer.Serialize(weeklyData.Select(d => d.Day))},
-                {JsonSerializer.Serialize(weeklyData.Select(d => (double)d.Amount))}
-                );
-            ");
+            // Monthly Sales Chart (Bar Chart)
+            await JSRuntime.InvokeVoidAsync("initializeMonthlySalesChart",
+                JsonSerializer.Serialize(new[] { "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep" }),
+                JsonSerializer.Serialize(new[] { 3200, 4800, 4100, 5700, 7200, 6900, 7500, 8200 })
+            );
         }
         catch (Exception ex)
         {
@@ -187,249 +171,177 @@
         }
     }
 
-    private async Task InitializeSignalR()
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("eval", $@"
-                if (typeof setupRealtimeUpdates === 'function') {{
-                    setupRealtimeUpdates({DotNetObjectReference.Create(this)});
-                }}
-            ");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error initializing SignalR: {ex.Message}");
-        }
-    }
-
-    private void StartAutoRefresh()
-    {
-        refreshTimer = new Timer(async _ =>
-        {
-            if (enableRealtime)
-            {
-                await InvokeAsync(async () =>
-                {
-                    await LoadData();
-                    if (isInitialized)
-                    {
-                        await InitializeCharts();
-                    }
-                    StateHasChanged();
-                });
-            }
-        }, null, 0, 5000); // Update every 5 seconds
-    }
-
-    [JSInvokable]
-    public async Task OnNewOrder(BusinessTransaction transaction)
-    {
-        if (enableRealtime)
-        {
-            await InvokeAsync(async () =>
-            {
-                transactions.Add(transaction);
-                recentOrders.Insert(0, transaction);
-
-                if (recentOrders.Count > 20)
-                    recentOrders.RemoveAt(recentOrders.Count - 1);
-
-                CalculateSummaryData();
-                await InitializeCharts();
-                StateHasChanged();
-            });
-        }
-    }
-
-    private async Task ExportData()
-    {
-        try
-        {
-            var csvContent = "Date,Total Sales,Returns,Discounts,Net Sales\n";
-            var dailyData = transactions
-                .GroupBy(t => t.TransactionDate.Date)
-                .OrderBy(g => g.Key);
-
-            foreach (var day in dailyData)
-            {
-                var daySales = day.Where(t => !t.IsReturn).Sum(t => t.TotalAmount);
-                var dayReturns = day.Where(t => t.IsReturn).Sum(t => t.TotalAmount);
-                var dayDiscounts = day.Sum(t => t.DiscountAmount);
-                var dayNet = daySales - dayReturns - dayDiscounts;
-
-                csvContent += $"{day.Key:yyyy-MM-dd},{daySales},{dayReturns},{dayDiscounts},{dayNet}\n";
-            }
-
-            await JSRuntime.InvokeVoidAsync("eval", $@"
-                downloadCSV(
-                {JsonSerializer.Serialize(csvContent)},
-                    'SalesReport_{DateTime.Now:yyyyMMdd}.csv'
-                );
-            ");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error exporting data: {ex.Message}");
-        }
-    }
-
     public void Dispose()
     {
-        refreshTimer?.Dispose();
         objRef?.Dispose();
-        GC.SuppressFinalize(this);
     }
 }
 
 <script suppress-error="BL9992">
-    // Setup SignalR connection for real-time updates
-    let connection;
-    let monthlyChart, dailyChart, weeklyChart;
+    let yearlyEarningsChart, monthlySalesChart;
 
-    function setupRealtimeUpdates(dotNetHelper) {
-        connection = new signalR.HubConnectionBuilder()
-            .withUrl("/salesHub")
-            .configureLogging(signalR.LogLevel.Information)
-            .build();
-
-        connection.on("NewOrder", (transaction) => {
-            dotNetHelper.invokeMethodAsync('OnNewOrder', transaction);
-        });
-
-        connection.start()
-            .then(() => console.log("SignalR Connected"))
-            .catch(err => console.error("SignalR Connection Error: ", err));
-    }
-
-    // Chart initialization functions
-    function initializeMonthlyChart(labels, data) {
-        const ctx = document.getElementById('monthlySalesChart').getContext('2d');
-        if (monthlyChart) {
-            monthlyChart.destroy();
+    function initializeYearlyEarningsChart(labels, data) {
+        const ctx = document.getElementById('yearlyEarningsChart').getContext('2d');
+        if (yearlyEarningsChart) {
+            yearlyEarningsChart.destroy();
         }
-        monthlyChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Sales',
-                    data: data,
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return '$' + context.raw.toLocaleString();
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
 
-    function initializeDailyChart(labels, data) {
-        const ctx = document.getElementById('dailySalesChart').getContext('2d');
-        if (dailyChart) {
-            dailyChart.destroy();
-        }
-        dailyChart = new Chart(ctx, {
+        yearlyEarningsChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: JSON.parse(labels),
                 datasets: [{
-                    label: 'Sales',
-                    data: data,
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: true
+                    label: 'Earnings',
+                    data: JSON.parse(data),
+                    borderColor: '#4a6fa5',
+                    backgroundColor: 'rgba(74, 111, 165, 0.05)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#4a6fa5',
+                    pointBorderColor: '#fff',
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBorderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    }
-                },
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: false
+                    },
                     tooltip: {
+                        backgroundColor: '#2c3e50',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
                         callbacks: {
                             label: function(context) {
                                 return '$' + context.raw.toLocaleString();
                             }
                         }
                     }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            color: '#999',
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            },
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.03)',
+                            drawBorder: false,
+                            borderDash: [3, 3]
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#999',
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                elements: {
+                    line: {
+                        cubicInterpolationMode: 'monotone'
+                    }
                 }
             }
         });
     }
 
-    function initializeWeeklyChart(labels, data) {
-        const ctx = document.getElementById('weeklySalesChart').getContext('2d');
-        if (weeklyChart) {
-            weeklyChart.destroy();
+    function initializeMonthlySalesChart(labels, data) {
+        const ctx = document.getElementById('monthlySalesChart').getContext('2d');
+        if (monthlySalesChart) {
+            monthlySalesChart.destroy();
         }
-        weeklyChart = new Chart(ctx, {
+
+        monthlySalesChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: JSON.parse(labels),
                 datasets: [{
                     label: 'Sales',
-                    data: data,
-                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
+                    data: JSON.parse(data),
+                    backgroundColor: [
+                        'rgba(74, 111, 165, 0.7)',
+                        'rgba(74, 111, 165, 0.7)',
+                        'rgba(74, 111, 165, 0.7)',
+                        'rgba(74, 111, 165, 0.7)',
+                        'rgba(74, 111, 165, 0.7)',
+                        'rgba(74, 111, 165, 0.7)',
+                        'rgba(74, 111, 165, 0.7)',
+                        'rgba(74, 111, 165, 0.7)'
+                    ],
+                    borderColor: '#4a6fa5',
+                    borderWidth: 0,
+                    borderRadius: 4,
+                    borderSkipped: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    }
-                },
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: false
+                    },
                     tooltip: {
+                        backgroundColor: '#2c3e50',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
                         callbacks: {
                             label: function(context) {
                                 return '$' + context.raw.toLocaleString();
                             }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#999',
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            },
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.03)',
+                            drawBorder: false,
+                            borderDash: [3, 3]
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#999',
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
                         }
                     }
                 }
@@ -437,402 +349,324 @@
         });
     }
 
-    function downloadCSV(content, fileName) {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-
-        link.setAttribute('href', url);
-        link.setAttribute('download', fileName);
-        link.style.visibility = 'hidden';
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    // Ensure required libraries are loaded
-    function loadRequiredScripts() {
+    // Ensure Chart.js is loaded
+    function loadChartJS() {
         if (typeof Chart === 'undefined') {
-            const chartScript = document.createElement('script');
-            chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-            document.head.appendChild(chartScript);
-        }
-
-        if (typeof signalR === 'undefined') {
-            const signalRScript = document.createElement('script');
-            signalRScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js';
-            document.head.appendChild(signalRScript);
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            document.head.appendChild(script);
         }
     }
 
-    // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        loadRequiredScripts();
+        loadChartJS();
     });
 </script>
 
 <style>
-    .sales-report-container {
-        padding: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        max-width: 1600px;
-        margin: 0 auto;
-        transition: margin-left 0.3s ease; /* Added for smooth sidebar transition */
+    :root {
+        --primary-color: #4a6fa5;
+        --primary-light: rgba(74, 111, 165, 0.1);
+        --text-color: #2c3e50;
+        --text-light: #7f8c8d;
+        --border-color: #ecf0f1;
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --positive: #27ae60;
+        --negative: #e74c3c;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    .header-section {
-        margin-bottom: 30px;
-        text-align: center;
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
     }
 
-    .date-selector {
+    .sales-dashboard {
+        font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        padding: 24px;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        gap: 20px;
-        flex-wrap: wrap;
+        margin-bottom: 24px;
     }
 
-    .month-selector {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-        .month-selector span {
-            font-size: 18px;
+        .dashboard-header h2 {
+            margin: 0;
+            font-size: 22px;
             font-weight: 600;
-            color: #333;
+            color: var(--text-color);
+        }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .time-filter {
+        background-color: var(--primary-light);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--primary-color);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .time-filter:hover {
+            background-color: rgba(74, 111, 165, 0.15);
+        }
+
+        .time-filter svg {
+            width: 14px;
+            height: 14px;
         }
 
     .export-btn {
-        background-color: #4a6fa5;
+        background-color: var(--primary-color);
         color: white;
         border: none;
-        padding: 8px 16px;
+        padding: 8px 14px;
         border-radius: 6px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        font-size: 13px;
         font-weight: 500;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
         .export-btn:hover {
-            background-color: #3a5a8a;
+            background-color: #3a5a80;
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
-    .realtime-toggle {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: #555;
-    }
+        .export-btn svg {
+            width: 14px;
+            height: 14px;
+        }
 
     .summary-cards {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 20px; /* Reduced gap for better responsiveness */
-        margin: 0 auto;
-        max-width: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
     }
 
     .summary-card {
-        flex: 1 1 calc(25% - 20px);
-        min-width: 200px; /* Increased min-width for better mobile display */
-        border-radius: 12px;
-        padding: 25px; /* Reduced padding for better space utilization */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        color: white;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 18px;
+        box-shadow: var(--shadow);
+        transition: all 0.2s;
     }
 
-        .summary-card::before {
-            content: "";
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.15);
-        }
-
-        .summary-card::after {
-            font-family: 'Material Icons';
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 24px;
-            opacity: 0.8;
-        }
-
-        .summary-card:nth-child(1) {
-            background: linear-gradient(135deg, #4285F4, #669DF6);
-        }
-
-            .summary-card:nth-child(1)::after {
-                content: "attach_money";
-            }
-
-        .summary-card:nth-child(2) {
-            background: linear-gradient(135deg, #0F9D58, #34A853);
-        }
-
-            .summary-card:nth-child(2)::after {
-                content: "shopping_cart";
-            }
-
-        .summary-card:nth-child(3) {
-            background: linear-gradient(135deg, #EA4335, #F25022);
-        }
-
-            .summary-card:nth-child(3)::after {
-                content: "people";
-            }
-
-        .summary-card:nth-child(4) {
-            background: linear-gradient(135deg, #9C27B0, #BA68C8);
-        }
-
-            .summary-card:nth-child(4)::after {
-                content: "trending_up";
-            }
-
         .summary-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .summary-card h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: rgba(255,255,255,0.9);
-            font-size: 16px;
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+        .card-header span:first-child {
+            font-size: 13px;
+            color: var(--text-light);
             font-weight: 500;
-            letter-spacing: 0.5px;
-            text-align: left;
         }
 
-        .summary-card .value-container {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            margin-top: 20px;
+    .time-label {
+        background-color: var(--primary-light);
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .card-value {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text-color);
+    }
+
+    .card-footer {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-light);
+    }
+
+    .growth {
+        font-weight: 600;
+    }
+
+        .growth.positive {
+            color: var(--positive);
         }
 
-        .summary-card p {
-            margin: 10px 0;
-            font-size: 24px; /* Slightly reduced font size */
-            font-weight: 600;
-            color: white;
-            text-align: left;
+        .growth.negative {
+            color: var(--negative);
         }
 
-        .summary-card small {
-            color: rgba(255,255,255,0.8);
-            font-size: 14px;
-            display: block;
-            margin-top: 8px;
-            text-align: left;
-        }
-
-        .summary-card .trend-indicator {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-    .chart-section {
+    .charts-section {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Reduced min-width */
-        gap: 20px; /* Reduced gap */
-        margin: 30px auto; /* Reduced margin */
-        max-width: 100%; /* Changed to 100% for better responsiveness */
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
     }
 
     .chart-container {
-        background-color: white;
-        border-radius: 12px;
-        padding: 20px; /* Reduced padding */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        transition: transform 0.3s ease;
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 18px;
+        box-shadow: var(--shadow);
     }
 
-        .chart-container:hover {
-            transform: translateY(-3px);
+    .chart-header {
+        margin-bottom: 16px;
+    }
+
+        .chart-header h3 {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            font-weight: 600;
         }
 
-        .chart-container h3 {
-            margin-top: 0;
-            margin-bottom: 15px; /* Reduced margin */
-            color: #333;
-            font-size: 16px; /* Slightly reduced font size */
-            font-weight: 600;
+        .chart-header span {
+            font-size: 12px;
+            color: var(--text-light);
         }
 
     .chart-wrapper {
+        height: 240px;
         position: relative;
-        height: 280px; /* Slightly reduced height */
-        width: 100%;
     }
 
-    .recent-orders {
-        background-color: white;
-        border-radius: 12px;
-        padding: 20px; /* Reduced padding */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        margin: 0 auto;
-        max-width: 100%; /* Changed to 100% for better responsiveness */
-        transition: transform 0.3s ease;
+    .data-grid {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 18px;
+        box-shadow: var(--shadow);
     }
 
-        .recent-orders:hover {
-            transform: translateY(-3px);
-        }
+    .grid-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
 
-        .recent-orders h3 {
-            margin-top: 0;
-            margin-bottom: 15px; /* Reduced margin */
-            color: #333;
-            font-size: 16px; /* Slightly reduced font size */
+        .grid-header h3 {
+            margin: 0;
+            font-size: 15px;
             font-weight: 600;
         }
 
-    .order-list {
+    .grid-tabs {
         display: flex;
-        flex-direction: column;
-        gap: 12px; /* Reduced gap */
+        gap: 6px;
     }
 
-    .order-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 15px; /* Reduced padding */
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        align-items: center;
-    }
-
-        .order-item:hover {
-            background-color: #eef2f7;
-            transform: translateX(5px);
+        .grid-tabs .tab {
+            background: none;
+            border: none;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
         }
 
-    .return-order {
-        background-color: #ffebee;
+            .grid-tabs .tab:hover {
+                color: var(--primary-color);
+                background-color: var(--primary-light);
+            }
+
+            .grid-tabs .tab.active {
+                color: var(--primary-color);
+                background-color: var(--primary-light);
+                font-weight: 500;
+            }
+
+    .grid-content {
+        overflow-x: auto;
     }
 
-        .return-order:hover {
-            background-color: #ffddde;
+    .grid-row {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        min-width: 800px;
+    }
+
+        .grid-row.header {
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
         }
 
-    .order-time {
-        font-weight: 600;
-        color: #444;
-        font-size: 13px; /* Slightly reduced font size */
-    }
-
-    .order-items {
-        color: #666;
-        font-size: 12px; /* Slightly reduced font size */
-    }
-
-    .order-amount {
-        font-weight: 600;
-        color: #2e7d32;
-        font-size: 14px; /* Slightly reduced font size */
-    }
-
-    .return-order .order-amount {
-        color: #c62828;
-    }
-
-    /* Responsive adjustments */
-    @@media (max-width: 1200px) {
-        .summary-card
-
-    {
-        flex: 1 1 calc(50% - 20px); /* 2 cards per row on medium screens */
-        min-width: 200px;
-    }
-
-    .chart-section {
-        grid-template-columns: 1fr;
-    }
-
-    }
-
-    @@media (max-width: 768px) {
-        .summary-card
-
-    {
-        flex: 1 1 100%; /* 1 card per row on small screens */
-    }
-
-    .date-selector {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .month-selector {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .export-btn {
-        width: 100%;
+    .grid-cell {
+        padding: 8px 10px;
+        font-size: 12px;
         text-align: center;
     }
 
+    .grid-row.header .grid-cell {
+        color: var(--text-light);
+        font-weight: 500;
     }
 
-    @@media (max-width: 480px) {
-        .summary-card
-
-    {
-        padding: 20px 15px; /* Further reduced padding for mobile */
+    /* Responsive styles */
+    @@media (max-width: 1200px) {
+        .summary-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 
-    .summary-card p {
-        font-size: 20px; /* Smaller font size for mobile */
+    @@media (max-width: 768px) {
+        .charts-section {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .header-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
     }
 
-    .chart-wrapper {
-        height: 240px; /* Smaller chart height for mobile */
-    }
+    @@media (max-width: 576px) {
+        .summary-cards {
+            grid-template-columns: 1fr;
+        }
 
-    .order-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    }
-
-    /* Special adjustment for when sidebar is open */
-    .sidebar-open .sales-report-container {
-        margin-left: 250px; /* Adjust this value to match your sidebar width */
-        width: calc(100% - 250px); /* Adjust this value to match your sidebar width */
-    }
-
-    .sidebar-open .summary-card {
-        flex: 1 1 calc(50% - 20px); /* Show 2 cards per row when sidebar is open */
-    }
-
-    .sidebar-open .chart-section {
-        grid-template-columns: 1fr; /* Single column layout when sidebar is open */
+        .sales-dashboard {
+            padding: 16px;
+        }
     }
 </style>
