@@ -7,116 +7,253 @@
 @inject BillService BillService
 @rendermode InteractiveServer
 
-<div class="container mt-4">
-    <div class="card shadow-sm">
-        <Sidebar />
-        <div class="card-body">
-            <h3 class="card-title text-primary mb-4">Weekly Menu Management</h3>
+<style>
+    .day-btn {
+        min-width: 120px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .day-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .day-btn.active {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .day-btn .day-icon {
+        font-size: 1.2rem;
+        margin-right: 8px;
+    }
+    .product-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+    .active-days {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    .day-badge {
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .translate-btn {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        border: none;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .save-btn {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+    }
+    .category-select {
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+    }
+</style>
 
-            <div class="d-flex mb-4 overflow-auto">
-                @foreach (var day in daysOfWeek)
-                {
-                    <button class="btn @(selectedDay == day ? "btn-primary" : "btn-outline-primary") mx-1"
-                            @onclick="() => SelectDay(day)">
-                        @day
+<div class="container mt-4">
+    <div class="card shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
+        <Sidebar />
+        <div class="card-body p-4">
+            <h3 class="card-title text-gradient mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-menu-button-wide me-2"></i> Weekly Menu Planner
+            </h3>
+
+            <!-- Day Selector -->
+            <div class="d-flex mb-4 overflow-auto pb-2" style="gap: 8px;">
+                                    <!-- Day Selector: Fix argument and quote issues -->
+                    <button class="btn day-btn @(selectedDay == "Monday" ? "active btn-indigo" : "btn-light")"
+                            @onclick='() => SelectDay("Monday")'>
+                        <i class="bi bi-sun day-icon"></i> Monday
                     </button>
-                }
+                    <button class="btn day-btn @(selectedDay == "Tuesday" ? "active btn-teal" : "btn-light")"
+                            @onclick='() => SelectDay("Tuesday")'>
+                        <i class="bi bi-cloud-sun day-icon"></i> Tuesday
+                    </button>
+                    <button class="btn day-btn @(selectedDay == "Wednesday" ? "active btn-purple" : "btn-light")"
+                            @onclick='() => SelectDay("Wednesday")'>
+                        <i class="bi bi-clouds day-icon"></i> Wednesday
+                    </button>
+                    <button class="btn day-btn @(selectedDay == "Thursday" ? "active btn-blue" : "btn-light")"
+                            @onclick='() => SelectDay("Thursday")'>
+                        <i class="bi bi-cloud-drizzle day-icon"></i> Thursday
+                    </button>
+                    <button class="btn day-btn @(selectedDay == "Friday" ? "active btn-orange" : "btn-light")"
+                            @onclick='() => SelectDay("Friday")'>
+                        <i class="bi bi-sunset day-icon"></i> Friday
+                    </button>
+                    <button class="btn day-btn @(selectedDay == "Saturday" ? "active btn-pink" : "btn-light")"
+                            @onclick='() => SelectDay("Saturday")'>
+                        <i class="bi bi-stars day-icon"></i> Saturday
+                    </button>
+                    <button class="btn day-btn @(selectedDay == "Sunday" ? "active btn-red" : "btn-light")"
+                            @onclick='() => SelectDay("Sunday")'>
+                        <i class="bi bi-brightness-high day-icon"></i> Sunday
+                    </button>
             </div>
 
-            @if (!string.IsNullOrEmpty(selectedDay))
-            {
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Select Category</label>
-                        <select class="form-select" @bind="selectedCategoryId">
-                            <option value="0">-- Select Category --</option>
-                            @foreach (var category in businessCategories)
-                            {
-                                <option value="@category.CategoryID">
-                                    @category.CategoryName -
-                                    <span style="direction: rtl; unicode-bidi: bidi-override;">
-                                        @category.UrduName
-                                    </span>
-                                </option>
-                            }
-                        </select>
+            <div class="row mb-3">
+                <!-- Category Selector -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-muted">Select Category</label>
+                    <select class="form-select category-select" @bind="selectedCategoryId">
+                        <option value="0">-- All Categories --</option>
+                        @foreach (var category in businessCategories)
+                        {
+                            <option value="@category.CategoryID">
+                                @category.CategoryName -
+                                <span style="direction: rtl; unicode-bidi: bidi-override;">
+                                    @category.UrduName
+                                </span>
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted">Search Products</label>
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search by name or category" 
+                               @bind="searchTerm" @bind:event="oninput" />
                     </div>
                 </div>
 
-                @if (selectedCategoryId > 0)
-                {
-                    <div class="mt-4">
-                        <h5 class="text-primary mb-3">Products in Category</h5>
+                <!-- Items Per Page Selector -->
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-muted">Items per page</label>
+                    <select class="form-select shadow-sm" @bind="itemsPerPage">
+                        <option value="5">5</option>
+                        <option value="7" selected>7</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+            </div>
 
-                        @if (FilteredProducts.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Active</th>
-                                            <th>Product Name (English/Urdu)</th>
-                                            <th>Price</th>
-                                            <th>Image</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var product in FilteredProducts)
-                                        {
-                                            var isActiveForDay = IsProductActiveForDay(product.ProductID, selectedDay);
-                                            <tr>
-                                                <td>
-                                                    <div class="form-check form-switch">
-                                                        <input type="checkbox"
-                                                               class="form-check-input"
-                                                               checked="@(isActiveForDay || string.IsNullOrEmpty(product.ActiveDays))"
-                                                               @onchange="async e => await ToggleProductForDay(product.ProductID, selectedDay, e.Value)" />
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    @product.ProductTitle
-                                                    @if (!string.IsNullOrEmpty(product.ProductUrduName))
-                                                    {
-                                                        <text>/</text>
-                                                        <span style="direction: rtl; unicode-bidi: bidi-override;">
-                                                            @product.ProductUrduName
-                                                        </span>
-                                                    }
-                                                    <button class="btn btn-sm btn-link" @onclick="async () => await AutoTranslateProduct(product)">
-                                                        <i class="fas fa-language"></i>
-                                                    </button>
-                                                </td>
-                                                <td>
-                                                    @product.ProductPrice.ToString("C")
-                                                </td>
-                                                <td>
-                                                    @if (!string.IsNullOrEmpty(product.ImageUrl))
-                                                    {
-                                                        <img src="@product.ImageUrl" alt="@product.ProductTitle" style="max-height: 50px;" />
-                                                    }
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="mt-3 text-end">
-                                <button class="btn btn-success" @onclick="SaveMenuForDay">
-                                    <i class="bi bi-save"></i> Save Menu for @selectedDay
-                                </button>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-info">No products found in this category</div>
-                        }
-                    </div>
-                }
-            }
-            else
+            @if (selectedCategoryId > 0 || selectedCategoryId == 0)
             {
-                <div class="alert alert-info">Please select a day to manage its menu</div>
+                <div class="mt-4">
+                    @if (PagedProducts.Any())
+                    {
+                        <div class="row g-4">
+                            @foreach (var product in PagedProducts)
+                            {
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="product-card p-3 h-100 bg-white">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="form-check form-switch">
+                                                <input type="checkbox" class="form-check-input"
+                                                       checked="@IsProductActiveForAnyDay(product.ProductID)"
+                                                       @onchange="async e => await ToggleProductActive(product.ProductID, e.Value)" />
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-light text-dark">
+                                                    @product.ProductPrice.ToString("C")
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center mb-3">
+                                            @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                            {
+                                                <img src="@product.ImageUrl" alt="@product.ProductTitle" 
+                                                     class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;" />
+                                            }
+                                            <div>
+                                                <h6 class="mb-0">@product.ProductTitle</h6>
+                                                @if (!string.IsNullOrEmpty(product.ProductUrduName))
+                                                {
+                                                    <small class="text-muted" style="direction: rtl; unicode-bidi: bidi-override;">
+                                                        @product.ProductUrduName
+                                                    </small>
+                                                }
+                                                <div class="mt-1">
+                                                    <small class="text-muted">
+                                                        @businessCategories.FirstOrDefault(c => c.CategoryID == product.CategoryID)?.CategoryName
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="active-days">
+                                                @foreach (var day in daysOfWeek)
+                                                {
+                                                    var isActive = IsProductActiveForDay(product.ProductID, day);
+                                                    <span class="day-badge @(isActive ? GetDayBadgeClass(day) : "bg-light text-muted")">
+                                                        @day.Substring(0, 3)
+                                                    </span>
+                                                }
+                                            </div>
+                                            <button class="btn translate-btn btn-sm" @onclick="async () => await AutoTranslateProduct(product)">
+                                                <i class="bi bi-translate me-1"></i> Urdu
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div class="text-muted">
+                                Showing @((currentPage - 1) * itemsPerPage + 1) to 
+                                @Math.Min(currentPage * itemsPerPage, FilteredProducts.Count) of 
+                                @FilteredProducts.Count products
+                            </div>
+                            
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination mb-0">
+                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => ChangePage(-1)">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </button>
+                                    </li>
+                                    
+                                    @for (int i = 1; i <= totalPages; i++)
+                                    {
+                                        <li class="page-item @(i == currentPage ? "active" : "")">
+                                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                                        </li>
+                                    }
+                                    
+                                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => ChangePage(1)">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+
+                            <!-- Replace the Save Menu Changes button with this: -->
+                            <button class="btn save-btn shadow" @onclick="SaveMenuForDay" type="button">
+                                <i class="bi bi-save me-2"></i> Save Menu Changes
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info shadow-sm">
+                            <i class="bi bi-info-circle me-2"></i> No products found matching your criteria
+                        </div>
+                    }
+                </div>
             }
         </div>
     </div>
@@ -124,23 +261,103 @@
 
 @code {
     private string selectedDay = "";
-    private int selectedCategoryId = 0;
+    private int selectedCategoryIdBacking = 0;
+    private int selectedCategoryId
+    {
+        get => selectedCategoryIdBacking;
+        set
+        {
+            if (selectedCategoryIdBacking != value)
+            {
+                selectedCategoryIdBacking = value;
+                currentPage = 1;
+                CalculateTotalPages();
+            }
+        }
+    }
     private List<Product> ProductList { get; set; } = new();
     private List<BusinessCategory> businessCategories { get; set; } = new();
-    private Product newProduct = new();
+    private string searchTermBacking = "";
+    private string searchTerm
+    {
+        get => searchTermBacking;
+        set
+        {
+            if (searchTermBacking != value)
+            {
+                searchTermBacking = value;
+                currentPage = 1;
+                CalculateTotalPages();
+            }
+        }
+    }
+    private int currentPage = 1;
+    private int itemsPerPageBacking = 7;
+    private int itemsPerPage
+    {
+        get => itemsPerPageBacking;
+        set
+        {
+            if (itemsPerPageBacking != value)
+            {
+                itemsPerPageBacking = value;
+                currentPage = 1;
+                CalculateTotalPages();
+            }
+        }
+    }
+    private int totalPages = 1;
 
     private List<string> daysOfWeek = new()
     {
         "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     };
 
-    private List<Product> FilteredProducts =>
-        ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
+    private List<Product> FilteredProducts
+    {
+        get
+        {
+            var filtered = selectedCategoryId == 0 
+                ? ProductList 
+                : ProductList.Where(p => p.CategoryID == selectedCategoryId).ToList();
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                filtered = filtered.Where(p => 
+                    p.ProductTitle.ToLower().Contains(term) ||
+                    (p.ProductUrduName?.ToLower().Contains(term) ?? false) ||
+                    businessCategories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName.ToLower().Contains(term) == true
+                ).ToList();
+            }
+
+            return filtered;
+        }
+    }
+
+    private List<Product> PagedProducts => FilteredProducts
+        .Skip((currentPage - 1) * itemsPerPage)
+        .Take(itemsPerPage)
+        .ToList();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProductsFromDatabase();
         await LoadBusinessCategories();
+    }
+
+    protected override void OnParametersSet()
+    {
+        CalculateTotalPages();
+    }
+
+    private void CalculateTotalPages()
+    {
+        totalPages = (int)Math.Ceiling((double)FilteredProducts.Count / itemsPerPage);
+        if (currentPage > totalPages && totalPages > 0)
+        {
+            currentPage = totalPages;
+        }
     }
 
     private async Task LoadProductsFromDatabase()
@@ -177,7 +394,51 @@
     private void SelectDay(string day)
     {
         selectedDay = day;
-        selectedCategoryId = 0;
+        currentPage = 1;
+        searchTerm = "";
+    }
+
+    private string GetDayBadgeClass(string day)
+    {
+        return day switch
+        {
+            "Monday" => "bg-indigo",
+            "Tuesday" => "bg-teal",
+            "Wednesday" => "bg-purple",
+            "Thursday" => "bg-blue",
+            "Friday" => "bg-orange",
+            "Saturday" => "bg-pink",
+            "Sunday" => "bg-red",
+            _ => "bg-secondary"
+        };
+    }
+
+    private async Task ToggleProductActive(int productId, object isChecked)
+    {
+        if (bool.TryParse(isChecked?.ToString(), out var newValue))
+        {
+            var product = ProductList.FirstOrDefault(p => p.ProductID == productId);
+            if (product != null)
+            {
+                product.IsActive = newValue;
+                if (!newValue)
+                {
+                    product.ActiveDays = "";
+                }
+                else if (string.IsNullOrEmpty(product.ActiveDays))
+                {
+                    product.ActiveDays = string.Join(",", daysOfWeek);
+                }
+                await ProductService.UpdateProductAsync(product);
+            }
+        }
+        StateHasChanged();
+    }
+
+    private bool IsProductActiveForAnyDay(int productId)
+    {
+        var product = ProductList.FirstOrDefault(p => p.ProductID == productId);
+        return product?.IsActive == true;
     }
 
     private async Task ToggleProductForDay(int productId, string day, object isChecked)
@@ -209,61 +470,74 @@
     private bool IsProductActiveForDay(int productId, string day)
     {
         var product = ProductList.FirstOrDefault(p => p.ProductID == productId);
-        // Return true if ActiveDays is empty (new product) or contains the day
-        return string.IsNullOrEmpty(product?.ActiveDays) || product?.ActiveDays?.Split(',').Contains(day) == true;
+        return product?.IsActive == true && 
+              (string.IsNullOrEmpty(product.ActiveDays) || product.ActiveDays.Split(',').Contains(day));
     }
 
-    private async Task SaveMenuForDay()
+    // Fix JSRuntime.InvokeVoidAsync for SweetAlert2 usage
+            private async Task SaveMenuForDay()
+{
+    try
     {
-        try
+        foreach (var product in ProductList)
         {
-            // Update all products for the selected day
-            foreach (var product in ProductList)
-            {
-                await ProductService.UpdateProductAsync(product);
-            }
+            if (product.ActiveDays == null)
+                product.ActiveDays = "";
 
-            // Update RateList with current selections
-            await UpdateRateItems();
+            if (!product.IsActive)
+                product.ActiveDays = "";
 
-            // Show success message
-            await JSRuntime.InvokeVoidAsync("alert", $"Menu for {selectedDay} saved successfully!");
+            await ProductService.UpdateProductAsync(product);
         }
-        catch (Exception ex)
+
+        await UpdateRateItems();
+
+        // Show notification after all updates
+        await JSRuntime.InvokeVoidAsync("Swal.fire", new
         {
-            Console.WriteLine($"Error saving menu: {ex.Message}");
-        }
+            title = "Saved!",
+            text = "Your changes have been saved.",
+            icon = "success",
+            confirmButtonText = "OK"
+        });
     }
+    catch (Exception ex)
+    {
+        await JSRuntime.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Error!",
+            text = $"Failed to save menu: {ex.Message}",
+            icon = "error",
+            confirmButtonText = "OK"
+        });
+    }
+}
+
 
     private async Task UpdateRateItems()
+{
+    try
     {
-        try
-        {
-            // Get all active products regardless of day
-            var activeProducts = ProductList
-                .Where(p => p.IsActive)
-                .ToList();
+        var activeProducts = ProductList.Where(p => p.IsActive).ToList();
 
-            // Convert to RateItems with their ActiveDays
-            var rateItems = activeProducts.Select(p => new RateItem
-                {
-                    Name = p.ProductTitle,
-                    BasePrice = p.ProductPrice,
-                    ImageUrl = p.ImageUrl,
-                    IsActive = true,
-                    Category = businessCategories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName ?? "Uncategorized",
-                    ActiveDays = p.ActiveDays // Include full ActiveDays information
-                }).ToList();
-
-            // Update BillService
-            BillService.UpdateRateItems(rateItems);
-            await BillService.NotifyStateChangedAsync();
-        }
-        catch (Exception ex)
+        var rateItems = activeProducts.Select(p => new RateItem
         {
-            Console.WriteLine($"Error updating rate items: {ex.Message}");
-        }
+            Name = p.ProductTitle,
+            BasePrice = p.ProductPrice,
+            ImageUrl = p.ImageUrl,
+            IsActive = true,
+            Category = businessCategories.FirstOrDefault(c => c.CategoryID == p.CategoryID)?.CategoryName ?? "Uncategorized",
+            ActiveDays = p.ActiveDays
+        }).ToList();
+
+        await BillService.UpdateRateItems(rateItems); // Await this!
+        await BillService.NotifyStateChangedAsync();
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error updating rate items: {ex.Message}");
+    }
+}
 
     private async Task AutoTranslateProduct(Product product)
     {
@@ -292,6 +566,23 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Translation error: {ex.Message}");
+        }
+    }
+
+    private void ChangePage(int delta)
+    {
+        var newPage = currentPage + delta;
+        if (newPage > 0 && newPage <= totalPages)
+        {
+            currentPage = newPage;
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page > 0 && page <= totalPages)
+        {
+            currentPage = page;
         }
     }
 
