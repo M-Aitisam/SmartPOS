@@ -417,6 +417,13 @@
 		daySelected = true;
 		currentPage = 1;
 		searchTerm = "";
+		foreach (var product in ProductList)
+		{
+			product.ActiveDays = ""; // Clear previous assignments
+		}
+
+		StateHasChanged();
+
 		StateHasChanged();
 	}
 
@@ -690,8 +697,9 @@
 						continue;
 					}
 
-					// Validate and normalize ActiveDays
-					var activeDays = NormalizeActiveDays(product.ActiveDays);
+					var activeDays = selectedDay; // Only include the currently selected day
+
+					Console.WriteLine($"Saving product: {product.ProductTitle} for day: {activeDays}");
 
 					// Get category with fallback
 					var category = GetProductCategory(product.CategoryID);
@@ -699,16 +707,17 @@
 
 					rateItems.Add(new RateItem
 						{
-							Id = product.ProductID, // Using existing Id property
+							Id = product.ProductID,
 							Name = product.ProductTitle?.Trim() ?? string.Empty,
-							BasePrice = product.ProductPrice >= 0 ? product.ProductPrice : 0,
-							Price = product.ProductPrice >= 0 ? product.ProductPrice : 0, // Set both BasePrice and Price
+							BasePrice = product.ProductPrice,
+							Price = product.ProductPrice,
 							ImageUrl = product.ImageUrl?.Trim() ?? string.Empty,
 							IsActive = true,
-							Category = category,
-							ActiveDays = activeDays,
-							Quantity = 1 // Default quantity
+							Category = GetProductCategory(product.CategoryID),
+							ActiveDays = activeDays, // Only the selected day
+							Quantity = 1
 						});
+				
 
 					processedProductIds.Add(product.ProductID);
 				}
