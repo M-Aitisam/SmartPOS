@@ -16,8 +16,8 @@
         font-family: 'Courier New', monospace;
         margin: 0 auto;
         max-width: 500px;
-        min-height: 80vh;
-        padding: 20px;
+        min-height: 90vh;
+        padding: 10px;
         background: white;
         box-sizing: border-box;
         display: flex;
@@ -148,14 +148,7 @@
     }
 
     /* Discount section styles */
-    .discount-section {
-        border: 1px solid #eee;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
-        background: #f9f9f9;
-    }
-
+    
     .discount-item {
         background: white;
         border-radius: 5px;
@@ -337,81 +330,79 @@
             }
         </div>
 
-        <!-- Enhanced Discount Section -->
-        <div class="discount-section">
-            <h5>Discounts</h5>
+       
+        <div class="receipt-footer">
+            <!-- Enhanced Discount Section -->
+            <div class="discount-section">
+                <!-- Default Discounts -->
+                @if (businessDetails?.DefaultDiscounts?.Any() == true)
+                {
+                    <div class="mb-3">
+                        <h6>Standard Discounts:</h6>
+                        <div class="discount-actions">
+                            @foreach (var discount in businessDetails.DefaultDiscounts)
+                            {
+                                <button class="btn btn-outline-primary btn-sm"
+                                        @onclick="() => ApplyStandardDiscount(discount)">
+                                    @discount.Name (@discount.Value@(discount.IsPercentage ? "%" : ""))
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
 
-            <!-- Default Discounts -->
-            @if (businessDetails?.DefaultDiscounts?.Any() == true)
-            {
+                <!-- Custom Discount -->
                 <div class="mb-3">
-                    <h6>Standard Discounts:</h6>
-                    <div class="discount-actions">
-                        @foreach (var discount in businessDetails.DefaultDiscounts)
+                    <h6>Custom Discount:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group col-md-12 mb-2">
+                                <input type="number" class="form-control" @bind="customDiscountValue"
+                                       placeholder="Discount value" style="padding: 0  0 0 10px;" />
+                                <select class="form-select" @bind="customDiscountType" style="max-width: 100px;">
+                                    <option value="true">%</option>
+                                    <option value="false">Fixed</option>
+                                </select>
+                                <button class="btn btn-primary" @onclick="ApplyCustomDiscount">
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" @bind="discountCode"
+                                       placeholder="Discount code" />
+                                <button class="btn btn-primary" @onclick="ApplyDiscountCode">
+                                    Apply Code
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applied Discounts -->
+                @if (appliedDiscounts.Any())
+                {
+                    <div class="applied-discounts">
+                        <h6>Applied Discounts:</h6>
+                        @foreach (var discount in appliedDiscounts)
                         {
-                            <button class="btn btn-outline-primary btn-sm"
-                                    @onclick="() => ApplyStandardDiscount(discount)">
-                                @discount.Name (@discount.Value@(discount.IsPercentage ? "%" : ""))
-                            </button>
+                            <div class="applied-discount-item">
+                                <span>
+                                    @discount.Name (@discount.Value@(discount.IsPercentage ? "%" : ""))
+                                </span>
+                                <span>
+                                    -@CalculateDiscountAmount(discount).ToString("0.00")
+                                    <button class="btn btn-sm btn-outline-danger ms-2"
+                                            @onclick="() => RemoveAppliedDiscount(discount)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </span>
+                            </div>
                         }
                     </div>
-                </div>
-            }
-
-            <!-- Custom Discount -->
-            <div class="mb-3">
-                <h6>Custom Discount:</h6>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="input-group mb-2">
-                            <input type="number" class="form-control" @bind="customDiscountValue"
-                                   placeholder="Discount value" />
-                            <select class="form-select" @bind="customDiscountType" style="max-width: 100px;">
-                                <option value="true">%</option>
-                                <option value="false">Fixed</option>
-                            </select>
-                            <button class="btn btn-primary" @onclick="ApplyCustomDiscount">
-                                Apply
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control" @bind="discountCode"
-                                   placeholder="Discount code" />
-                            <button class="btn btn-primary" @onclick="ApplyDiscountCode">
-                                Apply Code
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                }
             </div>
-
-            <!-- Applied Discounts -->
-            @if (appliedDiscounts.Any())
-            {
-                <div class="applied-discounts">
-                    <h6>Applied Discounts:</h6>
-                    @foreach (var discount in appliedDiscounts)
-                    {
-                        <div class="applied-discount-item">
-                            <span>
-                                @discount.Name (@discount.Value@(discount.IsPercentage ? "%" : ""))
-                            </span>
-                            <span>
-                                -@CalculateDiscountAmount(discount).ToString("0.00")
-                                <button class="btn btn-sm btn-outline-danger ms-2"
-                                        @onclick="() => RemoveAppliedDiscount(discount)">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </span>
-                        </div>
-                    }
-                </div>
-            }
-        </div>
-
-        <div class="receipt-footer">
             <div class="receipt-line">
                 <span>Total Item(s) :</span>
                 <span>@(BillService.SelectedItems?.Count() ?? 0)</span>
@@ -534,7 +525,7 @@
                 <div class="print-receipt" id="receiptToPrint">
                     <!-- Store header information -->
                     <div style="text-align: center; margin-bottom: 10px;">
-                        <h3 style="margin-bottom: 5px;">@businessDetails?.BusinessName.ToUpper() ?? "SUPERMARKET"</h3>
+                        <h3 style="margin-bottom: 5px;">@businessDetails?.BusinessName.ToUpper()</h3>
                         <div style="font-size: 0.9em;">@businessDetails?.AddressLine1</div>
                         <div style="font-size: 0.9em;">@businessDetails?.AddressLine2</div>
                         <div style="font-size: 0.9em;">Tel: @businessDetails?.PhoneNumber</div>

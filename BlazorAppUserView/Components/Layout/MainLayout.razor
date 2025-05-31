@@ -261,7 +261,6 @@
         .content {
             flex: 1;
             width: 100%;
-            padding: 1.5rem;
             background-color: #f8f9fa;
             transition: all var(--transition-speed) ease-in-out;
         }
@@ -340,7 +339,7 @@
                             <img src="data:image/png;base64,@Convert.ToBase64String(StateContainer.CurrentBusiness.BusinessDetails.LogoData)"
                                  alt="Business Logo" class="me-2" style="height:30px;width:auto;" />
                         }
-                        @(StateContainer.CurrentBusiness?.BusinessDetails?.BusinessName ?? "POS System")
+                        @(StateContainer.CurrentBusiness?.BusinessDetails?.BusinessName)
                     </a>
                 </div>
                 <!-- Sidebar Navigation -->
