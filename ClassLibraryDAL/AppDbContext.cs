@@ -73,6 +73,16 @@ namespace ClassLibraryDAL
                 entity.Property(e => e.DefaultTaxRate).HasDefaultValue(15.0m);
                 entity.Property(e => e.IncludeBarcode).HasDefaultValue(true);
             });
+
+            modelBuilder.Entity<Discount>(entity =>
+            {
+                entity.HasKey(d => d.DiscountId);
+
+                entity.HasOne(d => d.BusinessModel)
+                      .WithMany(b => b.DefaultDiscounts)
+                      .HasForeignKey(d => d.BusinessModelId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

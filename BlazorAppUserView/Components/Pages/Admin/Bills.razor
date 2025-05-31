@@ -147,6 +147,92 @@
         margin: 5px 0;
     }
 
+    /* Discount section styles */
+    .discount-section {
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        background: #f9f9f9;
+    }
+
+    .discount-item {
+        background: white;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+    }
+
+    .discount-actions {
+        display: flex;
+        gap: 5px;
+        margin-top: 5px;
+    }
+
+    .applied-discounts {
+        margin-top: 10px;
+    }
+
+    .applied-discount-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px dashed #ddd;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        padding: 15px 20px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+    }
+
     @@media print {
         body * {
             visibility: hidden;
@@ -251,29 +337,112 @@
             }
         </div>
 
+        <!-- Enhanced Discount Section -->
+        <div class="discount-section">
+            <h5>Discounts</h5>
+
+            <!-- Default Discounts -->
+            @if (businessDetails?.DefaultDiscounts?.Any() == true)
+            {
+                <div class="mb-3">
+                    <h6>Standard Discounts:</h6>
+                    <div class="discount-actions">
+                        @foreach (var discount in businessDetails.DefaultDiscounts)
+                        {
+                            <button class="btn btn-outline-primary btn-sm"
+                                    @onclick="() => ApplyStandardDiscount(discount)">
+                                @discount.Name (@discount.Value@(discount.IsPercentage ? "%" : ""))
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Custom Discount -->
+            <div class="mb-3">
+                <h6>Custom Discount:</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group mb-2">
+                            <input type="number" class="form-control" @bind="customDiscountValue"
+                                   placeholder="Discount value" />
+                            <select class="form-select" @bind="customDiscountType" style="max-width: 100px;">
+                                <option value="true">%</option>
+                                <option value="false">Fixed</option>
+                            </select>
+                            <button class="btn btn-primary" @onclick="ApplyCustomDiscount">
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" @bind="discountCode"
+                                   placeholder="Discount code" />
+                            <button class="btn btn-primary" @onclick="ApplyDiscountCode">
+                                Apply Code
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Applied Discounts -->
+            @if (appliedDiscounts.Any())
+            {
+                <div class="applied-discounts">
+                    <h6>Applied Discounts:</h6>
+                    @foreach (var discount in appliedDiscounts)
+                    {
+                        <div class="applied-discount-item">
+                            <span>
+                                @discount.Name (@discount.Value@(discount.IsPercentage ? "%" : ""))
+                            </span>
+                            <span>
+                                -@CalculateDiscountAmount(discount).ToString("0.00")
+                                <button class="btn btn-sm btn-outline-danger ms-2"
+                                        @onclick="() => RemoveAppliedDiscount(discount)">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
         <div class="receipt-footer">
             <div class="receipt-line">
                 <span>Total Item(s) :</span>
                 <span>@(BillService.SelectedItems?.Count() ?? 0)</span>
             </div>
+
+            @if (appliedDiscounts.Any())
+            {
+                <div class="receipt-line">
+                    <span>Subtotal:</span>
+                    <span>@subtotal.ToString("0.00"))</span>
+                </div>
+
+                <div class="receipt-line">
+                    <span>Total Discount:</span>
+                    <span>-@totalDiscount.ToString("0.00"))</span>
+                </div>
+            }
+
             <div class="receipt-line">
-                <span>Discount</span>
-                <span>
-                    <input type="number" @bind="discountValue" @bind:event="oninput" style="width: 50px; text-align: right;" />
-                    @if (isPercentageDiscount)
-                    {
-                        <span>%</span>
-                    }
-                    <button @onclick="ToggleDiscountType" style="border: none; background: none; cursor: pointer;">↻</button>
-                </span>
+                <span>Price After Discount:</span>
+                <span>@subtotalAfterDiscount.ToString("0.00"))</span>
             </div>
+
             <div class="receipt-line">
-                <span>Price : :</span>
-                <span>@(BillService.TotalAmount.ToString("0"))</span>
+                <span>Tax (@(businessDetails?.DefaultTaxRate ?? 15)%):</span>
+                <span>@taxAmount.ToString("0.00"))</span>
             </div>
-            <div class="receipt-line">
-                <span>Gross Price (Inc 15% Tax)</span>
-                <span>@_totalWithTax.ToString("0.00"))</span>
+
+            <div class="receipt-line" style="font-weight: bold;">
+                <span>Total Amount:</span>
+                <span>@totalWithTax.ToString("0.00"))</span>
             </div>
         </div>
     </div>
@@ -337,12 +506,12 @@
             </div>
             <div style="margin-bottom: 15px;">
                 <label>Amount Received</label>
-                <input type="number" @bind="amountReceived" min="@_totalWithTax" step="0.01" style="width: 100%; padding: 5px;" />
+                <input type="number" @bind="amountReceived" min="@totalWithTax" step="0.01" style="width: 100%; padding: 5px;" />
             </div>
             @if (amountReceived > 0)
             {
                 <div style="background: #e7f3fe; padding: 10px; margin-bottom: 15px;">
-                    Change: @((amountReceived - _totalWithTax).ToString("0.00"))
+                    Change: @((amountReceived - totalWithTax).ToString("0.00"))
                 </div>
             }
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -411,19 +580,24 @@
                     <div style="margin-bottom: 10px;">
                         <div style="display: flex; justify-content: space-between;">
                             <div>Sub Total:</div>
-                            <div>@_totalAmount.ToString("0.00"))</div>
+                            <div>@subtotal.ToString("0.00"))</div>
                         </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <div>Discount:</div>
-                            <div>@discountAmount.ToString("0.00"))</div>
-                        </div>
+
+                        @if (appliedDiscounts.Any())
+                        {
+                            <div style="display: flex; justify-content: space-between;">
+                                <div>Discounts:</div>
+                                <div>-@totalDiscount.ToString("0.00"))</div>
+                            </div>
+                        }
+
                         <div style="display: flex; justify-content: space-between;">
                             <div>Tax (@(businessDetails?.DefaultTaxRate ?? 15)%):</div>
-                            <div>@((_totalWithTax - subtotalAfterDiscount).ToString("0.00"))</div>
+                            <div>@taxAmount.ToString("0.00"))</div>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-weight: bold;">
                             <div>Total:</div>
-                            <div>@_totalWithTax.ToString("0.00"))</div>
+                            <div>@totalWithTax.ToString("0.00"))</div>
                         </div>
                     </div>
 
@@ -435,14 +609,14 @@
                         </div>
                         <div style="display: flex; justify-content: space-between;">
                             <div>Change:</div>
-                            <div>@((amountReceived - _totalWithTax).ToString("0.00"))</div>
+                            <div>@((amountReceived - totalWithTax).ToString("0.00"))</div>
                         </div>
                     </div>
 
                     <div class="dotted-line"></div>
 
                     <!-- QR Code -->
-                    @if (businessDetails?.IncludeQRCode == false)
+                    @if (businessDetails?.IncludeQRCode == true)
                     {
                         <div class="code-container">
                             <img class="qr-code-img" src="@qrCodeImageSrc" alt="Transaction QR Code" />
@@ -450,7 +624,7 @@
                     }
 
                     <!-- Barcode -->
-                    @if (businessDetails?.IncludeBarcode == false)
+                    @if (businessDetails?.IncludeBarcode == true)
                     {
                         <div class="code-container">
                             <img class="barcode-img" src="@barcodeImageSrc" alt="Transaction barcode" />
@@ -489,25 +663,27 @@
     private RateItem? SelectedItem;
     private bool ShowDeleteModal = false;
     private bool ShowPaymentModal = false;
-    private decimal discountValue = 0;
-    private bool isPercentageDiscount = true;
     private string selectedPaymentMethod = "Cash";
     private decimal amountReceived = 0;
     private bool isInitialized = false;
     private bool isLoading = true;
-    private decimal currentTotalAmount = 0;
-    private decimal currentTotalWithTax = 0;
     private string qrCodeImageSrc = string.Empty;
     private string barcodeImageSrc = string.Empty;
     private CurrentUser? currentUser;
 
-    private decimal discountAmount => isPercentageDiscount
-        ? BillService.TotalAmount * (discountValue / 100m)
-        : discountValue;
+    // Discount related variables
+    private List<Discount> appliedDiscounts = new();
+    private decimal customDiscountValue = 0;
+    private bool customDiscountType = true; // true=percentage, false=fixed
+    private string discountCode = "";
 
-    private decimal subtotalAfterDiscount => BillService.TotalAmount - discountAmount;
-    private decimal _totalAmount = 0;
-    private decimal _totalWithTax = 0;
+    // Calculated totals
+    private decimal subtotal => BillService.SelectedItems?.Sum(item => item.BasePrice * item.Quantity) ?? 0;
+    private decimal totalDiscount => appliedDiscounts.Sum(d => CalculateDiscountAmount(d));
+    private decimal subtotalAfterDiscount => subtotal - totalDiscount;
+    private decimal taxRate => (businessDetails?.DefaultTaxRate ?? 15) / 100m;
+    private decimal taxAmount => subtotalAfterDiscount * taxRate;
+    private decimal totalWithTax => subtotalAfterDiscount + taxAmount;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -535,9 +711,10 @@
                 {
                     TransactionId = currentTransactionId,
                     DateTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    TotalAmount = _totalWithTax,
-                    TaxAmount = _totalWithTax - subtotalAfterDiscount,
-                    Items = BillService.SelectedItems?.Select(i => new { i.Name, i.Quantity, i.BasePrice })
+                    TotalAmount = totalWithTax,
+                    TaxAmount = taxAmount,
+                    Items = BillService.SelectedItems?.Select(i => new { i.Name, i.Quantity, i.BasePrice }),
+                    Discounts = appliedDiscounts.Select(d => new { d.Name, d.Value, d.IsPercentage })
                 };
 
                 var jsonData = System.Text.Json.JsonSerializer.Serialize(qrData);
@@ -651,7 +828,13 @@
                     BusinessName = "SUPERMARKET",
                     ManagerName = "Eric Steer",
                     IncludeBarcode = true,
-                    IncludeQRCode = true
+                    IncludeQRCode = true,
+                    DefaultDiscounts = new List<Discount>
+                {
+                    new Discount { Name = "Senior Citizen", Value = 10, IsPercentage = true },
+                    new Discount { Name = "Student", Value = 5, IsPercentage = true },
+                    new Discount { Name = "Festival", Value = 50, IsPercentage = false }
+                }
                 };
             currentUser = new CurrentUser { Id = "3", Name = "Cashier" };
         }
@@ -660,39 +843,26 @@
             isLoading = false;
         }
 
-        await UpdateTotals();
         BillService.OnChange += async () =>
         {
-            await UpdateTotals();
             await InvokeAsync(StateHasChanged);
         };
     }
 
-    private async Task UpdateTotals()
+    private decimal CalculateDiscountAmount(Discount discount)
     {
-        // Calculate base total
-        _totalAmount = BillService.SelectedItems?.Sum(item => item.BasePrice * item.Quantity) ?? 0;
-
-        // Calculate discount
-        var discount = isPercentageDiscount
-            ? _totalAmount * (discountValue / 100m)
-            : discountValue;
-
-        // Calculate subtotal after discount
-        var subtotal = _totalAmount - discount;
-
-        // Calculate final total with tax
-        var taxRate = (businessDetails?.DefaultTaxRate ?? 15) / 100m;
-        _totalWithTax = subtotal * (1 + taxRate);
-
-        await InvokeAsync(StateHasChanged);
+        if (discount.IsPercentage)
+        {
+            return subtotal * (discount.Value / 100m);
+        }
+        return discount.Value;
     }
 
     private async Task IncreaseQuantity(RateItem item)
     {
         item.Quantity++;
         await BillService.UpdateItemAsync(item);
-        await UpdateTotals();
+        StateHasChanged();
     }
 
     private async Task DecreaseQuantity(RateItem item)
@@ -701,7 +871,7 @@
         {
             item.Quantity--;
             await BillService.UpdateItemAsync(item);
-            await UpdateTotals();
+            StateHasChanged();
         }
     }
 
@@ -739,16 +909,9 @@
         StateHasChanged();
     }
 
-    private void ToggleDiscountType()
-    {
-        isPercentageDiscount = !isPercentageDiscount;
-        discountValue = 0;
-        StateHasChanged();
-    }
-
     private void ProcessPayment()
     {
-        amountReceived = _totalWithTax;
+        amountReceived = totalWithTax;
         ShowPaymentModal = true;
         StateHasChanged();
     }
@@ -761,18 +924,6 @@
 
     private async Task ConfirmPayment()
     {
-        // Calculate the discount amount first
-        var discount = isPercentageDiscount
-            ? _totalAmount * (discountValue / 100m)
-            : discountValue;
-
-        // Calculate subtotal after discount
-        var subtotal = _totalAmount - discount;
-
-        // Calculate tax amount
-        var taxRate = (businessDetails?.DefaultTaxRate ?? 15) / 100m;
-        var tax = subtotal * taxRate;
-
         var transaction = new BusinessTransaction
             {
                 TransactionId = currentTransactionId,
@@ -782,14 +933,15 @@
                     UnitPrice = i.BasePrice,
                     Quantity = i.Quantity
                 }).ToList(),
-                SubTotal = _totalAmount,
-                Discount = discount,
-                Tax = tax,
-                Total = _totalWithTax,
+                SubTotal = subtotal,
+                Discount = totalDiscount,
+                Tax = taxAmount,
+                Total = totalWithTax,
                 PaymentMethod = selectedPaymentMethod,
                 AmountReceived = amountReceived,
-                ChangeAmount = amountReceived - _totalWithTax,
-                TransactionDate = DateTime.Now
+                ChangeAmount = amountReceived - totalWithTax,
+                TransactionDate = DateTime.Now,
+                AppliedDiscounts = appliedDiscounts
             };
 
         showReceiptModal = false;
@@ -806,6 +958,9 @@
         await TransactionService.SaveTransactionAsync(transaction);
         await BillService.ClearCart();
         ShowPaymentModal = false;
+
+        // Show receipt after payment
+        showReceiptModal = true;
     }
 
     private async Task CancelOrder()
@@ -854,5 +1009,63 @@
         showReceiptModal = false;
         await Task.Delay(50); // Small delay for modal transition
         ProcessPayment();
+    }
+
+    // Discount related methods
+    private void ApplyStandardDiscount(Discount discount)
+    {
+        if (!appliedDiscounts.Any(d => d.Name == discount.Name))
+        {
+            appliedDiscounts.Add(new Discount
+                {
+                    Name = discount.Name,
+                    Value = discount.Value,
+                    IsPercentage = discount.IsPercentage,
+                    Code = discount.Code
+                });
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyCustomDiscount()
+    {
+        if (customDiscountValue > 0)
+        {
+            appliedDiscounts.Add(new Discount
+                {
+                    Name = "Custom Discount",
+                    Value = customDiscountValue,
+                    IsPercentage = customDiscountType,
+                    Code = "CUSTOM"
+                });
+            customDiscountValue = 0;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyDiscountCode()
+    {
+        if (!string.IsNullOrWhiteSpace(discountCode))
+        {
+            // Check if code matches any default discounts
+            var defaultDiscount = businessDetails?.DefaultDiscounts?
+                .FirstOrDefault(d => d.Code?.Equals(discountCode, StringComparison.OrdinalIgnoreCase) == true);
+
+            if (defaultDiscount != null)
+            {
+                ApplyStandardDiscount(defaultDiscount);
+                discountCode = "";
+            }
+            else
+            {
+                // Handle invalid code (show message to user)
+            }
+        }
+    }
+
+    private void RemoveAppliedDiscount(Discount discount)
+    {
+        appliedDiscounts.Remove(discount);
+        StateHasChanged();
     }
 }

@@ -41,19 +41,16 @@ namespace ClassLibraryEntities
 -----------------------------
 Aitisam Ahmed
 Contact: 0347-1536817
-Islamabad, E-9
+Islamabad, G-9
 Shop No. 258, Lorem Ipsum Plaza
 City Index: 02025
-Tel:  0347-1536817
------------------------------
-Cashier: #3
-Manager: Eric Steer
+
 -----------------------------";
 
         [Required]
         public string ReceiptFooter { get; set; } = @"
 -----------------------------
-THANK YOU FOR SHOPPING!
+THANKS FOR Comming!
 We appreciate your business.
 Visit us again soon!
 ";
@@ -80,6 +77,8 @@ Visit us again soon!
         [DataType(DataType.Password)]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long")]
         public string? Password { get; set; }
+        public bool EnableDiscounts { get; set; } = true;
+        public List<Discount> DefaultDiscounts { get; set; } = new List<Discount>();
 
     }
 }

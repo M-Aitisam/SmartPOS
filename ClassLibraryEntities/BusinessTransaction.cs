@@ -24,6 +24,6 @@ namespace ClassLibraryEntities
         public bool IsReturn { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal TaxAmount { get; set; }
-        public decimal DiscountAmount { get; set; }
+        public List<Discount> AppliedDiscounts { get; set; } = new List<Discount>();
     }
 }

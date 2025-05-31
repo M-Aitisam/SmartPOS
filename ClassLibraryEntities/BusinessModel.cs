@@ -12,8 +12,10 @@ namespace ClassLibraryEntities
         // Navigation properties for the steps
         public GeneralInformation GeneralInformation { get; set; } = new();
         public BusinessDetails BusinessDetails { get; set; } = new();
+        public DateTime RegistrationDate { get; set; }
         public bool IsActive { get; set; } = true;
         public string? Email { get; set; }
         public string? PasswordHash { get; set; }
+        public List<Discount> DefaultDiscounts { get; set; } = new List<Discount>();
     }
 }
