@@ -1,5 +1,6 @@
 ﻿@page "/salesreport"
 @using System.Globalization
+@inject ITransactionService TransactionService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 @using System.Text.Json
@@ -11,13 +12,13 @@
     <div class="dashboard-header">
         <h2>Sales Dashboard</h2>
         <div class="header-actions">
-            <div class="time-filter">
-                <span>Last Week</span>
+            <div class="time-filter" @onclick="ToggleTimeRange">
+                <span>@TimeRangeLabel</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
             </div>
-            <button class="export-btn">
+            <button class="export-btn" @onclick="ExportData">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -31,49 +32,57 @@
     <div class="summary-cards">
         <div class="summary-card">
             <div class="card-header">
-                <span>Order</span>
-                <span class="time-label">Last week</span>
+                <span>Gross Sales</span>
+                <span class="time-label">@TimeRangeLabel</span>
             </div>
-            <div class="card-value">$4,673</div>
+            <div class="card-value">@GrossSales.ToString("C")</div>
             <div class="card-footer">
-                <span class="growth positive">+18.2%</span>
-                <span>vs last week</span>
+                <span class="growth @(GrossSalesGrowth >= 0 ? "positive" : "negative")">
+                    @(GrossSalesGrowth >= 0 ? "+" : "")@GrossSalesGrowth.ToString("0.0")%
+                </span>
+                <span>vs previous period</span>
             </div>
         </div>
 
         <div class="summary-card">
             <div class="card-header">
-                <span>Sales</span>
-                <span class="time-label">Last Year</span>
+                <span>Net Sales</span>
+                <span class="time-label">@TimeRangeLabel</span>
             </div>
-            <div class="card-value">1.28k</div>
+            <div class="card-value">@NetSales.ToString("C")</div>
             <div class="card-footer">
-                <span class="growth negative">-8.2%</span>
-                <span>vs last year</span>
+                <span class="growth @(NetSalesGrowth >= 0 ? "positive" : "negative")">
+                    @(NetSalesGrowth >= 0 ? "+" : "")@NetSalesGrowth.ToString("0.0")%
+                </span>
+                <span>vs previous period</span>
             </div>
         </div>
 
         <div class="summary-card">
             <div class="card-header">
-                <span>Total Profit</span>
-                <span class="time-label">Last week</span>
+                <span>Discount</span>
+                <span class="time-label">@TimeRangeLabel</span>
             </div>
-            <div class="card-value">1.28k</div>
+            <div class="card-value">@Discount.ToString("C")</div>
             <div class="card-footer">
-                <span class="growth positive">+12.4%</span>
-                <span>vs last week</span>
+                <span class="growth @(DiscountGrowth >= 0 ? "positive" : "negative")">
+                    @(DiscountGrowth >= 0 ? "+" : "")@DiscountGrowth.ToString("0.0")%
+                </span>
+                <span>vs previous period</span>
             </div>
         </div>
 
         <div class="summary-card">
             <div class="card-header">
-                <span>Revenue Growth</span>
-                <span class="time-label">Weekly Report</span>
+                <span>Taxes</span>
+                <span class="time-label">@TimeRangeLabel</span>
             </div>
-            <div class="card-value">$8,245</div>
+            <div class="card-value">@Taxes.ToString("C")</div>
             <div class="card-footer">
-                <span class="growth positive">+21.7%</span>
-                <span>vs last week</span>
+                <span class="growth @(TaxesGrowth >= 0 ? "positive" : "negative")">
+                    @(TaxesGrowth >= 0 ? "+" : "")@TaxesGrowth.ToString("0.0")%
+                </span>
+                <span>vs previous period</span>
             </div>
         </div>
     </div>
@@ -102,34 +111,20 @@
 
     <div class="data-grid">
         <div class="grid-header">
-            <h3>Orders</h3>
-            <div class="grid-tabs">
-                <button class="tab active">Orders</button>
-                <button class="tab">Sales</button>
-                <button class="tab">Profit</button>
-                <button class="tab">Income</button>
-            </div>
+            <h3>Monthly Sales</h3>
         </div>
         <div class="grid-content">
             <div class="grid-row header">
-                <div class="grid-cell">Feb</div>
-                <div class="grid-cell">Mar</div>
-                <div class="grid-cell">Apr</div>
-                <div class="grid-cell">May</div>
-                <div class="grid-cell">Jun</div>
-                <div class="grid-cell">Jul</div>
-                <div class="grid-cell">Aug</div>
-                <div class="grid-cell">Sep</div>
+                @foreach (var month in monthlySales.Keys)
+                {
+                    <div class="grid-cell">@month</div>
+                }
             </div>
             <div class="grid-row">
-                <div class="grid-cell">$3,200</div>
-                <div class="grid-cell">$4,800</div>
-                <div class="grid-cell">$4,100</div>
-                <div class="grid-cell">$5,700</div>
-                <div class="grid-cell">$7,200</div>
-                <div class="grid-cell">$6,900</div>
-                <div class="grid-cell">$7,500</div>
-                <div class="grid-cell">$8,200</div>
+                @foreach (var sales in monthlySales.Values)
+                {
+                    <div class="grid-cell">@sales.ToString("C")</div>
+                }
             </div>
         </div>
     </div>
@@ -138,42 +133,247 @@
 @code {
     private bool isInitialized = false;
     private DotNetObjectReference<SalesReport>? objRef;
+    private TimeRange currentTimeRange = TimeRange.Week;
+    private string TimeRangeLabel => currentTimeRange.ToString();
+
+    // Current period values
+    private decimal GrossSales;
+    private decimal NetSales;
+    private decimal Discount;
+    private decimal Taxes;
+
+    // Previous period values for comparison
+    private decimal GrossSalesPrev;
+    private decimal NetSalesPrev;
+    private decimal DiscountPrev;
+    private decimal TaxesPrev;
+
+    // Growth calculations
+    private decimal GrossSalesGrowth => GrossSalesPrev == 0 ? 0 : ((GrossSales - GrossSalesPrev) / GrossSalesPrev) * 100;
+    private decimal NetSalesGrowth => NetSalesPrev == 0 ? 0 : ((NetSales - NetSalesPrev) / NetSalesPrev) * 100;
+    private decimal DiscountGrowth => DiscountPrev == 0 ? 0 : ((Discount - DiscountPrev) / DiscountPrev) * 100;
+    private decimal TaxesGrowth => TaxesPrev == 0 ? 0 : ((Taxes - TaxesPrev) / TaxesPrev) * 100;
+
+    // Chart data
+    private decimal[] yearlyEarnings = new decimal[12];
+    private string[] last6MonthsLabels = Array.Empty<string>();
+    private decimal[] last6MonthsData = Array.Empty<decimal>();
+    private Dictionary<string, decimal> monthlySales = new Dictionary<string, decimal>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSalesData();
+        await LoadChartData();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !isInitialized)
+        if (firstRender)
         {
-            isInitialized = true;
-            objRef = DotNetObjectReference.Create(this);
             await InitializeCharts();
+            isInitialized = true;
+        }
+    }
+
+    private async Task LoadChartData()
+    {
+        // Load yearly earnings data
+        DateTime startOfYear = new DateTime(DateTime.Today.Year, 1, 1);
+        DateTime endOfYear = new DateTime(DateTime.Today.Year, 12, 31);
+        var yearlyTransactions = await TransactionService.GetTransactionsByDateAsync(startOfYear, endOfYear);
+
+        yearlyEarnings = new decimal[12];
+        if (yearlyTransactions != null)
+        {
+            var yearlyGroups = yearlyTransactions
+                .GroupBy(t => t.TransactionDate.Month)
+                .Select(g => new { Month = g.Key, Total = g.Sum(t => t.Total) });
+
+            foreach (var group in yearlyGroups)
+            {
+                yearlyEarnings[group.Month - 1] = group.Total;
+            }
+        }
+
+        // Load last 6 months data
+        DateTime startDate6Months = DateTime.Today.AddMonths(-6);
+        var last6MonthsTransactions = await TransactionService.GetTransactionsByDateAsync(startDate6Months, DateTime.Today);
+
+        last6MonthsLabels = new string[6];
+        last6MonthsData = new decimal[6];
+
+        for (int i = 0; i < 6; i++)
+        {
+            DateTime monthStart = startDate6Months.AddMonths(i);
+            last6MonthsLabels[i] = monthStart.ToString("MMM");
+
+            last6MonthsData[i] = last6MonthsTransactions?
+                .Where(t => t.TransactionDate.Month == monthStart.Month &&
+                           t.TransactionDate.Year == monthStart.Year)
+                .Sum(t => t.Total) ?? 0;
+        }
+
+        // Load monthly sales for grid (last 8 months)
+        DateTime startDate8Months = DateTime.Today.AddMonths(-8);
+        var gridTransactions = await TransactionService.GetTransactionsByDateAsync(startDate8Months, DateTime.Today);
+
+        monthlySales.Clear();
+        for (int i = 0; i < 8; i++)
+        {
+            DateTime month = DateTime.Today.AddMonths(-7 + i);
+            string monthName = month.ToString("MMM");
+
+            decimal monthTotal = gridTransactions?
+                .Where(t => t.TransactionDate.Month == month.Month &&
+                           t.TransactionDate.Year == month.Year)
+                .Sum(t => t.Total) ?? 0;
+
+            monthlySales[monthName] = monthTotal;
         }
     }
 
     private async Task InitializeCharts()
     {
+        // Use real data
+        var yearlyLabels = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+        await JSRuntime.InvokeVoidAsync("initializeYearlyEarningsChart",
+            JsonSerializer.Serialize(yearlyLabels),
+            JsonSerializer.Serialize(yearlyEarnings));
+
+        await JSRuntime.InvokeVoidAsync("initializeMonthlySalesChart",
+            JsonSerializer.Serialize(last6MonthsLabels),
+            JsonSerializer.Serialize(last6MonthsData));
+    }
+
+    private async Task LoadSalesData()
+    {
+        DateTime endDate = DateTime.Today;
+        DateTime startDate;
+        DateTime prevStartDate;
+        DateTime prevEndDate;
+
+        switch (currentTimeRange)
+        {
+            case TimeRange.Day:
+                startDate = endDate;
+                prevStartDate = startDate.AddDays(-1);
+                prevEndDate = prevStartDate;
+                break;
+            case TimeRange.Week:
+                startDate = endDate.AddDays(-(int)endDate.DayOfWeek);
+                prevStartDate = startDate.AddDays(-7);
+                prevEndDate = startDate.AddDays(-1);
+                break;
+            case TimeRange.Month:
+                startDate = new DateTime(endDate.Year, endDate.Month, 1);
+                prevStartDate = startDate.AddMonths(-1);
+                prevEndDate = startDate.AddDays(-1);
+                break;
+            case TimeRange.Year:
+                startDate = new DateTime(endDate.Year, 1, 1);
+                prevStartDate = new DateTime(endDate.Year - 1, 1, 1);
+                prevEndDate = new DateTime(endDate.Year - 1, 12, 31);
+                break;
+            default:
+                startDate = endDate.AddDays(-(int)endDate.DayOfWeek);
+                prevStartDate = startDate.AddDays(-7);
+                prevEndDate = startDate.AddDays(-1);
+                break;
+        }
+
+        var currentTransactions = await TransactionService.GetTransactionsByDateAsync(startDate, endDate);
+        var previousTransactions = await TransactionService.GetTransactionsByDateAsync(prevStartDate, prevEndDate);
+
+        // Calculate current period values
+        GrossSales = currentTransactions?.Sum(t => t.SubTotal) ?? 0;
+        NetSales = currentTransactions?.Sum(t => t.Total) ?? 0;
+        Discount = currentTransactions?.Sum(t => t.Discount) ?? 0;
+        Taxes = currentTransactions?.Sum(t => t.Tax) ?? 0;
+
+        // Calculate previous period values for comparison
+        GrossSalesPrev = previousTransactions?.Sum(t => t.SubTotal) ?? 0;
+        NetSalesPrev = previousTransactions?.Sum(t => t.Total) ?? 0;
+        DiscountPrev = previousTransactions?.Sum(t => t.Discount) ?? 0;
+        TaxesPrev = previousTransactions?.Sum(t => t.Tax) ?? 0;
+
+        StateHasChanged();
+    }
+
+    private async Task ToggleTimeRange()
+    {
+        currentTimeRange = currentTimeRange switch
+        {
+            TimeRange.Day => TimeRange.Week,
+            TimeRange.Week => TimeRange.Month,
+            TimeRange.Month => TimeRange.Year,
+            TimeRange.Year => TimeRange.Day,
+            _ => TimeRange.Week
+        };
+
+        await LoadSalesData();
+    }
+
+    private async Task ExportData()
+    {
         try
         {
-            // Yearly Earnings Chart (Line Chart)
-            await JSRuntime.InvokeVoidAsync("initializeYearlyEarningsChart",
-                JsonSerializer.Serialize(new[] { "Jun", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep" }),
-                JsonSerializer.Serialize(new[] { 3500, 4200, 3800, 5100, 6300, 7200, 6800, 7500, 8200 })
-            );
+            var csvContent = $"Period,{TimeRangeLabel}\n";
+            csvContent += $"Previous Period,{GetPreviousPeriodLabel()}\n\n";
+            csvContent += "Metric,Current,Previous,Growth\n";
+            csvContent += $"Gross Sales,{GrossSales:C},{GrossSalesPrev:C},{GrossSalesGrowth:0.0}%\n";
+            csvContent += $"Net Sales,{NetSales:C},{NetSalesPrev:C},{NetSalesGrowth:0.0}%\n";
+            csvContent += $"Discount,{Discount:C},{DiscountPrev:C},{DiscountGrowth:0.0}%\n";
+            csvContent += $"Taxes,{Taxes:C},{TaxesPrev:C},{TaxesGrowth:0.0}%\n\n";
 
-            // Monthly Sales Chart (Bar Chart)
-            await JSRuntime.InvokeVoidAsync("initializeMonthlySalesChart",
-                JsonSerializer.Serialize(new[] { "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep" }),
-                JsonSerializer.Serialize(new[] { 3200, 4800, 4100, 5700, 7200, 6900, 7500, 8200 })
-            );
+            // Add chart data
+            csvContent += "Yearly Earnings\nMonth,Amount\n";
+            var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+            for (int i = 0; i < 12; i++)
+            {
+                csvContent += $"{months[i]},{yearlyEarnings[i]:C}\n";
+            }
+
+            csvContent += "\nMonthly Sales (Last 6 Months)\nMonth,Amount\n";
+            for (int i = 0; i < last6MonthsLabels.Length; i++)
+            {
+                csvContent += $"{last6MonthsLabels[i]},{last6MonthsData[i]:C}\n";
+            }
+
+            var fileName = $"SalesReport_{DateTime.Now:yyyyMMddHHmmss}.csv";
+            await JSRuntime.InvokeVoidAsync("downloadCSV", csvContent, fileName);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error initializing charts: {ex.Message}");
+            Console.WriteLine($"Error exporting data: {ex.Message}");
         }
+    }
+
+    private string GetPreviousPeriodLabel()
+    {
+        return currentTimeRange switch
+        {
+            TimeRange.Day => "Yesterday",
+            TimeRange.Week => "Previous Week",
+            TimeRange.Month => "Previous Month",
+            TimeRange.Year => "Previous Year",
+            _ => "Previous Period"
+        };
     }
 
     public void Dispose()
     {
         objRef?.Dispose();
+    }
+
+    private enum TimeRange
+    {
+        Day,
+        Week,
+        Month,
+        Year
     }
 }
 
@@ -377,29 +577,67 @@
         --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
+    /* Reset and base styles */
     * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
     }
 
-    .sales-dashboard {
+    body {
         font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-        padding: 24px;
-        color: var(--text-color);
         background-color: var(--bg-color);
+        color: var(--text-color);
         min-height: 100vh;
     }
 
+    /* Layout: Sidebar and Content */
+    .layout {
+        display: flex;
+        min-height: 100vh;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 250px;
+        background-color: var(--card-bg);
+        border-right: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+        padding: 16px;
+        transition: transform 0.3s ease;
+    }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+            position: absolute;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            height: 100%;
+        }
+
+    .content {
+        flex: 1;
+        padding: 24px;
+        overflow-x: hidden;
+    }
+
+    /* Sales Dashboard */
+    .sales-dashboard {
+        width: 100%;
+    }
+
+    /* Header */
     .dashboard-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
         .dashboard-header h2 {
-            margin: 0;
             font-size: 22px;
             font-weight: 600;
             color: var(--text-color);
@@ -409,6 +647,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        flex-wrap: wrap;
     }
 
     .time-filter {
@@ -416,22 +655,17 @@
         padding: 8px 12px;
         border-radius: 6px;
         font-size: 13px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
         color: var(--primary-color);
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background-color 0.2s;
     }
 
         .time-filter:hover {
             background-color: rgba(74, 111, 165, 0.15);
-        }
-
-        .time-filter svg {
-            width: 14px;
-            height: 14px;
         }
 
     .export-btn {
@@ -443,10 +677,10 @@
         cursor: pointer;
         font-size: 13px;
         font-weight: 500;
-        transition: all 0.2s;
         display: flex;
         align-items: center;
         gap: 6px;
+        transition: background-color 0.2s, transform 0.2s;
     }
 
         .export-btn:hover {
@@ -454,14 +688,10 @@
             transform: translateY(-1px);
         }
 
-        .export-btn svg {
-            width: 14px;
-            height: 14px;
-        }
-
+    /* Summary Cards */
     .summary-cards {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 16px;
         margin-bottom: 24px;
     }
@@ -471,7 +701,7 @@
         border-radius: 8px;
         padding: 18px;
         box-shadow: var(--shadow);
-        transition: all 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
         .summary-card:hover {
@@ -528,9 +758,10 @@
             color: var(--negative);
         }
 
+    /* Charts Section */
     .charts-section {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 16px;
         margin-bottom: 24px;
     }
@@ -547,7 +778,6 @@
     }
 
         .chart-header h3 {
-            margin: 0 0 4px 0;
             font-size: 15px;
             font-weight: 600;
         }
@@ -562,11 +792,13 @@
         position: relative;
     }
 
+    /* Data Grid */
     .data-grid {
         background-color: var(--card-bg);
         border-radius: 8px;
         padding: 18px;
         box-shadow: var(--shadow);
+        overflow-x: auto;
     }
 
     .grid-header {
@@ -574,40 +806,14 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
         .grid-header h3 {
-            margin: 0;
             font-size: 15px;
             font-weight: 600;
         }
-
-    .grid-tabs {
-        display: flex;
-        gap: 6px;
-    }
-
-        .grid-tabs .tab {
-            background: none;
-            border: none;
-            padding: 5px 10px;
-            font-size: 12px;
-            color: var(--text-light);
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-
-            .grid-tabs .tab:hover {
-                color: var(--primary-color);
-                background-color: var(--primary-light);
-            }
-
-            .grid-tabs .tab.active {
-                color: var(--primary-color);
-                background-color: var(--primary-light);
-                font-weight: 500;
-            }
 
     .grid-content {
         overflow-x: auto;
@@ -636,37 +842,32 @@
         font-weight: 500;
     }
 
-    /* Responsive styles */
-    @@media (max-width: 1200px) {
-        .summary-cards {
-            grid-template-columns: repeat(2, 1fr);
+    /* Media Queries */
+    @@media (max-width: 768px) {
+        .sidebar {
+            position: absolute;
+            z-index: 1000;
+            transform: translateX(-100%);
+        }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+        .content {
+            padding: 16px;
         }
     }
 
-    @@media (max-width: 768px) {
-        .charts-section {
-            grid-template-columns: 1fr;
-        }
-
+    @@media (max-width: 576px) {
         .dashboard-header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 12px;
         }
 
         .header-actions {
             width: 100%;
             justify-content: space-between;
-        }
-    }
-
-    @@media (max-width: 576px) {
-        .summary-cards {
-            grid-template-columns: 1fr;
-        }
-
-        .sales-dashboard {
-            padding: 16px;
         }
     }
 </style>
