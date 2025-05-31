@@ -271,23 +271,33 @@
 
 @code {
 	private string selectedDay = "";
+	private bool daySelected = false;
 	private int selectedCategoryIdBacking = 0;
-	private int selectedCategoryId
-	{
-		get => selectedCategoryIdBacking;
-		set
-		{
-			if (selectedCategoryIdBacking != value)
-			{
-				selectedCategoryIdBacking = value;
-				currentPage = 1;
-				CalculateTotalPages();
-			}
-		}
-	}
 	private List<Product> ProductList { get; set; } = new();
 	private List<BusinessCategory> businessCategories { get; set; } = new();
 	private string searchTermBacking = "";
+	
+	
+	private int selectedCategoryId
+    {
+        get => selectedCategoryIdBacking;
+        set
+        {
+            if (!daySelected)
+            {
+                ShowDaySelectionWarning();
+                return;
+            }
+            
+            if (selectedCategoryIdBacking != value)
+            {
+                selectedCategoryIdBacking = value;
+                currentPage = 1;
+                CalculateTotalPages();
+            }
+        }
+    }
+
 	private string searchTerm
 	{
 		get => searchTermBacking;
@@ -404,8 +414,21 @@
 	private void SelectDay(string day)
 	{
 		selectedDay = day;
+		daySelected = true;
 		currentPage = 1;
 		searchTerm = "";
+		StateHasChanged();
+	}
+
+	private async Task ShowDaySelectionWarning()
+	{
+		await JSRuntime.InvokeVoidAsync("Swal.fire", new
+		{
+			title = "Warning!",
+			text = "Please select a day first!",
+			icon = "warning",
+			confirmButtonText = "OK"
+		});
 	}
 
 	private string GetDayBadgeClass(string day)
@@ -500,7 +523,11 @@
 				await ShowError(message);
 				return;
 			}
-
+			if (!daySelected)
+			{
+				await ShowDaySelectionWarning();
+				return;
+			}
 			// Optimize updates - only save products that actually changed
 			var productsToUpdate = ProductList
 				.Where(p => p.IsActive || !string.IsNullOrEmpty(p.ActiveDays))
@@ -668,6 +695,7 @@
 
 					// Get category with fallback
 					var category = GetProductCategory(product.CategoryID);
+					Console.WriteLine($"Saving product: {product.ProductTitle} - ActiveDays: {product.ActiveDays}");
 
 					rateItems.Add(new RateItem
 						{

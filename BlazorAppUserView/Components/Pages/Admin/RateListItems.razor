@@ -2,6 +2,7 @@
 @using System.Collections.Generic
 @inject BillService BillService
 @rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
 @using ClassLibraryServices
 @inject ClassLibraryServices.StateContainerService StateContainer
 
@@ -23,7 +24,7 @@
     </div>
 
     <div class="category-buttons">
-        @foreach (var category in Categories)
+        @foreach (var category in GetAvailableCategories())
         {
             <button class="category-btn @(category == SelectedCategory ? "active" : "")"
                     @onclick="() => FilterByCategory(category)">
@@ -37,7 +38,9 @@
             @if (FilteredItems.Any())
             {
                 @foreach (var item in FilteredItems)
+
                 {
+
                     <div class="product-card" @onclick="() => AddToBill(item)">
                         <div class="card-image">
                             @if (!string.IsNullOrEmpty(item.ImageUrl))
@@ -317,6 +320,49 @@
     private string SelectedCategory { get; set; } = "All";
     private string currentViewDay = DateTime.Now.DayOfWeek.ToString();
 
+    private List<string> GetAvailableCategories()
+    {
+        if (BillService?.RateItems == null)
+            return new List<string> { "All" };
+
+        // Get categories that have items for the current day
+        var categoriesWithItems = BillService.RateItems
+            .Where(i => i != null && i.IsActive)
+            .Where(i => ShouldIncludeForDay(i.ActiveDays, currentViewDay))
+            .Select(i => i.Category)
+            .Where(c => !string.IsNullOrEmpty(c))
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+
+        return new List<string> { "All" }.Concat(categoriesWithItems).ToList();
+    }
+  
+
+    protected override async Task OnInitializedAsync()
+    {
+        BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
+
+        // Try to get last selected day from session/local storage
+        try
+        {
+            var lastDay = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "lastSelectedDay");
+            if (!string.IsNullOrEmpty(lastDay) && daysOfWeek.Contains(lastDay))
+            {
+                currentViewDay = lastDay;
+            }
+            else
+            {
+                currentViewDay = DateTime.Now.DayOfWeek.ToString();
+            }
+        }
+        catch
+        {
+            currentViewDay = DateTime.Now.DayOfWeek.ToString();
+        }
+    }
+
+
     private List<string> daysOfWeek = new()
     {
         "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
@@ -334,6 +380,10 @@
             if (BillService?.RateItems == null)
                 return Enumerable.Empty<RateItem>();
 
+            // Add debug logging
+            Console.WriteLine($"Current day: {currentViewDay}");
+            Console.WriteLine($"All rate items count: {BillService.RateItems.Count}");
+
             var filtered = BillService.RateItems
                 .Where(i => i != null && i.IsActive)
                 .Where(i => ShouldIncludeForDay(i.ActiveDays, currentViewDay))
@@ -344,38 +394,39 @@
                 .OrderBy(i => i.Name)
                 .ToList();
 
-            Console.WriteLine($"Filtered items for {currentViewDay}: {filtered.Count}");
+            Console.WriteLine($"Filtered items count for {currentViewDay}: {filtered.Count}");
             foreach (var item in filtered)
             {
-                Console.WriteLine($"{item.Name} - Days: {item.ActiveDays}");
+                Console.WriteLine($"{item.Name} - Active Days: {item.ActiveDays}");
             }
 
             return filtered;
         }
     }
     private bool ShouldIncludeForDay(string activeDays, string currentDay)
-    {
-        // If no days specified, don't show the item (strict filtering)
-        if (string.IsNullOrWhiteSpace(activeDays))
-            return false;
+{
+    // If no days specified, don't show the item (strict filtering)
+    if (string.IsNullOrWhiteSpace(activeDays))
+        return false;
+    
+    // Normalize comparison (case-insensitive, trim whitespace)
+    var days = activeDays.Split(',')
+        .Select(d => d.Trim())
+        .Where(d => !string.IsNullOrEmpty(d));
 
-        // Normalize comparison (case-insensitive, trim whitespace)
-        var days = activeDays.Split(',')
-            .Select(d => d.Trim())
-            .Where(d => !string.IsNullOrEmpty(d));
+    return days.Any(d => 
+        d.Equals(currentDay, StringComparison.OrdinalIgnoreCase));
+}
 
-        return days.Any(d =>
-            d.Equals(currentDay, StringComparison.OrdinalIgnoreCase));
-    }
     protected override void OnInitialized()
     {
         BillService.OnChange += async () => await InvokeAsync(StateHasChanged);
     }
-
     private void ChangeViewDay(string day)
     {
-        Console.WriteLine($"Changing to day: {day}");
         currentViewDay = day;
+        // Store the selected day
+        JSRuntime.InvokeVoidAsync("localStorage.setItem", "lastSelectedDay", day);
         StateHasChanged();
     }
 
