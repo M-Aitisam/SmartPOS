@@ -1,6 +1,7 @@
 ﻿@page "/"
 @layout MainLayout
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <div class="dashboard-container">
@@ -14,7 +15,7 @@
     <div class="dashboard-content">
         <div class="dashboard-header">
             <div class="welcome-message">
-                <h2>Welcome back!</h2>
+                <h2>Welcome to</h2>
                 <h1>Menu<span>IQ</span></h1>
                 <p class="subtitle">From chaos to clarity – control orders, tables, and inventory</p>
             </div>
@@ -22,14 +23,14 @@
                 <div class="stat-card">
                     <i class="fas fa-utensils"></i>
                     <div>
-                        <span class="stat-value">24</span>
+                        <span class="stat-value">0</span>
                         <span class="stat-label">Active Orders</span>
                     </div>
                 </div>
                 <div class="stat-card">
                     <i class="fas fa-users"></i>
                     <div>
-                        <span class="stat-value">12</span>
+                        <span class="stat-value">1</span>
                         <span class="stat-label">Staff Online</span>
                     </div>
                 </div>
@@ -39,7 +40,14 @@
         <div class="dashboard-grid">
             @foreach (var item in DashboardItems)
             {
-                <div class="dashboard-card" @onclick="() => NavigateTo(item.Route)">
+                <div class="dashboard-card @(item.Route == "businessdetails" ? "" : "locked-card")"
+                     @onclick="() => HandleCardClick(item.Route)">
+                    @if (item.Route != "businessdetails")
+                    {
+                        <div class="card-lock">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                    }
                     <div class="card-icon">
                         <i class="@item.Icon"></i>
                     </div>
@@ -57,24 +65,38 @@
 </div>
 
 @code {
+    // Track registration status
+    private bool isRegistered = false;
     private List<DashboardItem> DashboardItems = new()
     {
-        new DashboardItem("BusinessRegister", "fas fa-user", "businessdetails"),
-        new DashboardItem("Login", "fa fa-sign-in", "login"),
-        new DashboardItem("Categories", "fas fa-edit", "categories"),
-        new DashboardItem("Products", "fas fa-boxes", "product"),
-        new DashboardItem("Menu", "fas fa-hamburger", "menu"),
-        new DashboardItem("AdminPage", "fas fa-rocket", "adminpage"),
-        new DashboardItem("Order History", "fas fa-copy", "order-history"),
-        new DashboardItem("Sales Report", "fas fa-shopping-cart", "salesreport")
-
+        new DashboardItem("Business Register", "fas fa-store", "businessdetails"),
+        new DashboardItem("Login", "fas fa-sign-in-alt", "login"),
+        new DashboardItem("Categories", "fas fa-tags", "categories"),
+        new DashboardItem("Products", "fas fa-box-open", "product"),
+        new DashboardItem("Menu", "fas fa-utensils", "menu"),
+        new DashboardItem("Admin", "fas fa-user-cog", "adminpage"),
+        new DashboardItem("Order History", "fas fa-history", "order-history"),
+        new DashboardItem("Sales Report", "fas fa-chart-line", "salesreport")
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check registration status (you would typically get this from your backend)
+        isRegistered = await CheckRegistrationStatus();
+    }
+
+    private async Task<bool> CheckRegistrationStatus()
+    {
+        // Simulate checking registration status
+        await Task.Delay(100);
+        return false; // Default to false for demo
+    }
 
     private string GetCardDescription(string label)
     {
         return label switch
         {
-            "Business Register" => "Set up your business profile",
+            "Business Register" => "Set up your business profile to begin",
             "Login" => "Access your account",
             "Categories" => "Manage product categories",
             "Products" => "View and edit products",
@@ -82,12 +104,39 @@
             "Admin" => "Administrator tools",
             "Order History" => "View past orders",
             "Sales Report" => "Analyze sales data",
-            "Inventory" => "Track stock levels",
-            "Staff" => "Manage employees",
-            "Tables" => "Configure dining tables",
-            "Settings" => "System configuration",
             _ => "Manage your restaurant operations"
         };
+    }
+
+    private async Task HandleCardClick(string route)
+    {
+        if (route != "businessdetails" && !isRegistered)
+        {
+            await ShowRegistrationAlert();
+            return;
+        }
+        NavigationManager.NavigateTo($"/{route}");
+    }
+
+    private async Task ShowRegistrationAlert()
+    {
+        await JSRuntime.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Complete Registration First",
+            html = "<div style='text-align:center;'><i class='fas fa-store-alt' style='font-size:48px;color:#6c5ce7;margin-bottom:20px;'></i><p>Please complete your business registration to unlock all features</p></div>",
+            icon = "info",
+            showCancelButton = false,
+            confirmButtonText = "Go to Registration",
+            confirmButtonColor = "#6c5ce7",
+            background = "#ffffff",
+            backdrop = "rgba(108,92,231,0.4)",
+            customClass = new
+            {
+                popup = "custom-swal-popup",
+                title = "custom-swal-title",
+                confirmButton = "custom-swal-confirm-button"
+            }
+        });
     }
 
     private class DashboardItem
@@ -102,11 +151,6 @@
             Icon = icon;
             Route = route;
         }
-    }
-
-    private void NavigateTo(string route)
-    {
-        NavigationManager.NavigateTo($"/{route}");
     }
 }
 
@@ -123,6 +167,7 @@
         --danger: #d63031;
         --gray: #636e72;
         --white: #ffffff;
+        --locked: rgba(99, 110, 114, 0.2);
     }
 
     * {
@@ -373,6 +418,58 @@
         color: var(--primary-light);
     }
 
+    /* Locked Card Styles */
+    .locked-card {
+        position: relative;
+        cursor: not-allowed;
+        opacity: 0.7;
+        background-color: var(--light);
+    }
+
+        .locked-card::before {
+            background: var(--gray) !important;
+        }
+
+        .locked-card:hover {
+            transform: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .locked-card .card-icon i {
+            color: var(--gray) !important;
+        }
+
+        .locked-card .card-content h3,
+        .locked-card .card-content p {
+            color: var(--gray) !important;
+        }
+
+    .card-lock {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        color: var(--gray);
+        font-size: 1.2rem;
+        z-index: 2;
+    }
+
+    /* SweetAlert Customizations */
+    .custom-swal-popup {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3) !important;
+    }
+
+    .custom-swal-title {
+        color: var(--primary) !important;
+        font-weight: 700 !important;
+    }
+
+    .custom-swal-confirm-button {
+        border-radius: 8px !important;
+        padding: 10px 24px !important;
+        font-weight: 600 !important;
+    }
+
     /* Responsive Styles */
     @@media (max-width: 1200px) {
         .dashboard-grid {
@@ -420,3 +517,25 @@
         }
     }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // This would be in your _Host.cshtml or index.html
+    window.showRegistrationAlert = function() {
+        return Swal.fire({
+            title: 'Complete Registration First',
+            html: `<div style='text-align:center;'><i class='fas fa-store-alt' style='font-size:48px;color:#6c5ce7;margin-bottom:20px;'></i><p>Please complete your business registration to unlock all features</p></div>`,
+            icon: 'info',
+            showCancelButton: false,
+            confirmButtonText: 'Go to Registration',
+            confirmButtonColor: '#6c5ce7',
+            background: '#ffffff',
+            backdrop: 'rgba(108,92,231,0.4)',
+            customClass: {
+                popup: 'custom-swal-popup',
+                title: 'custom-swal-title',
+                confirmButton: 'custom-swal-confirm-button'
+            }
+        });
+    };
+</script>
