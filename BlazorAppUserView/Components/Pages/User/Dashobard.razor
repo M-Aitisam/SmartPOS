@@ -10,6 +10,7 @@
     </div>
 
     <div class="container">
+      
         <div class="row g-4 justify-content-center">
             @foreach (var item in DashboardItems)
             {
@@ -25,6 +26,10 @@
             }
         </div>
     </div>
+    <div class="mt-auto d-flex justify-content-end pe-4">
+        <DashboardNavigator />
+    </div>
+
 </div>
 
 @code {

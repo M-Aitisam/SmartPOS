@@ -1,0 +1,74 @@
+﻿@inject NavigationManager NavigationManager
+
+<div class="d-flex justify-content-center my-3 gap-3">
+    <button class="btn btn-outline-primary" @onclick="NavigateBackward" disabled="@IsFirst">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+
+    <button class="btn btn-outline-success" @onclick="NavigateForward" disabled="@IsLast">
+        Forward <i class="fas fa-arrow-right"></i>
+    </button>
+</div>
+
+@code {
+    // Only the routes you want in forward/backward sequence
+    private List<DashboardItem> DashboardItems = new()
+    {
+        new DashboardItem("Categories", "fas fa-edit", "categories"),
+        new DashboardItem("Products", "fas fa-boxes", "product"),
+        new DashboardItem("Menu", "fas fa-hamburger", "menu"),
+        new DashboardItem("AdminPage", "fas fa-rocket", "adminpage"),
+        new DashboardItem("Order History", "fas fa-copy", "order-history"),
+        new DashboardItem("Sales Report", "fas fa-shopping-cart", "salesreport")
+    };
+
+    private int currentIndex => GetCurrentPageIndex();
+    private bool IsFirst => currentIndex <= 0;
+    private bool IsLast => currentIndex >= DashboardItems.Count - 1;
+
+    private void NavigateForward()
+    {
+        if (!IsLast)
+        {
+            var nextRoute = DashboardItems[currentIndex + 1].Route;
+            NavigationManager.NavigateTo($"/{nextRoute}");
+        }
+    }
+
+    private void NavigateBackward()
+    {
+        if (!IsFirst)
+        {
+            var prevRoute = DashboardItems[currentIndex - 1].Route;
+            NavigationManager.NavigateTo($"/{prevRoute}");
+        }
+    }
+
+    private int GetCurrentPageIndex()
+    {
+        var currentUri = NavigationManager.Uri;
+        var baseUri = NavigationManager.BaseUri;
+        var relativePath = currentUri.Replace(baseUri, "").Trim('/').ToLower();
+
+        for (int i = 0; i < DashboardItems.Count; i++)
+        {
+            if (DashboardItems[i].Route.ToLower() == relativePath)
+                return i;
+        }
+        return 0; // Default to first item if not found
+    }
+
+    private class DashboardItem
+    {
+        public string Label { get; }
+        public string Icon { get; }
+        public string Route { get; }
+
+        public DashboardItem(string label, string icon, string route)
+        {
+            Label = label;
+            Icon = icon;
+            Route = route;
+        }
+    }
+}
