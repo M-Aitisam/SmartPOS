@@ -13,279 +13,279 @@
 <style>
     /* Main receipt container - now full height and fixed */
     .receipt-container {
-        font-family: 'Courier New', monospace;
-        margin: 0 auto;
-        max-width: 500px;
-        min-height: 90vh;
-        padding: 10px;
-        background: white;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+    font-family: 'Courier New', monospace;
+    margin: 0 auto;
+    max-width: 500px;
+    min-height: 90vh;
+    padding: 10px;
+    background: white;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     }
 
     /* Content area that will scroll */
     .receipt-content {
-        flex: 1;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     }
 
     .receipt-line {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
     }
 
     .receipt-footer {
-        margin-top: auto;
-        border-top: 1px dashed #000;
-        padding-top: 10px;
+    margin-top: auto;
+    border-top: 1px dashed #000;
+    padding-top: 10px;
     }
 
     .quantity-control {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     }
 
     .action-buttons {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-        justify-content: center;
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
     }
 
     .product-row {
-        display: flex;
-        margin: 3px 0;
-        padding: 0 10px;
-        gap: 10px;
+    display: flex;
+    margin: 3px 0;
+    padding: 0 10px;
+    gap: 10px;
     }
 
     .col-number {
-        width: 50px;
-        text-align: left;
+    width: 50px;
+    text-align: left;
     }
 
     .col-name {
-        flex: 1;
-        text-align: left;
-        padding-left: 5px;
+    flex: 1;
+    text-align: left;
+    padding-left: 5px;
     }
 
     .col-qty {
-        width: 10px;
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    width: 10px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     }
 
     .col-price {
-        width: 170px;
-        text-align: center;
-        margin-left: 3px;
+    width: 170px;
+    text-align: center;
+    margin-left: 3px;
     }
 
     .qty-control {
-        text-align: left;
-        display: flex;
-        align-items: center;
-        gap: 5px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     }
 
     .qty-btn {
-        border: none;
-        background: none;
-        cursor: pointer;
-        font-weight: bold;
-        padding: 0 5px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0 5px;
     }
 
     /* Scrollable product list */
     .product-list-container {
-        max-height: 25rem;
-        overflow-y: auto;
-        margin-bottom: 20px;
-        padding: 0 5px;
-        flex-shrink: 0;
+    max-height: 25rem;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 0 5px;
+    flex-shrink: 0;
     }
 
     .product-list-header {
-        border-bottom: 3px solid #eee;
-        font-weight: bold;
-        margin-bottom: 5px;
-        padding: 0 10px;
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 1;
+    border-bottom: 3px solid #eee;
+    font-weight: bold;
+    margin-bottom: 5px;
+    padding: 0 10px;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
     }
 
     /* QR and barcode styles */
     .code-container {
-        text-align: center;
-        margin: 10px 0;
+    text-align: center;
+    margin: 10px 0;
     }
 
     .qr-code-img, .barcode-img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
     }
 
     .barcode-img {
-        height: 60px;
+    height: 60px;
     }
 
     .dotted-line {
-        border-top: 1px dashed #000;
-        margin: 5px 0;
+    border-top: 1px dashed #000;
+    margin: 5px 0;
     }
 
     /* Discount section styles */
-    
+
     .discount-item {
-        background: white;
-        border-radius: 5px;
-        padding: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
+    background: white;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
     }
 
     .discount-actions {
-        display: flex;
-        gap: 5px;
-        margin-top: 5px;
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
     }
 
     .applied-discounts {
-        margin-top: 10px;
+    margin-top: 10px;
     }
 
     .applied-discount-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 5px 0;
-        border-bottom: 1px dashed #ddd;
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dashed #ddd;
     }
 
     /* Modal styles */
     .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
     }
 
     .modal-content {
-        background: white;
-        border-radius: 8px;
-        max-width: 600px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    background: white;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
 
     .modal-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     }
 
     .modal-body {
-        padding: 20px;
+    padding: 20px;
     }
 
     .modal-footer {
-        padding: 15px 20px;
-        border-top: 1px solid #eee;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
     }
 
     .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #666;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
     }
 
     @@media print {
-        body * {
-            visibility: hidden;
-        }
+    body * {
+    visibility: hidden;
+    }
 
-        .print-receipt, .print-receipt * {
-            visibility: visible;
-        }
+    .print-receipt, .print-receipt * {
+    visibility: visible;
+    }
 
-        .print-receipt {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 10px;
-            box-shadow: none;
-            border: none;
-        }
+    .print-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    box-shadow: none;
+    border: none;
+    }
 
-        .no-print {
-            display: none !important;
-        }
+    .no-print {
+    display: none !important;
+    }
 
-        .barcode-img, .qr-code-img {
-            max-width: 200px;
-            height: auto;
-        }
+    .barcode-img, .qr-code-img {
+    max-width: 200px;
+    height: auto;
+    }
     }
 
     .action-buttons {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-        justify-content: center;
-        flex-wrap: wrap;
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
     }
 
-        .action-buttons button {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            min-width: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
+    .action-buttons button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    }
 
-            .action-buttons button:disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-            }
+    .action-buttons button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    }
 
-            .action-buttons button i {
-                font-size: 1rem;
-            }
+    .action-buttons button i {
+    font-size: 1rem;
+    }
 </style>
 
 <div class="receipt-container">
@@ -330,7 +330,7 @@
             }
         </div>
 
-       
+
         <div class="receipt-footer">
             <!-- Enhanced Discount Section -->
             <div class="discount-section">
@@ -343,7 +343,7 @@
                             @foreach (var discount in businessDetails.DefaultDiscounts)
                             {
                                 <button class="btn btn-outline-primary btn-sm"
-                                        @onclick="() => ApplyStandardDiscount(discount)">
+                                @onclick="() => ApplyStandardDiscount(discount)">
                                     @discount.Name (@discount.Value@(discount.IsPercentage ? "%" : ""))
                                 </button>
                             }
@@ -358,7 +358,7 @@
                         <div class="col-md-6">
                             <div class="input-group col-md-12 mb-2">
                                 <input type="number" class="form-control" @bind="customDiscountValue"
-                                       placeholder="Discount value" style="padding: 0  0 0 10px;" />
+                                placeholder="Discount value" style="padding: 0  0 0 10px;" />
                                 <select class="form-select" @bind="customDiscountType" style="max-width: 100px;">
                                     <option value="true">%</option>
                                     <option value="false">Fixed</option>
@@ -371,7 +371,7 @@
                         <div class="col-md-6">
                             <div class="input-group mb-2">
                                 <input type="text" class="form-control" @bind="discountCode"
-                                       placeholder="Discount code" />
+                                placeholder="Discount code" />
                                 <button class="btn btn-primary" @onclick="ApplyDiscountCode">
                                     Apply Code
                                 </button>
@@ -394,7 +394,7 @@
                                 <span>
                                     -@CalculateDiscountAmount(discount).ToString("0.00")
                                     <button class="btn btn-sm btn-outline-danger ms-2"
-                                            @onclick="() => RemoveAppliedDiscount(discount)">
+                                    @onclick="() => RemoveAppliedDiscount(discount)">
                                         <i class="bi bi-x"></i>
                                     </button>
                                 </span>
@@ -440,11 +440,11 @@
 
     <div class="action-buttons">
         <button @onclick="ProcessPayment" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())"
-                style="padding: 5px 10px; background: #4CAF50; color: white; border: none; cursor: pointer;">
+        style="padding: 5px 10px; background: #4CAF50; color: white; border: none; cursor: pointer;">
             Pay Now
         </button>
         <button @onclick="ShowPrintPreview" disabled="@(BillService.SelectedItems == null || !BillService.SelectedItems.Any())"
-                style="padding: 5px 10px; background: #2196F3; color: white; border: none; cursor: pointer;">
+        style="padding: 5px 10px; background: #2196F3; color: white; border: none; cursor: pointer;">
             Print Preview
         </button>
         <button @onclick="CancelOrder" style="padding: 5px 10px; background: #f44336; color: white; border: none; cursor: pointer;">
@@ -463,17 +463,17 @@
 
             <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
                 <button @onclick="RemoveOneQuantity"
-                        style="padding: 8px 15px; background: #f44336; color: white; border: none; cursor: pointer; width: 100%;">
+                style="padding: 8px 15px; background: #f44336; color: white; border: none; cursor: pointer; width: 100%;">
                     Remove 1 Quantity (Current: @SelectedItem?.Quantity)
                 </button>
 
                 <button @onclick="RemoveAllQuantities"
-                        style="padding: 8px 15px; background: #d32f2f; color: white; border: none; cursor: pointer; width: 100%;">
+                style="padding: 8px 15px; background: #d32f2f; color: white; border: none; cursor: pointer; width: 100%;">
                     Remove ALL Quantities (Delete Item)
                 </button>
 
                 <button @onclick="CancelDelete"
-                        style="padding: 8px 15px; background: #ddd; border: none; cursor: pointer; width: 100%; margin-top: 10px;">
+                style="padding: 8px 15px; background: #ddd; border: none; cursor: pointer; width: 100%; margin-top: 10px;">
                     Cancel
                 </button>
             </div>
@@ -671,7 +671,8 @@
     // Calculated totals
     private decimal subtotal => BillService.SelectedItems?.Sum(item => item.BasePrice * item.Quantity) ?? 0;
     private decimal totalDiscount => appliedDiscounts.Sum(d => CalculateDiscountAmount(d));
-    private decimal subtotalAfterDiscount => subtotal - totalDiscount;
+    private decimal subtotalAfterDiscount =>
+         Math.Max(subtotal - totalDiscount, 0); 
     private decimal taxRate => (businessDetails?.DefaultTaxRate ?? 15) / 100m;
     private decimal taxAmount => subtotalAfterDiscount * taxRate;
     private decimal totalWithTax => subtotalAfterDiscount + taxAmount;
@@ -915,44 +916,51 @@
 
     private async Task ConfirmPayment()
     {
-        var transaction = new BusinessTransaction
-            {
-                TransactionId = currentTransactionId,
-                Items = BillService.SelectedItems.Select(i => new TransactionItem
-                {
-                    ProductName = i.Name,
-                    UnitPrice = i.BasePrice,
-                    Quantity = i.Quantity
-                }).ToList(),
-                SubTotal = subtotal,
-                Discount = totalDiscount,
-                Tax = taxAmount,
-                Total = totalWithTax,
-                PaymentMethod = selectedPaymentMethod,
-                AmountReceived = amountReceived,
-                ChangeAmount = amountReceived - totalWithTax,
-                TransactionDate = DateTime.Now,
-                AppliedDiscounts = appliedDiscounts
-            };
-
-        showReceiptModal = false;
-
-        // Generate codes if enabled
-        if (businessDetails?.IncludeBarcode == true || businessDetails?.IncludeQRCode == true)
+        try
         {
-            await Task.WhenAll(
-                businessDetails.IncludeQRCode ? GenerateQRCode() : Task.CompletedTask,
-                businessDetails.IncludeBarcode ? GenerateBarcode() : Task.CompletedTask
-            );
+
+            var transaction = new BusinessTransaction
+                {
+                    TransactionId = currentTransactionId,
+                    Items = BillService.SelectedItems.Select(i => new TransactionItem
+                    {
+                        ProductName = i.Name,
+                        UnitPrice = i.BasePrice,
+                        Quantity = i.Quantity
+                    }).ToList(),
+                    SubTotal = subtotal,
+                    Discount = totalDiscount,
+                    Tax = taxAmount,
+                    Total = totalWithTax,
+                    PaymentMethod = selectedPaymentMethod,
+                    AmountReceived = amountReceived,
+                    ChangeAmount = amountReceived - totalWithTax,
+                    TransactionDate = DateTime.Now,
+                    AppliedDiscounts = appliedDiscounts
+                };
+
+            
+            await TransactionService.SaveTransactionAsync(transaction);
+            await BillService.ClearCart();
+            
+            appliedDiscounts.Clear();
+           
         }
-
-        await TransactionService.SaveTransactionAsync(transaction);
-        await BillService.ClearCart();
-        ShowPaymentModal = false;
-
+       
+       		
+     catch (Exception ex)
+    {
+            // Handle error (log/show message)
+            Console.WriteLine($"Payment failed: {ex.Message}");
+        }
+    finally
+    {
+            ShowPaymentModal = false;
+        }
         // Show receipt after payment
-        showReceiptModal = true;
+        showReceiptModal = false;
     }
+
 
     private async Task CancelOrder()
     {

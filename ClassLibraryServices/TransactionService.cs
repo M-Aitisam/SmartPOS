@@ -25,6 +25,18 @@ namespace ClassLibraryServices
                 transaction.Id ??= Guid.NewGuid().ToString();
                 transaction.TransactionDate = DateTime.UtcNow;
 
+                // Calculate totals if not already set
+                if (transaction.SubTotal == 0)
+                {
+                    transaction.SubTotal = transaction.Items.Sum(i => i.UnitPrice * i.Quantity);
+                }
+
+                // Ensure discounts are properly tracked
+                foreach (var discount in transaction.AppliedDiscounts)
+                {
+                    _context.Entry(discount).State = EntityState.Added;
+                }
+
                 _context.Transactions.Add(transaction);
                 await _context.SaveChangesAsync();
             }
