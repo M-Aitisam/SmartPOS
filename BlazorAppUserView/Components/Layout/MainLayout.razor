@@ -677,10 +677,10 @@
 
 @code {
     private string? businessLogoUrl;
-    private string businessName = "My Business";
-    private string userName = "John Doe";
+    private string businessName = " ";
+    private string userName = "Aitisam Ahmed ";
     private string userRole = "Admin";
-    private string userInitials = "JD";
+    private string userInitials = "AA";
     private bool isSidebarExpanded = false;
 
     protected override async Task OnInitializedAsync()
@@ -723,7 +723,7 @@
     {
         if (business?.BusinessDetails != null)
         {
-            businessName = business.BusinessDetails.BusinessName ?? "My Business";
+            businessName = business.BusinessDetails.BusinessName ?? "Pakistani Cafe";
 
             if (business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0)
             {
@@ -780,6 +780,7 @@
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         return uri.AbsolutePath.Contains("businessregistration", StringComparison.OrdinalIgnoreCase) ||
                uri.AbsolutePath.Equals("/login", StringComparison.OrdinalIgnoreCase) ||
+               uri.AbsolutePath.Equals("/dashboard", StringComparison.OrdinalIgnoreCase) ||
                uri.AbsolutePath.Equals("/", StringComparison.OrdinalIgnoreCase);
     }
     public void Dispose()
