@@ -4,16 +4,19 @@
 
 namespace ClassLibraryDAL.Migrations
 {
-    public partial class SalesPage : Migration
+    /// <inheritdoc />
+    public partial class WorkingFIzx : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Empty migration since column already exists
+
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Empty since we didn't actually add anything
+
         }
     }
 }

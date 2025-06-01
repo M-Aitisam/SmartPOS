@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,7 +52,6 @@ City Index: 02025
         public string ReceiptFooter { get; set; } = @"
 -----------------------------
 THANKS FOR Comming!
-We appreciate your business.
 Visit us again soon!
 ";
 
@@ -77,6 +77,9 @@ Visit us again soon!
         [DataType(DataType.Password)]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long")]
         public string? Password { get; set; }
+
+
+
         public bool EnableDiscounts { get; set; } = true;
         public List<Discount> DefaultDiscounts { get; set; } = new List<Discount>();
 

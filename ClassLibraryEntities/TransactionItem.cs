@@ -7,6 +7,7 @@ namespace ClassLibraryEntities
         [Key]
         public int Id { get; set; }
         // Remove this line: public string? TransactionID { get; set; }
+        public bool IsRateListItem { get; set; }
         public int ProductID { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public decimal UnitPrice { get; set; }

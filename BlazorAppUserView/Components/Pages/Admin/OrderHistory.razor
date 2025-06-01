@@ -22,7 +22,6 @@
                 <button class="btn btn-secondary" @onclick="PrintBills">
                     <i class="fas fa-print"></i> Print
                 </button>
-
             </div>
         </div>
     </div>
@@ -70,7 +69,16 @@
                             <td>@transaction.TransactionDate.ToString("g")</td>
                             <td>@transaction.Items.Sum(i => i.Quantity)</td>
                             <td class="text-end">@transaction.SubTotal.ToString("C")</td>
-                            <td class="text-end">@transaction.Discount.ToString("C")</td>
+                            <td class="text-end">
+                                @if (!transaction.Items.Any(i => i.IsRateListItem))
+                                {
+                                    @transaction.Discount.ToString("C")
+                                }
+                                else
+                                {
+                                    <span>N/A</span>
+                                }
+                            </td>
                             <td class="text-end">@transaction.Tax.ToString("C")</td>
                             <td class="text-end">@transaction.Total.ToString("C")</td>
                             <td class="text-end">@transaction.PaymentMethod</td>
@@ -81,6 +89,7 @@
         </table>
     </div>
 </div>
+
 @code {
     private List<BusinessTransaction> transactions = new();
     private string searchText = string.Empty;
@@ -148,16 +157,18 @@
             var csvContent = "Bill ID,Customer,Date,Items,Subtotal,Discount,Total\n";
             foreach (var t in filteredTransactions)
             {
+                var discountValue = t.Items.Any(i => i.IsRateListItem) ? "N/A" : t.Discount.ToString();
+
                 csvContent += $"{t.Id},\"{t.CustomerName ?? "Walk-in"}\"," +
                             $"{t.TransactionDate:dd-MM-yyyy HH:mm}," +
                             $"{t.Items.Sum(i => i.Quantity)}," +
                             $"{t.SubTotal}," +
-                            $"{t.Discount}," +
+                            $"{discountValue}," +
                             $"{t.Total}\n";
             }
 
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-var fileName = $"Bills_{timestamp}.csv";
+            var fileName = $"Bills_{timestamp}.csv";
             await JS.InvokeVoidAsync("downloadCSV", csvContent, fileName);
         }
         catch (Exception ex)
