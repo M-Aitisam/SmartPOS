@@ -295,9 +295,27 @@
                         <div class="col-md-6 mb-4">
                             <label class="form-label required-field">Time Zone</label>
                             <InputSelect @bind-Value="generalInfo.TimeZone" class="form-select">
-                                <option value="IST - Indian Standard Time - GMT +5:30">IST - Indian Standard Time - GMT +5:30</option>
-                                <option value="GMT - Greenwich Mean Time">GMT - Greenwich Mean Time</option>
+
+                                <option value="PST - Pakistan Standard Time - GMT +5:00">PST - Pakistan Standard Time - GMT +5:00</option>
+
+                                <option value="GMT - Greenwich Mean Time - GMT 0:00">GMT - Greenwich Mean Time - GMT 0:00</option>
+
                                 <option value="EST - Eastern Standard Time - GMT -5:00">EST - Eastern Standard Time - GMT -5:00</option>
+
+                                <option value="CST - Central Standard Time - GMT -6:00">CST - Central Standard Time - GMT -6:00</option>
+
+                                <option value="MST - Mountain Standard Time - GMT -7:00">MST - Mountain Standard Time - GMT -7:00</option>
+
+                                <option value="PST - Pacific Standard Time - GMT -8:00">PST - Pacific Standard Time - GMT -8:00</option>
+
+                                <option value="CET - Central European Time - GMT +1:00">CET - Central European Time - GMT +1:00</option>
+
+                                <option value="EET - Eastern European Time - GMT +2:00">EET - Eastern European Time - GMT +2:00</option>
+
+                                <option value="JST - Japan Standard Time - GMT +9:00">JST - Japan Standard Time - GMT +9:00</option>
+
+                                <option value="AEST - Australian Eastern Standard Time - GMT +10:00">AEST - Australian Eastern Standard Time - GMT +10:00</option>
+
                             </InputSelect>
                         </div>
                     </div>
@@ -312,12 +330,12 @@
                             <label class="form-label required-field">Country</label>
                             <InputSelect @bind-Value="generalInfo.Country" class="form-select">
                                 <option value="">Select Country</option>
-                                <option value="India">India</option>
+                                <option value="Pakistan">Pakistan</option>
                                 <option value="USA">USA</option>
                                 <option value="UK">UK</option>
                                 <option value="Canada">Canada</option>
                                 <option value="Australia">Australia</option>
-                                <option value="Pakistan">Pakistan</option>
+                               
                             </InputSelect>
                             <ValidationMessage For="@(() => generalInfo.Country)" class="validation-message" />
                         </div>
@@ -581,73 +599,14 @@
 
                 <!-- Receipt Preview Section -->
                 <div class="review-section">
-                    <h5 class="mb-3">Receipt Preview</h5>
-                    <div class="review-card print-receipt">
-                        <div class="review-card-body">
-                            <!-- Receipt Header -->
-                            @if (!string.IsNullOrEmpty(businessDetails.ReceiptHeader))
-                            {
-                                <div class="text-center mb-3">
-                                    @((MarkupString)businessDetails.ReceiptHeader.Replace("\n", "<br/>"))
-                                </div>
-                                <hr />
-                            }
-
-                            <!-- Receipt Body -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between">
-                                    <span>Sample Item 1</span>
-                                    <span>₹100.00</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Sample Item 2</span>
-                                    <span>₹200.00</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Sample Item 3</span>
-                                    <span>₹150.00</span>
-                                </div>
-                            </div>
-
-                            <hr />
-
-                            <!-- Totals -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between">
-                                    <span>Subtotal:</span>
-                                    <span>₹450.00</span>
-                                </div>
-                                @if (businessDetails.DefaultTaxRate > 0)
-                                {
-                                    <div class="d-flex justify-content-between">
-                                        <span>Tax (@businessDetails.DefaultTaxRate%):</span>
-                                        <span>₹@(450 * businessDetails.DefaultTaxRate / 100)</span>
-                                    </div>
-                                }
-                                <div class="d-flex justify-content-between fw-bold">
-                                    <span>Total:</span>
-                                    <span>₹@(450 + (450 * businessDetails.DefaultTaxRate / 100))</span>
-                                </div>
-                            </div>
-
-                            <!-- Barcode -->
+                   
+                      <!-- Barcode -->
                             @if (businessDetails.IncludeBarcode)
                             {
                                 <div class="text-center mt-3">
                                     <svg id="receiptBarcode"></svg>
                                 </div>
                             }
-
-                            <!-- Receipt Footer -->
-                            @if (!string.IsNullOrEmpty(businessDetails.ReceiptFooter))
-                            {
-                                <hr />
-                                <div class="text-center mt-3 small">
-                                    @((MarkupString)businessDetails.ReceiptFooter.Replace("\n", "<br/>"))
-                                </div>
-                            }
-                        </div>
-                    </div>
 
                     <div class="d-flex justify-content-end mt-3">
                         <button class="btn btn-primary" @onclick="PrintReceipt">Print Receipt</button>
