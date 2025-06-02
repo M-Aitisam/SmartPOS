@@ -1,8 +1,8 @@
 ﻿@page "/login"
 @inject NavigationManager Navigation
 @inject IAdminService AdminService
-@inject StateContainerService StateContainer;
-@using System.ComponentModel.DataAnnotations;
+@inject StateContainerService StateContainer
+@using System.ComponentModel.DataAnnotations
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
@@ -69,6 +69,125 @@
     </div>
 </div>
 
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+    private string? logoUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBusinessLogo();
+    }
+
+    private async Task LoadBusinessLogo()
+    {
+        try
+        {
+            if (StateContainer.CurrentBusiness?.BusinessDetails?.LogoData != null)
+            {
+                logoUrl = $"data:image/png;base64,{Convert.ToBase64String(StateContainer.CurrentBusiness.BusinessDetails.LogoData)}";
+                return;
+            }
+
+            var logoData = await AdminService.GetBusinessLogo("aitisamahmed24@gmail.com");
+            if (logoData != null)
+            {
+                logoUrl = $"data:image/png;base64,{Convert.ToBase64String(logoData)}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading business logo: {ex.Message}");
+        }
+    }
+
+        private async Task HandleLogin()
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            try
+            {
+                if (string.IsNullOrEmpty(loginModel.Email))
+                {
+                    errorMessage = "Email is required";
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(loginModel.Password))
+                {
+                    errorMessage = "Password is required";
+                    return;
+                }
+
+                var isValid = await AdminService.VerifyCredentials(loginModel.Email, loginModel.Password);
+
+                if (isValid)
+                {
+                    var business = await AdminService.GetBusinessByEmail(loginModel.Email);
+                    if (business != null)
+                    {
+                        StateContainer.CurrentBusiness = business;
+                    }
+
+                    if (loginModel.RememberMe)
+                    {
+                        await JS.InvokeVoidAsync("localStorage.setItem", "authToken", "generated-token");
+                    }
+
+                    // Show success alert - CORRECTED SYNTAX
+                    await JS.InvokeVoidAsync("Swal.fire", new
+                    {
+                        title = "Login Successful!",
+                        text = "You're being redirected to your dashboard",
+                        icon = "success",
+                        showConfirmButton = false,
+                        timer = 1500,
+                        background = "#ffffff",
+                        backdrop = "rgba(108,92,231,0.4)",
+                        customClass = new
+                        {
+                            popup = "custom-swal-popup",
+                            title = "custom-swal-title"
+                        }
+                    });
+
+                    // Navigate after alert closes
+                    await Task.Delay(1500);
+                    Navigation.NavigateTo("", forceLoad: true);
+                }
+                else
+                {
+                    errorMessage = "Invalid email or password";
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Login failed: {ex.Message}";
+            }
+            finally
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; }
+    }
+}
+
 <style>
     .login-container {
         display: flex;
@@ -79,13 +198,6 @@
         padding: 2rem;
     }
 
-    .logo {
-        max-height: 80px;
-        max-width: 100%;
-        object-fit: contain;
-        margin: 0 auto;
-        display: block;
-    }
     .login-card {
         background: white;
         border-radius: 12px;
@@ -246,6 +358,17 @@
         }
     }
 
+    /* SweetAlert Customizations */
+    .custom-swal-popup {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3) !important;
+    }
+
+    .custom-swal-title {
+        color: #6c5ce7 !important;
+        font-weight: 700 !important;
+    }
+
     @@media (max-width: 576px) {
         .login-container {
             padding: 1rem;
@@ -256,93 +379,3 @@
         }
     }
 </style>
-
-@code {
-    private LoginModel loginModel = new();
-    private bool isLoading = false;
-    private string errorMessage = string.Empty;
-    private string? logoUrl;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadBusinessLogo();
-    }
-
-    private async Task LoadBusinessLogo()
-    {
-        try
-        {
-            // Try to get from StateContainer first
-            if (StateContainer.CurrentBusiness?.BusinessDetails?.LogoData != null)
-            {
-                logoUrl = $"data:image/png;base64,{Convert.ToBase64String(StateContainer.CurrentBusiness.BusinessDetails.LogoData)}";
-                return;
-            }
-
-            // Get logo for the first active business
-            var logoData = await AdminService.GetBusinessLogo("your_default_business_email@example.com");
-            if (logoData != null)
-            {
-                logoUrl = $"data:image/png;base64,{Convert.ToBase64String(logoData)}";
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading business logo: {ex.Message}");
-            // Fallback to default logo
-        }
-    }
-    private async Task HandleLogin()
-    {
-        isLoading = true;
-        errorMessage = string.Empty;
-        StateHasChanged();
-
-        try
-        {
-            if (string.IsNullOrEmpty(loginModel.Email))
-            {
-                errorMessage = "Email is required";
-                return;
-            }
-
-            if (string.IsNullOrEmpty(loginModel.Password))
-            {
-                errorMessage = "Password is required";
-                return;
-            }
-
-            var isValid = await AdminService.VerifyCredentials(loginModel.Email, loginModel.Password);
-
-            if (isValid)
-            {
-                var business = await AdminService.GetBusinessByEmail(loginModel.Email);
-                if (business != null)
-                {
-                    // Update state container with current business
-                    StateContainer.CurrentBusiness = business;
-                }
-
-                if (loginModel.RememberMe)
-                {
-                    await JS.InvokeVoidAsync("localStorage.setItem", "authToken", "aitisam");
-                }
-
-                Navigation.NavigateTo("/dashboard");
-            }
-            else
-            {
-                errorMessage = "Invalid email or password";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Login failed: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
-    }
-}

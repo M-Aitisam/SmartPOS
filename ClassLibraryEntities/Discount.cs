@@ -1,32 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using ClassLibraryEntities;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
-namespace ClassLibraryEntities
+public class Discount
 {
-    public class Discount
-    {
-        [Key]
-        public int DiscountId { get; set; }
+    [Key]
+    public int DiscountId { get; set; }
 
-        public string Name { get; set; } = string.Empty;
-        public decimal Value { get; set; }
-        public bool IsPercentage { get; set; } = true;
-        public string Code { get; set; } = string.Empty;
-        public string? Description { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Value { get; set; }
+    public bool IsPercentage { get; set; } = true;
+    public string Code { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
-        // Remove these conflicting properties:
-        // public string? Business { get; set; }
-        // public int BusinessId { get; set; }
+    public int BusinessModelId { get; set; }
+    public int BusinessDetailsId { get; set; }  // Add this
+    public string BusinessTransactionId { get; set; } = string.Empty;  // Add this
 
-        // Keep only one reference to BusinessModel
-        public int BusinessModelId { get; set; }
+    [ForeignKey("BusinessModelId")]
+    public BusinessModel? BusinessModel { get; set; }
 
-        [ForeignKey("BusinessModelId")]
-        public BusinessModel? BusinessModel { get; set; }
-    }
+    [ForeignKey("BusinessDetailsId")]
+    public BusinessDetails? BusinessDetails { get; set; }
+
+    [ForeignKey("BusinessTransactionId")]
+    public BusinessTransaction? BusinessTransaction { get; set; }
 }

@@ -918,7 +918,6 @@
     {
         try
         {
-
             var transaction = new BusinessTransaction
                 {
                     TransactionId = currentTransactionId,
@@ -936,31 +935,34 @@
                     AmountReceived = amountReceived,
                     ChangeAmount = amountReceived - totalWithTax,
                     TransactionDate = DateTime.Now,
-                    AppliedDiscounts = appliedDiscounts
+                    AppliedDiscounts = appliedDiscounts.Select(d => new Discount
+                    {
+                    // Add required foreign key values here
+                        BusinessDetailsId = businessDetails?.Id ?? 0, // Provide actual business details ID
+                        BusinessModelId = 1, // Provide actual business model ID if needed
+                        BusinessTransactionId = currentTransactionId,
+                        Name = d.Name,
+                        Value = d.Value,
+                        IsPercentage = d.IsPercentage,
+                        Code = d.Code,
+                        Description = d.Description
+                    }).ToList()
                 };
 
-            
             await TransactionService.SaveTransactionAsync(transaction);
             await BillService.ClearCart();
-            
             appliedDiscounts.Clear();
-           
         }
-       
-       		
-     catch (Exception ex)
-    {
-            // Handle error (log/show message)
+        catch (Exception ex)
+        {
             Console.WriteLine($"Payment failed: {ex.Message}");
         }
-    finally
-    {
+        finally
+        {
             ShowPaymentModal = false;
         }
-        // Show receipt after payment
         showReceiptModal = false;
     }
-
 
     private async Task CancelOrder()
     {

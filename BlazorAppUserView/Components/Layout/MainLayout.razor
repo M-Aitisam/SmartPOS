@@ -471,10 +471,10 @@
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#pages"
+                        <a href="/dashboard" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#pages"
                            aria-expanded="false" aria-controls="pages">
                             <i class="fa-solid fa-store pe-2"></i>
-                            Business
+                            Dashboard
                         </a>
                         <ul id="pages" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
 
@@ -742,8 +742,8 @@
         }
         else
         {
-            userName = " Aitisam AHmed ";
-            userInitials = "AA";
+            userName = $"{business.GeneralInformation.FirstName} {business.GeneralInformation.LastName}";
+            userInitials = GetInitials(userName);
         }
 
         // Force UI update
