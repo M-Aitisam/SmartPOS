@@ -26,10 +26,10 @@ namespace ClassLibraryEntities
         public string Email { get; set; } = string.Empty;
 
         public string TimeZone { get; set; } = "IST - Pakistan Standard Time - GMT +5:30";
-
+        
         [Required(ErrorMessage = "Date of Birth is required")]
+        [MinimumAge(15, ErrorMessage = "You must be at least 15 years old.")]
         public DateTime? DateOfBirth { get; set; }
-
         [Required(ErrorMessage = "Country is required")]
         public string Country { get; set; } = string.Empty;
 

@@ -60,7 +60,7 @@ Visit us again soon!
         public bool IncludeBarcode { get; set; } = true;
         public bool IncludeQRCode { get; set; } = true;
         public string? FeedbackUrl { get; set; }
-        public string? ManagerName { get; set; } = "Aitisam Ahmed";
+        public string? ManagerName { get; set; } = "";
         public decimal DefaultTaxRate { get; set; } = 15;
 
         public string AddressLine1 { get; set; } = string.Empty;
