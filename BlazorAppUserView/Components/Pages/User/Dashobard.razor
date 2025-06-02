@@ -31,7 +31,7 @@
                 <div class="stat-card">
                     <i class="fas fa-users"></i>
                     <div>
-                        <span class="stat-value">1</span>
+                        <span class="stat-value">@(StateContainer.IsAuthenticated ? "1" : "0")</span>
                         <span class="stat-label">Staff Online</span>
                     </div>
                 </div>
@@ -41,9 +41,9 @@
         <div class="dashboard-grid">
             @foreach (var item in DashboardItems)
             {
-                <div class="dashboard-card @(StateContainer.IsRegistered || item.Route == "businessdetails" || item.Route == "login" ? "" : "locked-card")"
+                <div class="dashboard-card @(IsCardUnlocked(item.Route) ? "" : "locked-card")"
                      @onclick="() => HandleCardClick(item.Route)">
-                    @if (!StateContainer.IsRegistered && item.Route != "businessdetails" && item.Route != "login")
+                    @if (!IsCardUnlocked(item.Route))
                     {
                         <div class="card-lock">
                             <i class="fas fa-lock"></i>
@@ -66,7 +66,6 @@
 </div>
 
 @code {
-  
     private List<DashboardItem> DashboardItems = new()
     {
         new DashboardItem("Business Register", "fas fa-store", "businessdetails"),
@@ -81,15 +80,32 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // No need to check registration status separately
+        // Check authentication status when component initializes
+        await CheckAuthStatus();
         await base.OnInitializedAsync();
     }
 
-    private async Task<bool> CheckRegistrationStatus()
+    private async Task CheckAuthStatus()
     {
-        // Simulate checking registration status
-        await Task.Delay(100);
-        return false; // Default to false for demo
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            StateContainer.IsAuthenticated = !string.IsNullOrEmpty(token);
+        }
+        catch
+        {
+            StateContainer.IsAuthenticated = false;
+        }
+    }
+
+    private bool IsCardUnlocked(string route)
+    {
+        // Always unlocked cards
+        if (route == "businessdetails" || route == "login")
+            return true;
+
+        // For other cards, check both authentication and registration
+        return StateContainer.IsAuthenticated && StateContainer.IsRegistered;
     }
 
     private string GetCardDescription(string label)
@@ -110,36 +126,71 @@
 
     private async Task HandleCardClick(string route)
     {
-        // Check StateContainer.IsRegistered instead of local variable
-        if (route != "businessdetails" && !StateContainer.IsRegistered)
+        if (!IsCardUnlocked(route))
         {
-            await ShowRegistrationAlert();
+            if (!StateContainer.IsAuthenticated)
+            {
+                await ShowLoginAlert();
+            }
+            else if (!StateContainer.IsRegistered)
+            {
+                await ShowRegistrationAlert();
+            }
             return;
         }
+
         NavigationManager.NavigateTo($"/{route}");
+    }
+
+    private async Task ShowLoginAlert()
+    {
+        var result = await JSRuntime.InvokeAsync<SweetAlertResult>("Swal.fire", new
+        {
+            title = "Authentication Required",
+            html = "<div style='text-align:center;'><i class='fas fa-user-lock' style='font-size:48px;color:#6c5ce7;margin-bottom:20px;'></i><p>Please login to access this feature</p></div>",
+            icon = "info",
+            showCancelButton = true,
+            confirmButtonText = "Go to Login",
+            cancelButtonText = "Cancel",
+            confirmButtonColor = "#6c5ce7",
+            background = "#ffffff",
+            backdrop = "rgba(108,92,231,0.4)"
+        });
+
+        if (result.IsConfirmed)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
     }
 
     private async Task ShowRegistrationAlert()
     {
-        await JSRuntime.InvokeVoidAsync("Swal.fire", new
+        var result = await JSRuntime.InvokeAsync<SweetAlertResult>("Swal.fire", new
         {
             title = "Complete Registration First",
             html = "<div style='text-align:center;'><i class='fas fa-store-alt' style='font-size:48px;color:#6c5ce7;margin-bottom:20px;'></i><p>Please complete your business registration to unlock all features</p></div>",
             icon = "info",
-            showCancelButton = false,
+            showCancelButton = true,
             confirmButtonText = "Go to Registration",
+            cancelButtonText = "Cancel",
             confirmButtonColor = "#6c5ce7",
             background = "#ffffff",
-            backdrop = "rgba(108,92,231,0.4)",
-            customClass = new
-            {
-                popup = "custom-swal-popup",
-                title = "custom-swal-title",
-                confirmButton = "custom-swal-confirm-button"
-            }
+            backdrop = "rgba(108,92,231,0.4)"
         });
+
+        if (result.IsConfirmed)
+        {
+            NavigationManager.NavigateTo("/businessdetails");
+        }
     }
 
+    // Add this class to your code to handle SweetAlert result
+    public class SweetAlertResult
+    {
+        public bool IsConfirmed { get; set; }
+        public bool IsDenied { get; set; }
+        public bool IsDismissed { get; set; }
+    }
     private class DashboardItem
     {
         public string Label { get; }
@@ -154,7 +205,6 @@
         }
     }
 }
-
 <style>
     /* Base Styles */
     :root {

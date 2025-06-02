@@ -9,19 +9,9 @@ namespace ClassLibraryServices
         private List<Product>? _products;
 
         private bool _isRegistered;
-
-        public bool IsRegistered
-        {
-            get => _isRegistered;
-            set
-            {
-                if (_isRegistered != value)
-                {
-                    _isRegistered = value;
-                    NotifyStateChanged();
-                }
-            }
-        }
+        public bool IsAuthenticated { get; set; }
+        public bool IsRegistered { get; set; }
+       
         public List<BusinessCategory> Categories
         {
             get => _categories ?? new();

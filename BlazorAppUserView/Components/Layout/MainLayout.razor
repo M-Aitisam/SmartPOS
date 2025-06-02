@@ -462,48 +462,55 @@
                 <!-- Sidebar Navigation -->
                 <ul class="sidebar-nav">
                     <li class="sidebar-header">
-                        Tools & Components
+                        Main Menu
                     </li>
+
+                    <!-- Dashboard Section -->
                     <li class="sidebar-item">
-                        <a href="/profile" class="sidebar-link">
-                            <i class="fa-solid fa-user pe-2"></i>
-                            Profile
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="/dashboard" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#pages"
-                           aria-expanded="false" aria-controls="pages">
+                        <a href="/dashboard" class="sidebar-link">
                             <i class="fa-solid fa-store pe-2"></i>
                             Dashboard
                         </a>
-                        <ul id="pages" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                    </li>
 
+                    <!-- Authentication Section -->
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#auth"
+                           aria-expanded="false" aria-controls="auth">
+                            <i class="fa-solid fa-user-shield pe-2"></i>
+                            Authentication
+                        </a>
+                        <ul id="auth" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
                                 <a href="/login" class="sidebar-link">Login</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/dashboard" class="sidebar-link">Dashboard</a>
+                                <a href="/businessdetails" class="sidebar-link">Register</a>
                             </li>
+                        </ul>
+                    </li>
+
+                    <!-- Products Management -->
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#products"
+                           aria-expanded="false" aria-controls="products">
+                            <i class="fa-solid fa-boxes pe-2"></i>
+                            Products
+                        </a>
+                        <ul id="products" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
                                 <a href="/categories" class="sidebar-link">Categories</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/product" class="sidebar-link">Products</a>
+                                <a href="/product" class="sidebar-link">Products List</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/menu" class="sidebar-link">Menu</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="/adminpage" class="sidebar-link">Admin Page</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="/order-history" class="sidebar-link">Order History</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="/salesreport" class="sidebar-link"> Sales Report</a>
+                                <a href="/menu" class="sidebar-link">Menu Management</a>
                             </li>
                         </ul>
                     </li>
+
+                    <!-- Sales Section -->
                     <li class="sidebar-item">
                         <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#sales"
                            aria-expanded="false" aria-controls="sales">
@@ -512,24 +519,39 @@
                         </a>
                         <ul id="sales" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
-                                <a href="/pos" class="sidebar-link">POS</a>
+                                <a href="/adminpage" class="sidebar-link">POS System</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="/orders" class="sidebar-link">Orders</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="/transactions" class="sidebar-link">Transactions</a>
+                                <a href="/order-history" class="sidebar-link">Order History</a>
                             </li>
                         </ul>
                     </li>
+
+                    <!-- Reports Section -->
                     <li class="sidebar-item">
-                        <a href="/reports" class="sidebar-link">
+                        <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse" data-bs-target="#reports"
+                           aria-expanded="false" aria-controls="reports">
                             <i class="fa-solid fa-chart-bar pe-2"></i>
                             Reports
                         </a>
+                        <ul id="reports" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                            <li class="sidebar-item">
+                                <a href="/salesreport" class="sidebar-link">Sales Report</a>
+                            </li>
+                        </ul>
                     </li>
+
+                    <!-- Administration Section -->
                     <li class="sidebar-item">
-                        <a href="/settings" class="sidebar-link">
+                        <a href="/adminpage" class="sidebar-link">
+                            <i class="fa-solid fa-user-cog pe-2"></i>
+                            Administration
+                        </a>
+                    </li>
+
+                    <!-- Settings Section -->
+                    <li class="sidebar-item">
+                        <a href="/" class="sidebar-link">
                             <i class="fa-solid fa-cog pe-2"></i>
                             Settings
                         </a>
@@ -570,14 +592,14 @@
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header">Account</h6></li>
-                        <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i> Profile</a></li>
-                        <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+                        
+                        <li><a class="dropdown-item" href="/"><i class="fas fa-cog"></i> Settings</a></li>
                         <li><a class="dropdown-item" href="/billing"><i class="fas fa-credit-card"></i> Billing Plan</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/pricing"><i class="fas fa-tag"></i> Pricing</a></li>
-                        <li><a class="dropdown-item" href="/faq"><i class="fas fa-question-circle"></i> FAQ</a></li>
+                       
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        <li><a class="dropdown-item" href="/"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </div>
             </nav>
