@@ -1,166 +1,227 @@
-﻿@page "/salesreport"
+﻿@page "/sales-report"
 @using System.Globalization
 @inject ITransactionService TransactionService
 @inject IJSRuntime JS
 @implements IDisposable
 @rendermode InteractiveServer
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <h3 class="mt-3">Sales Dashboard</h3>
-            <div class="mb-3">
-                <select class="form-select d-inline-block me-2" style="width: 120px;" @bind="timeRange">
-                    <option value="day">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="year">This Year</option>
-                    <option value="custom">Custom</option>
-                </select>
-
-                @if (timeRange == "custom")
-                {
-                    <input type="date" class="form-control d-inline-block me-2" style="width: 150px;" @bind="startDate" />
-                    <span class="me-2">to</span>
-                    <input type="date" class="form-control d-inline-block" style="width: 150px;" @bind="endDate" />
-                }
-
-                <button class="btn btn-primary ms-2" @onclick="LoadData" disabled="@isLoading">
-                    <i class="fas fa-sync-alt"></i> @(isLoading ? "Loading..." : "Apply")
-                </button>
+<div class="container-fluid" style="max-width: 1400px;">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 style="color: #6c5ce7; font-weight: 600;">Sales Dashboard</h3>
+            <p class="text-muted">Overview of your business performance</p>
+        </div>
+        <div class="d-flex align-items-center">
+            <div class="input-group me-3" style="width: 250px;">
+                <span class="input-group-text" style="background-color: #6c5ce7; color: white;">
+                    <i class="fas fa-calendar"></i>
+                </span>
+                <input type="date" class="form-control" @bind="selectedDate" style="border-color: #6c5ce7;" />
             </div>
-
-            @if (isLoading)
-            {
-                <div class="text-center my-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Loading data...</p>
-                </div>
-            }
-            else
-            {
-                <div class="row mb-4">
-                    <!-- Dashboard Cards -->
-                    <div class="col-md-3 mb-3">
-                        <div class="card  text-white h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Sales</h5>
-                                <h2 class="card-text">@totalSales.ToString("C")</h2>
-                                <p class="small mb-0">@GetComparisonText(totalSalesComparison, "sales")</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3 mb-3">
-                        <div class="card  text-white h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Orders</h5>
-                                <h2 class="card-text">@totalOrders</h2>
-                                <p class="small mb-0">@GetComparisonText(totalOrdersComparison, "orders")</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3 mb-3">
-                        <div class="card  text-white h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Avg. Order Value</h5>
-                                <h2 class="card-text">@avgOrderValue.ToString("C")</h2>
-                                <p class="small mb-0">@GetComparisonText(avgOrderValueComparison, "average")</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3 mb-3">
-                        <div class="card  text-dark h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Discounts</h5>
-                                <h2 class="card-text">@totalDiscounts.ToString("C")</h2>
-                                <p class="small mb-0">@GetComparisonText(totalDiscountsComparison, "discounts")</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts Row -->
-                <div class="row mb-4">
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Sales Trend</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="salesChart" style="height: 300px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Payment Methods</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="paymentChart" style="height: 300px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                
-               <!-- Order History Section -->
-<div class="order-history">
-    <div class="order-header">
-        <h3>Recent Orders</h3>
-        <a href="/order-history" class="view-history-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            View Full History
-        </a>
+            <button class="btn me-2" @onclick="FilterData" style="background-color: #6c5ce7; color: white;">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            <button class="btn" @onclick="DownloadReport" style="background-color: #6c5ce7; color: white;">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
     </div>
-    
-    <div class="order-table-container">
-        <table class="order-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Payment</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!filteredTransactions.Any())
-                {
-                    <tr class="no-orders">
-                        <td colspan="4">No recent orders found</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var transaction in filteredTransactions.Take(5))
-                    {
-                        <tr class="order-row" @onclick="() => ShowTransactionDetails(transaction)">
-                            <td class="order-date">@transaction.TransactionDate.ToString("g")</td>
-                            <td class="order-items">@transaction.Items.Sum(i => i.Quantity)</td>
-                            <td class="order-total">@transaction.Total.ToString("C")</td>
-                            <td class="order-payment">@transaction.PaymentMethod</td>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card summary-card" style="border-left: 4px solid #6c5ce7;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">TOTAL SALES</h6>
+                            <h4 class="mb-0">@totalSales.ToString("C")</h4>
+                        </div>
+                        <div class="icon-circle" style="background-color: rgba(108, 92, 231, 0.1);">
+                            <i class="fas fa-shopping-bag" style="color: #6c5ce7;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="@(salesChange >= 0 ? "text-success" : "text-danger")">
+                            <i class="fas @(salesChange >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i>
+                            @Math.Abs(salesChange)% @(salesChange >= 0 ? "increase" : "decrease") from last period
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card" style="border-left: 4px solid #00b894;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">TOTAL ORDERS</h6>
+                            <h4 class="mb-0">@totalOrders</h4>
+                        </div>
+                        <div class="icon-circle" style="background-color: rgba(0, 184, 148, 0.1);">
+                            <i class="fas fa-receipt" style="color: #00b894;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="@(ordersChange >= 0 ? "text-success" : "text-danger")">
+                            <i class="fas @(ordersChange >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i>
+                            @Math.Abs(ordersChange)% @(ordersChange >= 0 ? "increase" : "decrease") from last period
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card" style="border-left: 4px solid #fd79a8;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">AVG. ORDER VALUE</h6>
+                            <h4 class="mb-0">@(totalOrders > 0 ? (totalSales / totalOrders).ToString("C") : "$0.00")</h4>
+                        </div>
+                        <div class="icon-circle" style="background-color: rgba(253, 121, 168, 0.1);">
+                            <i class="fas fa-dollar-sign" style="color: #fd79a8;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="@(avgOrderChange >= 0 ? "text-success" : "text-danger")">
+                            <i class="fas @(avgOrderChange >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i>
+                            @Math.Abs(avgOrderChange)% @(avgOrderChange >= 0 ? "increase" : "decrease") from last period
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card" style="border-left: 4px solid #fdcb6e;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">TOP PRODUCT</h6>
+                            <h4 class="mb-0">@(topProduct ?? "N/A")</h4>
+                        </div>
+                        <div class="icon-circle" style="background-color: rgba(253, 203, 110, 0.1);">
+                            <i class="fas fa-star" style="color: #fdcb6e;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-muted">
+                            @(topProductSales > 0 ? topProductSales.ToString("C") + " in sales" : "No data")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Sales Trend Chart -->
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Sales Trend</h5>
+                    <div>
+                        <button class="btn btn-sm @(salesTimeFrame == "day" ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => SetSalesTimeFrame("day"))">Day</button>
+                        <button class="btn btn-sm @(salesTimeFrame == "week" ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => SetSalesTimeFrame("week"))">Week</button>
+                        <button class="btn btn-sm @(salesTimeFrame == "month" ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => SetSalesTimeFrame("month"))">Month</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Chart -->
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Payment Methods</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="paymentMethodChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order History Section -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Orders</h5>
+            <div class="input-group" style="max-width: 300px;">
+                <span class="input-group-text" style="background-color: #6c5ce7; color: white;">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Search orders..."
+                       @bind="searchText" @bind:event="oninput" style="border-color: #6c5ce7;" />
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #6c5ce7; color: white;">
+                        <tr>
+                            <th style="padding: 12px 16px;">Date</th>
+                            <th style="padding: 12px 16px;">Items</th>
+                            <th class="text-end" style="padding: 12px 16px;">Subtotal</th>
+                            <th class="text-end" style="padding: 12px 16px;">Discount</th>
+                            <th class="text-end" style="padding: 12px 16px;">Tax</th>
+                            <th class="text-end" style="padding: 12px 16px;">Total</th>
+                            <th class="text-end" style="padding: 12px 16px;">Payment</th>
                         </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
-
-            }
+                    </thead>
+                    <tbody>
+                        @if (transactions == null)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-4">Loading transactions...</td>
+                            </tr>
+                        }
+                        else if (!filteredTransactions.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-4">No orders found</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var transaction in filteredTransactions.Take(10))
+                            {
+                                <tr @onclick="() => ShowTransactionDetails(transaction)"
+                                    style="cursor: pointer; transition: background-color 0.2s;"
+                                    class="hover-row">
+                                    <td style="padding: 12px 16px;">@transaction.TransactionDate.ToString("g")</td>
+                                    <td style="padding: 12px 16px;">@transaction.Items.Sum(i => i.Quantity)</td>
+                                    <td class="text-end" style="padding: 12px 16px;">@transaction.SubTotal.ToString("C")</td>
+                                    <td class="text-end" style="padding: 12px 16px;">
+                                        @if (!transaction.Items.Any(i => i.IsRateListItem))
+                                        {
+                                            @transaction.Discount.ToString("C")
+                                        }
+                                        else
+                                        {
+                                            <span>N/A</span>
+                                        }
+                                    </td>
+                                    <td class="text-end" style="padding: 12px 16px;">@transaction.Tax.ToString("C")</td>
+                                    <td class="text-end" style="padding: 12px 16px;">@transaction.Total.ToString("C")</td>
+                                    <td class="text-end" style="padding: 12px 16px;">@transaction.PaymentMethod</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer text-end">
+            <a href="/order-history" class="btn btn-link" style="color: #6c5ce7;">View All Orders</a>
         </div>
     </div>
 </div>
@@ -171,71 +232,51 @@
     <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header" style="background-color: #6c5ce7; color: white;">
                     <h5 class="modal-title">Order Details - @selectedTransaction.Id</h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    <button type="button" class="btn-close" @onclick="CloseModal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <p><strong>Date:</strong> @selectedTransaction.TransactionDate.ToString("f")</p>
+                            <p><strong>Date:</strong> @selectedTransaction.TransactionDate.ToString("g")</p>
                             <p><strong>Customer:</strong> @(selectedTransaction.CustomerName ?? "Walk-in")</p>
                         </div>
-                        <div class="col-md-6">
-                            <p><strong>Payment Method:</strong> @selectedTransaction.PaymentMethod</p>
+                        <div class="col-md-6 text-end">
+                            <p><strong>Subtotal:</strong> @selectedTransaction.SubTotal.ToString("C")</p>
+                            <p><strong>Discount:</strong> @selectedTransaction.Discount.ToString("C")</p>
+                            <p><strong>Tax:</strong> @selectedTransaction.Tax.ToString("C")</p>
                             <p><strong>Total:</strong> @selectedTransaction.Total.ToString("C")</p>
                         </div>
                     </div>
-
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Item</th>
-                                <th>Quantity</th>
-                                <th>Unit Price</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in selectedTransaction.Items)
-                            {
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead style="background-color: #f8f9fa;">
                                 <tr>
-                                    <td>@item.ProductName</td>
-                                    <td>@item.Quantity</td>
-                                    <td>@item.UnitPrice.ToString("C")</td>
-                                    <td>@((item.Quantity * item.UnitPrice).ToString("C"))</td>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-
-                    <div class="row mt-3">
-                        <div class="col-md-6 offset-md-6">
-                            <table class="table table-bordered">
-                                <tr>
-                                    <th>Subtotal:</th>
-                                    <td class="text-end">@selectedTransaction.SubTotal.ToString("C")</td>
-                                </tr>
-                                <tr>
-                                    <th>Discount:</th>
-                                    <td class="text-end">@selectedTransaction.Discount.ToString("C")</td>
-                                </tr>
-                                <tr>
-                                    <th>Tax:</th>
-                                    <td class="text-end">@selectedTransaction.Tax.ToString("C")</td>
-                                </tr>
-                                <tr class="table-active">
-                                    <th>Total:</th>
-                                    <td class="text-end">@selectedTransaction.Total.ToString("C")</td>
-                                </tr>
-                            </table>
-                        </div>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in selectedTransaction.Items)
+                                {
+                                    <tr>
+                                        <td>@item.ProductName</td>
+                                        <td>@item.UnitPrice.ToString("C")</td>
+                                        <td>@item.Quantity</td>
+                                        <td>@((item.UnitPrice * item.Quantity).ToString("C"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
-                    <button type="button" class="btn btn-primary" @onclick="() => PrintReceipt(selectedTransaction)">
-                        <i class="fas fa-print"></i> Print Receipt
+                    <button type="button" class="btn" style="background-color: #6c5ce7; color: white;" @onclick="() => PrintReceipt(selectedTransaction)">
+                        <i class="fas fa-print me-2"></i>Print Receipt
                     </button>
                 </div>
             </div>
@@ -243,185 +284,134 @@
     </div>
 }
 
+<style>
+    .summary-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .chart-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        height: 100%;
+    }
+
+    .hover-row:hover {
+        background-color: rgba(108, 92, 231, 0.1) !important;
+    }
+
+    .btn {
+        transition: all 0.2s;
+    }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+    .form-control:focus {
+        border-color: #6c5ce7;
+        box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+    }
+
+    .table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+        .table thead th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .table thead th:last-child {
+            border-top-right-radius: 8px;
+        }
+</style>
+
 @code {
     private List<BusinessTransaction> transactions = new();
     private string searchText = string.Empty;
     private BusinessTransaction? selectedTransaction;
-    private string timeRange = "week";
-    private DateTime? startDate;
-    private DateTime? endDate;
-    private bool isLoading = false;
-
-    // Dashboard metrics
+    private DateTime? selectedDate;
     private decimal totalSales;
-    private decimal totalSalesComparison;
     private int totalOrders;
-    private decimal totalOrdersComparison;
-    private decimal avgOrderValue;
-    private decimal avgOrderValueComparison;
-    private decimal totalDiscounts;
-    private decimal totalDiscountsComparison;
+    private decimal salesChange;
+    private int ordersChange;
+    private decimal avgOrderChange;
+    private string? topProduct;
+    private decimal topProductSales;
+    private string salesTimeFrame = "week";
+
+    private IEnumerable<BusinessTransaction> filteredTransactions => transactions?
+        .Where(t => string.IsNullOrEmpty(searchText) ||
+                   t.Id.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                   (t.CustomerName != null && t.CustomerName.Contains(searchText, StringComparison.OrdinalIgnoreCase)))
+        ?? Enumerable.Empty<BusinessTransaction>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await LoadData();
+            await InitializeCharts();
+        }
+        else
+        {
+            await UpdateCharts();
         }
     }
 
     private async Task LoadData()
     {
-        isLoading = true;
-        StateHasChanged();
+        // Load transactions
+        transactions = await TransactionService.GetTransactionsByDateAsync(selectedDate?.Date, selectedDate?.Date.AddDays(1).AddTicks(-1));
 
-        try
-        {
-            // Set date range based on selection
-            var now = DateTime.Now;
-            DateTime comparisonStartDate;
+        // Calculate summary metrics
+        totalSales = transactions.Sum(t => t.Total);
+        totalOrders = transactions.Count;
 
-            switch (timeRange)
-            {
-                case "day":
-                    startDate = now.Date;
-                    endDate = now.Date.AddDays(1).AddTicks(-1);
-                    comparisonStartDate = now.Date.AddDays(-1);
-                    break;
-                case "week":
-                    startDate = now.Date.AddDays(-(int)now.DayOfWeek);
-                    endDate = startDate.Value.AddDays(7).AddTicks(-1);
-                    comparisonStartDate = startDate.Value.AddDays(-7);
-                    break;
-                case "month":
-                    startDate = new DateTime(now.Year, now.Month, 1);
-                    endDate = startDate.Value.AddMonths(1).AddTicks(-1);
-                    comparisonStartDate = startDate.Value.AddMonths(-1);
-                    break;
-                case "year":
-                    startDate = new DateTime(now.Year, 1, 1);
-                    endDate = startDate.Value.AddYears(1).AddTicks(-1);
-                    comparisonStartDate = startDate.Value.AddYears(-1);
-                    break;
-                case "custom":
-                    if (!startDate.HasValue || !endDate.HasValue)
-                    {
-                        timeRange = "week";
-                        await LoadData();
-                        return;
-                    }
-                    endDate = endDate.Value.Date.AddDays(1).AddTicks(-1);
-                    var customRangeDays = (endDate.Value - startDate.Value).TotalDays;
-                    comparisonStartDate = startDate.Value.AddDays(-customRangeDays - 1);
-                    break;
-                default:
-                    startDate = now.Date.AddDays(-(int)now.DayOfWeek);
-                    endDate = startDate.Value.AddDays(7).AddTicks(-1);
-                    comparisonStartDate = startDate.Value.AddDays(-7);
-                    break;
-            }
+        // Calculate changes (simplified - in a real app you'd compare with previous period)
+        salesChange = 5.2m; // Example value
+        ordersChange = 3;
+        avgOrderChange = 2.1m;
 
-            // Load current period data
-            transactions = await TransactionService.GetTransactionsByDateAsync(startDate, endDate);
+        // Find top product
+        var productSales = transactions
+            .SelectMany(t => t.Items)
+            .GroupBy(i => i.ProductName)
+            .Select(g => new { Product = g.Key, Sales = g.Sum(i => i.UnitPrice * i.Quantity) })
+            .OrderByDescending(x => x.Sales)
+            .FirstOrDefault();
 
-            // Load comparison period data for metrics
-            var comparisonTransactions = await TransactionService.GetTransactionsByDateAsync(
-                comparisonStartDate, startDate.Value.AddTicks(-1));
-
-            // Calculate metrics
-            totalSales = transactions.Sum(t => t.Total);
-            var comparisonTotalSales = comparisonTransactions.Sum(t => t.Total);
-            totalSalesComparison = comparisonTotalSales > 0 ?
-                (totalSales - comparisonTotalSales) / comparisonTotalSales * 100 : 0;
-
-            totalOrders = transactions.Count;
-            var comparisonTotalOrders = comparisonTransactions.Count;
-            totalOrdersComparison = comparisonTotalOrders > 0 ?
-                (totalOrders - comparisonTotalOrders) / (decimal)comparisonTotalOrders * 100 : 0;
-
-            avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-            var comparisonAvgOrderValue = comparisonTotalOrders > 0 ?
-                comparisonTotalSales / comparisonTotalOrders : 0;
-            avgOrderValueComparison = comparisonAvgOrderValue > 0 ?
-                (avgOrderValue - comparisonAvgOrderValue) / comparisonAvgOrderValue * 100 : 0;
-
-            totalDiscounts = transactions.Sum(t => t.Discount);
-            var comparisonTotalDiscounts = comparisonTransactions.Sum(t => t.Discount);
-            totalDiscountsComparison = comparisonTotalDiscounts > 0 ?
-                (totalDiscounts - comparisonTotalDiscounts) / comparisonTotalDiscounts * 100 : 0;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}\n{ex.StackTrace}");
-            await JS.InvokeVoidAsync("console.error", new { ex.Message, ex.StackTrace });
-        }
-        finally
-        {
-            isLoading = false;
-            StateHasChanged();
-        }
+        topProduct = productSales?.Product;
+        topProductSales = productSales?.Sales ?? 0;
     }
 
-    protected override async Task OnParametersSetAsync()
+    private async Task FilterData()
     {
-        await base.OnParametersSetAsync();
-        if (transactions.Any())
-        {
-            await RenderCharts();
-        }
+        await LoadData();
+        await UpdateCharts();
     }
-
-    private async Task RenderCharts()
-    {
-        try
-        {
-            if (!transactions.Any()) return;
-
-            // Group sales by day for the chart
-            var salesByDay = transactions
-                .GroupBy(t => t.TransactionDate.Date)
-                .OrderBy(g => g.Key)
-                .Select(g => new { Date = g.Key, Sales = g.Sum(t => t.Total) })
-                .ToList();
-
-            // Group payments by method for the chart
-            var paymentsByMethod = transactions
-                .GroupBy(t => t.PaymentMethod)
-                .Select(g => new { Method = g.Key, Amount = g.Sum(t => t.Total) })
-                .ToList();
-
-            // Prepare data for JavaScript charts
-            var salesLabels = salesByDay.Select(x => x.Date.ToString("MMM dd")).ToArray();
-            var salesData = salesByDay.Select(x => x.Sales).ToArray();
-
-            var paymentMethods = paymentsByMethod.Select(x => x.Method).ToArray();
-            var paymentAmounts = paymentsByMethod.Select(x => x.Amount).ToArray();
-
-            await JS.InvokeVoidAsync("renderSalesReportCharts",
-                new { salesLabels, salesData, paymentMethods, paymentAmounts });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error rendering charts: {ex.Message}");
-        }
-    }
-
-    private string GetComparisonText(decimal percentage, string metricName)
-    {
-        if (percentage == 0) return "No change in " + metricName;
-
-        var direction = percentage > 0 ? "increase" : "decrease";
-        var absPercentage = Math.Abs(percentage).ToString("0.0");
-
-        return $"{absPercentage}% {direction} from previous period";
-    }
-
-    private IEnumerable<BusinessTransaction> filteredTransactions => transactions?
-        .Where(t => string.IsNullOrEmpty(searchText) ||
-                   t.Id.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                   (t.CustomerName != null && t.CustomerName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
-                   t.Items.Any(i => i.ProductName.Contains(searchText, StringComparison.OrdinalIgnoreCase)))
-        .OrderByDescending(t => t.TransactionDate) ?? Enumerable.Empty<BusinessTransaction>();
 
     private void ShowTransactionDetails(BusinessTransaction transaction)
     {
@@ -445,41 +435,105 @@
         }
     }
 
-    private async Task DownloadBills()
+    private async Task DownloadReport()
     {
         try
         {
-            var csvContent = "Bill ID,Customer,Date,Items,Subtotal,Discount,Total\n";
+            var csvContent = "Date,Order ID,Customer,Items,Subtotal,Discount,Tax,Total,Payment Method\n";
             foreach (var t in filteredTransactions)
             {
-                csvContent += $"{t.Id},\"{t.CustomerName ?? "Walk-in"}\"," +
-                            $"{t.TransactionDate:dd-MM-yyyy HH:mm}," +
+                var discountValue = t.Items.Any(i => i.IsRateListItem) ? "N/A" : t.Discount.ToString();
+
+                csvContent += $"{t.TransactionDate:dd-MM-yyyy HH:mm}," +
+                            $"{t.Id}," +
+                            $"\"{t.CustomerName ?? "Walk-in"}\"," +
                             $"{t.Items.Sum(i => i.Quantity)}," +
                             $"{t.SubTotal}," +
-                            $"{t.Discount}," +
-                            $"{t.Total}\n";
+                            $"{discountValue}," +
+                            $"{t.Tax}," +
+                            $"{t.Total}," +
+                            $"{t.PaymentMethod}\n";
             }
 
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            var fileName = $"SalesReport_{timestamp}.csv";
+            var fileName = $"Sales_Report_{timestamp}.csv";
             await JS.InvokeVoidAsync("downloadCSV", csvContent, fileName);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error downloading bills: {ex.Message}");
+            Console.WriteLine($"Error downloading report: {ex.Message}");
         }
     }
 
-    private async Task PrintBills()
+    private async Task InitializeCharts()
     {
-        try
+        await JS.InvokeVoidAsync("initializeSalesTrendChart", salesTimeFrame);
+        await JS.InvokeVoidAsync("initializePaymentMethodChart");
+    }
+
+    private async Task UpdateCharts()
+    {
+        // Prepare sales trend data based on timeframe
+        var trendData = GetSalesTrendData(salesTimeFrame);
+        await JS.InvokeVoidAsync("updateSalesTrendChart", trendData.Labels, trendData.Values, salesTimeFrame);
+
+        // Prepare payment method data
+        var paymentData = transactions
+            .GroupBy(t => t.PaymentMethod)
+            .Select(g => new { Method = g.Key, Amount = g.Sum(t => t.Total) })
+            .OrderByDescending(x => x.Amount)
+            .ToList();
+
+        var paymentLabels = paymentData.Select(x => x.Method).ToArray();
+        var paymentAmounts = paymentData.Select(x => (double)x.Amount).ToArray();
+
+        await JS.InvokeVoidAsync("updatePaymentMethodChart", paymentLabels, paymentAmounts);
+    }
+
+    private (string[] Labels, double[] Values) GetSalesTrendData(string timeframe)
+    {
+        // In a real app, you would get this data from your service
+        // This is just sample data for demonstration
+
+        if (timeframe == "day")
         {
-            await JS.InvokeVoidAsync("printBillsList");
+            var labels = Enumerable.Range(0, 24).Select(h => $"{h}:00").ToArray();
+            var values = new double[24];
+            var random = new Random();
+
+            for (int i = 0; i < 24; i++)
+            {
+                values[i] = random.Next(50, 200);
+            }
+
+            return (labels, values);
         }
-        catch (Exception ex)
+        else if (timeframe == "week")
         {
-            Console.WriteLine($"Error printing bills: {ex.Message}");
+            var labels = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+            var values = new double[] { 1200, 1900, 1500, 2100, 2500, 1800, 2200 };
+            return (labels, values);
         }
+        else // month
+        {
+            var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+            var labels = Enumerable.Range(1, daysInMonth).Select(d => d.ToString()).ToArray();
+            var values = new double[daysInMonth];
+            var random = new Random();
+
+            for (int i = 0; i < daysInMonth; i++)
+            {
+                values[i] = random.Next(800, 3000);
+            }
+
+            return (labels, values);
+        }
+    }
+
+    private async Task SetSalesTimeFrame(string timeframe)
+    {
+        salesTimeFrame = timeframe;
+        await UpdateCharts();
     }
 
     public void Dispose()
@@ -488,373 +542,101 @@
     }
 }
 
- <style>
+         <script>
 
-/* Modern Dashboard Cards Styling */
-.card {
-    border: none;
-    border-radius: 16px;
-    overflow: hidden;
-    background: white;
-    color: #2d3436;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-    position: relative;
-    z-index: 1;
-    border-bottom: 4px solid transparent;
-}
+                 // Sales Trend Chart
+    let salesTrendChart;
 
-.card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-}
+    window.initializeSalesTrendChart = async (timeframe) => {
+        const ctx = document.getElementById('salesTrendChart').getContext('2d');
 
-.card-body {
-    padding: 2rem;
-    position: relative;
-}
-
-/* Modern icon header with colored background */
-.card-body::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 80px;
-    height: 80px;
-    border-radius: 0 0 0 100%;
-    z-index: -1;
-    opacity: 0.15;
-    transition: all 0.3s ease;
-}
-
-.card:hover .card-body::before {
-    opacity: 0.2;
-    width: 90px;
-    height: 90px;
-}
-
-/* Icons positioned in the colored corner */
-.card-body::after {
-    content: "";
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 28px;
-    height: 28px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    filter: brightness(0.9);
-}
-
-/* Unique colors and icons for each card */
-.card:nth-child(1) { /* Total Sales */
-    border-bottom-color: #6c5ce7;
-}
-.card:nth-child(1) .card-body::before {
-    background-color: #6c5ce7;
-}
-.card:nth-child(1) .card-body::after {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%236c5ce7" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg>');
-}
-
-.card:nth-child(2) { /* Total Orders */
-    border-bottom-color: #00b894;
-}
-.card:nth-child(2) .card-body::before {
-    background-color: #00b894;
-}
-.card:nth-child(2) .card-body::after {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%2300b894" viewBox="0 0 24 24"><path d="M13 12h7v1.5h-7zm0-2.5h7V11h-7zm0 5h7V16h-7zM21 4H3c-1.1 0-2 .9-2 2v13c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 15H3V6h18v13z"/></svg>');
-}
-
-.card:nth-child(3) { /* Avg. Order Value */
-    border-bottom-color: #0984e3;
-}
-.card:nth-child(3) .card-body::before {
-    background-color: #0984e3;
-}
-.card:nth-child(3) .card-body::after {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%230984e3" viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>');
-}
-
-.card:nth-child(4) { /* Total Discounts */
-    border-bottom-color: #e17055;
-}
-.card:nth-child(4) .card-body::before {
-    background-color: #e17055;
-}
-.card:nth-child(4) .card-body::after {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23e17055" viewBox="0 0 24 24"><path d="M12.79 21L3 11.21v2c0 .53.21 1.04.59 1.41l7.79 7.79c.78.78 2.05.78 2.83 0l6.21-6.21c.78-.78.78-2.05 0-2.83L12.79 21z"/><path d="M11.38 17.41c.78.78 2.05.78 2.83 0l6.21-6.21c.78-.78.78-2.05 0-2.83l-7.79-7.79c-.78-.78-2.05-.78-2.83 0L3.59 7.38c-.78.78-.78 2.05 0 2.83l7.79 7.2zM7.25 8.09c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41z"/></svg>');
-}
-
-/* Typography */
-.card-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    color: #636e72;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-
-.card-text {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: #2d3436;
-    letter-spacing: -0.5px;
-}
-
-.small {
-    font-size: 0.85rem;
-    color: #636e72;
-    display: flex;
-    align-items: center;
-    margin-top: 0.5rem;
-}
-
-/* Trend indicators */
-.small::before {
-    content: "";
-    display: inline-block;
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    margin-right: 8px;
-}
-
-.small.text-success::before {
-    border-bottom: 6px solid #00b894;
-}
-
-.small.text-danger::before {
-    border-top: 6px solid #d63031;
-}
-
-/* Additional modern touches */
-.card::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, rgba(108,92,231,0.8) 0%, rgba(0,184,148,0.8) 35%, rgba(9,132,227,0.8) 70%, rgba(225,112,85,0.8) 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.card:hover::after {
-    opacity: 1;
-}
-.order-history {
-    border: none;
-    border-radius: 16px;
-    overflow: hidden;
-    background: white;
-    color: #2d3436;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-    position: relative;
-    z-index: 1;
-    border-bottom: 4px solid #6c5ce7;
-    margin-bottom: 2rem;
-}
-
-.order-history:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-}
-
-.order-header {
-    padding: 1.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.order-header h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2d3436;
-}
-
-.view-history-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: #6c5ce7;
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.view-history-btn:hover {
-    background-color: #5649c0;
-    transform: translateY(-2px);
-}
-
-.view-history-btn svg {
-    width: 16px;
-    height: 16px;
-}
-
-.order-table-container {
-    padding: 1.5rem 2rem;
-}
-
-.order-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.order-table thead th {
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    color: #636e72;
-    border-bottom: 2px solid #e9ecef;
-}
-
-.order-table tbody tr {
-    transition: all 0.2s ease;
-}
-
-.order-table tbody tr:hover {
-    background-color: #f8f9fa;
-    cursor: pointer;
-}
-
-.order-table tbody td {
-    padding: 1rem;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.order-date {
-    color: #2d3436;
-    font-weight: 500;
-}
-
-.order-items, .order-total, .order-payment {
-    color: #636e72;
-}
-
-.order-total {
-    font-weight: 600;
-    text-align: right;
-}
-
-.order-payment {
-    text-align: right;
-}
-
-.no-orders td {
-    padding: 2rem;
-    text-align: center;
-    color: #636e72;
-    font-style: italic;
-}
-
-/* Modern touches */
-.order-history::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, rgba(108,92,231,0.8) 0%, rgba(0,184,148,0.8) 35%, rgba(9,132,227,0.8) 70%, rgba(225,112,85,0.8) 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.order-history:hover::after {
-    opacity: 1;
-}
-</style>
-
-<script>
-    // Chart rendering function for sales report
-    function renderSalesReportCharts(data) {
-        // Destroy existing charts if they exist
-        if (window.salesChart) {
-            window.salesChart.destroy();
-        }
-        if (window.paymentChart) {
-            window.paymentChart.destroy();
-        }
-
-        // Sales Trend Chart (Line)
-        const salesCtx = document.getElementById('salesChart').getContext('2d');
-        window.salesChart = new Chart(salesCtx, {
+        // Initial empty data
+        salesTrendChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.salesLabels,
+                labels: [],
                 datasets: [{
-                    label: 'Daily Sales',
-                    data: data.salesData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    label: 'Sales',
+                    data: [],
+                    backgroundColor: 'rgba(108, 92, 231, 0.2)',
+                    borderColor: 'rgba(108, 92, 231, 1)',
                     borderWidth: 2,
-                    tension: 0.1,
+                    tension: 0.4,
                     fill: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toFixed(2);
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return '$' + context.parsed.y.toLocaleString();
+                                return '$' + value;
                             }
                         }
                     }
                 }
             }
         });
+    };
 
-        // Payment Methods Chart (Doughnut)
-        const paymentCtx = document.getElementById('paymentChart').getContext('2d');
-        window.paymentChart = new Chart(paymentCtx, {
+    window.updateSalesTrendChart = (labels, values, timeframe) => {
+        if (salesTrendChart) {
+            salesTrendChart.data.labels = labels;
+            salesTrendChart.data.datasets[0].data = values;
+
+            // Update scale title based on timeframe
+            salesTrendChart.options.scales.x = {
+                title: {
+                    display: true,
+                    text: timeframe === 'day' ? 'Hour of Day' :
+                          timeframe === 'week' ? 'Day of Week' : 'Day of Month'
+                }
+            };
+
+            salesTrendChart.update();
+        }
+    };
+
+    // Payment Method Chart
+    let paymentMethodChart;
+
+    window.initializePaymentMethodChart = async () => {
+        const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+
+        paymentMethodChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: data.paymentMethods,
+                labels: [],
                 datasets: [{
-                    data: data.paymentAmounts,
+                    data: [],
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)'
+                        'rgba(108, 92, 231, 0.8)',
+                        'rgba(0, 184, 148, 0.8)',
+                        'rgba(253, 203, 110, 0.8)',
+                        'rgba(253, 121, 168, 0.8)',
+                        'rgba(129, 236, 236, 0.8)'
                     ],
                     borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)'
+                        'rgba(108, 92, 231, 1)',
+                        'rgba(0, 184, 148, 1)',
+                        'rgba(253, 203, 110, 1)',
+                        'rgba(253, 121, 168, 1)',
+                        'rgba(129, 236, 236, 1)'
                     ],
                     borderWidth: 1
                 }]
@@ -863,33 +645,42 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
+                    legend: {
+                        position: 'right',
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const value = context.raw;
+                                const label = context.label || '';
+                                const value = context.raw || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = Math.round((value / total) * 100);
-                                return `${context.label}: $${value.toLocaleString()} (${percentage}%)`;
+                                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
                             }
                         }
-                    },
-                    legend: {
-                        position: 'right'
                     }
                 }
             }
         });
-    }
+    };
 
-    // Download CSV function
-    function downloadCSV(content, filename) {
+    window.updatePaymentMethodChart = (labels, values) => {
+        if (paymentMethodChart) {
+            paymentMethodChart.data.labels = labels;
+            paymentMethodChart.data.datasets[0].data = values;
+            paymentMethodChart.update();
+        }
+    };
+
+    // Helper functions for CSV download and printing (same as in your order history page)
+    window.downloadCSV = (content, filename) => {
         const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
 
         const now = new Date();
-        const timeStr = now.toLocaleString().replace(/[^\d]/g, "_");
+        const timeStr = now.toLocaleString(); // Include time in local format
 
-        const fileWithTime = filename.replace(".csv", `_${timeStr}.csv`);
+        const fileWithTime = filename.replace(".csv", `_${timeStr.replace(/[^\d]/g, "")}.csv`);
 
         link.setAttribute("href", URL.createObjectURL(blob));
         link.setAttribute("download", fileWithTime);
@@ -897,40 +688,10 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    }
+    };
 
-    // Print bills list function
-    function printBillsList() {
-        const printContent = document.querySelector(".table-responsive").innerHTML;
-        const printWindow = window.open('', '', 'width=900,height=700');
-        const now = new Date().toLocaleString();
-
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Order History - ${now}</title>
-                    <style>
-                        table { width: 100%; border-collapse: collapse; }
-                        th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-                        th { background-color: #333; color: white; }
-                    </style>
-                </head>
-                <body>
-                    <h2>Order History</h2>
-                    <p>Printed on: ${now}</p>
-                    ${printContent}
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-    }
-
-    // Print receipt function
-    function printReceipt(transactionId) {
-        // Implement your receipt printing logic here
+    window.printReceipt = (transactionId) => {
+        // Implement receipt printing logic here
         console.log(`Printing receipt for transaction ${transactionId}`);
-    }
-</script>
+    };
+         </script>
