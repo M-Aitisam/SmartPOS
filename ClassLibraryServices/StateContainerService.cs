@@ -8,7 +8,20 @@ namespace ClassLibraryServices
         private List<BusinessCategory>? _categories;
         private List<Product>? _products;
 
+        private bool _isRegistered;
 
+        public bool IsRegistered
+        {
+            get => _isRegistered;
+            set
+            {
+                if (_isRegistered != value)
+                {
+                    _isRegistered = value;
+                    NotifyStateChanged();
+                }
+            }
+        }
         public List<BusinessCategory> Categories
         {
             get => _categories ?? new();

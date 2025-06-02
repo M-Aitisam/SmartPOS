@@ -2,6 +2,7 @@
 @layout MainLayout
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject StateContainerService StateContainer
 @rendermode InteractiveServer
 
 <div class="dashboard-container">
@@ -40,9 +41,9 @@
         <div class="dashboard-grid">
             @foreach (var item in DashboardItems)
             {
-                <div class="dashboard-card @(item.Route == "businessdetails" ? "" : "locked-card")"
+                <div class="dashboard-card @(StateContainer.IsRegistered || item.Route == "businessdetails" || item.Route == "login" ? "" : "locked-card")"
                      @onclick="() => HandleCardClick(item.Route)">
-                    @if (item.Route != "businessdetails")
+                    @if (!StateContainer.IsRegistered && item.Route != "businessdetails" && item.Route != "login")
                     {
                         <div class="card-lock">
                             <i class="fas fa-lock"></i>
@@ -65,8 +66,7 @@
 </div>
 
 @code {
-    // Track registration status
-    private bool isRegistered = false;
+  
     private List<DashboardItem> DashboardItems = new()
     {
         new DashboardItem("Business Register", "fas fa-store", "businessdetails"),
@@ -81,8 +81,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Check registration status (you would typically get this from your backend)
-        isRegistered = await CheckRegistrationStatus();
+        // No need to check registration status separately
+        await base.OnInitializedAsync();
     }
 
     private async Task<bool> CheckRegistrationStatus()
@@ -110,7 +110,8 @@
 
     private async Task HandleCardClick(string route)
     {
-        if (route != "businessdetails" && !isRegistered)
+        // Check StateContainer.IsRegistered instead of local variable
+        if (route != "businessdetails" && !StateContainer.IsRegistered)
         {
             await ShowRegistrationAlert();
             return;
