@@ -3,6 +3,7 @@
 @using System.Text.Json
 @using System.IO
 @using System.Text
+@using Microsoft.AspNetCore.Components.Forms
 @inject BillService BillService
 @inject NavigationManager Navigation
 @inject StateContainerService StateContainer
@@ -47,20 +48,27 @@
                                     </div>
                                     <div class="col-md-4 col-lg-4">
                                         <label class="form-label fw-semibold">Image:</label>
-                                        <div class="dropdown">
-                                            <button class="btn btn-outline-secondary w-100 text-start d-flex align-items-center" type="button" @onclick="ToggleDropdown">
-                                                @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
-                                                {
-                                                    <img src="@newProduct.ImageUrl" class="me-2 rounded-1" style="width: 24px; height: 24px; object-fit: cover;" />
-                                                    <span class="text-truncate">@Path.GetFileName(newProduct.ImageUrl)</span>
-                                                }
-                                                else
-                                                {
-                                                    <span>Select Image</span>
-                                                }
-                                                <i class="bi bi-chevron-down ms-auto"></i>
-                                            </button>
-                                            <ul class="dropdown-menu w-100" style="display: @(isDropdownOpen ? "block" : "none"); max-height: 300px; overflow-y: auto;">
+                                        <div class="d-flex align-items-center">
+                                            <InputFile id="imageUpload" style="display:none" OnChange="OnImageSelected" accept="image/*" />
+                                            <div class="input-group">
+                                                <button type="button" class="btn btn-outline-secondary text-start d-flex align-items-center flex-grow-1" style="border-top-right-radius: 0; border-bottom-right-radius: 0;" @onclick="ToggleDropdown">
+                                                    @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
+                                                    {
+                                                        <img src="@newProduct.ImageUrl" class="me-2 rounded-1" style="width: 24px; height: 24px; object-fit: cover;" />
+                                                        <span class="text-truncate">@Path.GetFileName(newProduct.ImageUrl)</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Select Image</span>
+                                                    }
+                                                    <i class="bi bi-chevron-down ms-auto"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary d-flex align-items-center" style="border-top-left-radius: 0; border-bottom-left-radius: 0;" @onclick="TriggerFileInput">
+                                                    <i class="bi bi-plus-circle me-2"></i> Add Image
+                                                </button>
+                                            </div>
+                                            <ul class="dropdown-menu" style="display: @(isDropdownOpen ? "block" : "none"); min-width: 250px; max-width: 350px; max-height: 300px; overflow-y: auto; position: absolute; z-index: 1000;"
+                                                @ref="dropdownMenuRef">
                                                 @foreach (var imgUrl in ImageUrls)
                                                 {
                                                     <li>
@@ -511,6 +519,68 @@
         }
     }
 
+    private async Task OnImageSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null && await ValidateFile(file))
+        {
+            var uploads = Path.Combine(WebHostEnvironment.WebRootPath, "Images");
+            if (!Directory.Exists(uploads))
+                Directory.CreateDirectory(uploads);
+            var fileName = Path.GetRandomFileName() + Path.GetExtension(file.Name);
+            var filePath = Path.Combine(uploads, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.OpenReadStream(5 * 1024 * 1024).CopyToAsync(stream); // 5MB limit
+            }
+            newProduct.ImageUrl = $"/Images/{fileName}";
+            await LoadImages();
+            StateHasChanged();
+        }
+    }
+
+    private async Task TriggerFileInput()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "document.getElementById('imageUpload').click()");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error opening file dialog: " + ex.Message);
+        }
+    }
+
+    private async Task<bool> ValidateFile(IBrowserFile file)
+    {
+        try
+        {
+            // Check file size (max 5MB)
+            const long maxFileSize = 5 * 1024 * 1024; // 5MB in bytes
+            if (file.Size > maxFileSize)
+            {
+                await JS.InvokeVoidAsync("alert", "File size must be less than 5MB");
+                return false;
+            }
+
+            // Check file type
+            var allowedTypes = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (!allowedTypes.Contains(extension))
+            {
+                await JS.InvokeVoidAsync("alert", "Only image files (jpg, jpeg, png, gif) are allowed");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error validating file: " + ex.Message);
+            return false;
+        }
+    }
+
     private string GetPageLabel(int page)
     {
         return page switch
@@ -562,6 +632,37 @@
         int half = (int)Math.Ceiling(pages.Count / 2.0);
         return new List<List<int>> { pages.Take(half).ToList(), pages.Skip(half).ToList() };
     }
+
+    private ElementReference dropdownMenuRef;
+    private DotNetObjectReference<Products>? dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerDropdownCloseHandler", dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void CloseDropdown()
+    {
+        if (isDropdownOpen)
+        {
+            isDropdownOpen = false;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetRef != null)
+        {
+            await JS.InvokeVoidAsync("unregisterDropdownCloseHandler");
+            dotNetRef.Dispose();
+        }
+    }
 }
 
 <script>
@@ -573,4 +674,19 @@
         link.click();
         document.body.removeChild(link);
     };
+
+window.registerDropdownCloseHandler = function (dotNetRef) {
+    window._dropdownClickHandler = function (event) {
+        const dropdown = document.querySelector('.dropdown-menu[style*="block"]');
+        const selectBtn = document.querySelector('button[onclick*="ToggleDropdown"]');
+        if (dropdown && !dropdown.contains(event.target) && (!selectBtn || !selectBtn.contains(event.target))) {
+            dotNetRef.invokeMethodAsync('CloseDropdown');
+        }
+    };
+    document.addEventListener('mousedown', window._dropdownClickHandler);
+};
+window.unregisterDropdownCloseHandler = function () {
+    document.removeEventListener('mousedown', window._dropdownClickHandler);
+    window._dropdownClickHandler = null;
+};
 </script>

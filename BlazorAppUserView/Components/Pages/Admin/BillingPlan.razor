@@ -1,0 +1,129 @@
+﻿@using ClassLibraryEntities
+@using ClassLibraryDAL
+@using ClassLibraryServices
+@inject BillingPlanModel BillingPlanModel
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+@page "/billing-plan"
+@inject IJSRuntime JS
+
+<h2 style="text-align: center; font-size: 2rem; font-weight: bold; margin-top: 1rem;">Choose Your Pricing Plan</h2>
+<p style="text-align: center; font-size: 0.9rem; color: #888;">All Plans FREE for the first 30 Days</p>
+
+<div style="text-align: center; margin: 1.5rem 0;">
+    <label>
+        <input type="checkbox" @bind="isYearly" />
+        <span style="margin-left: 0.5rem; color: white;">Monthly</span> /
+        <span style="color: white;">Yearly</span>
+    </label>
+</div>
+
+<div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5rem;">
+    @foreach (var plan in billingPlans)
+    {
+        <div style="
+            width: 250px;
+            height: 400px;
+            border-radius: 20px;
+            background: linear-gradient(170deg, rgba(58, 56, 56, 0.623) 0%, rgb(31, 31, 31) 100%);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.55);
+            position: relative;
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;"
+             onmouseover="this.style.transform='scale(0.97)'" onmouseout="this.style.transform='scale(1)'">
+
+            @if (plan.Name == "Premium")
+            {
+                <span style="
+                    position: absolute;
+                    overflow: hidden;
+                    width: 150px;
+                    height: 150px;
+                    top: -10px;
+                    left: -10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;">
+                    <div style="
+                        content: 'Premium';
+                        position: absolute;
+                        width: 150%;
+                        height: 40px;
+                        background-image: linear-gradient(45deg, #ff6547 0%, #ffb144 51%, #ff7053 100%);
+                        transform: rotate(-45deg) translateY(-20px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: #fff;
+                        font-weight: 600;
+                        letter-spacing: 0.1em;
+                        text-transform: uppercase;
+                        box-shadow: 0 5px 10px rgba(0,0,0,0.23);">
+                        Premium
+                    </div>
+                    <div style="
+                        content: '';
+                        position: absolute;
+                        width: 10px;
+                        bottom: 0;
+                        left: 0;
+                        height: 10px;
+                        z-index: -1;
+                        box-shadow: 140px -140px #cc3f47;
+                        background-image: linear-gradient(45deg, #FF512F 0%, #F09819  51%, #FF512F  100%);
+                            "></div>
+                </span>
+            }
+
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">@plan.Name</h3>
+            <div style="font-size: 2rem; font-weight: bold; color: #ffb144; margin: 1rem 0;">
+                $@(isYearly ? (plan.PricePerMonth * 12 * 0.9m).ToString("0") : plan.PricePerMonth.ToString("0"))<span style="font-size: 0.9rem;">/month</span>
+            </div>
+
+            @foreach (var feature in plan.Features)
+            {
+                <div style="font-size: 0.9rem; color: #ccc; margin-bottom: 0.3rem;">✔️ @feature</div>
+            }
+
+            <button @onclick="() => ChoosePlan(plan.Name)" style="
+                margin-top: 1.5rem;
+                background-color: #ff5c8d;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 20px;
+                border: none;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background 0.3s;"
+                    onmouseover="this.style.backgroundColor='#e84e78'" onmouseout="this.style.backgroundColor='#ff5c8d'">
+                Choose Plan
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isYearly = false;
+
+    private class Plan
+    {
+        public string Name { get; set; } = "";
+        public decimal PricePerMonth { get; set; }
+        public List<string> Features { get; set; } = new();
+    }
+
+    private List<Plan> billingPlans = new()
+    {
+        new Plan { Name = "Basic", PricePerMonth = 199, Features = new() { "Maintenance", "Subdomain", "70 email accounts", "Maintenance", "Maintenance" }},
+        new Plan { Name = "Standard", PricePerMonth = 299, Features = new() { "Maintenance", "Subdomain", "70 email accounts", "Maintenance", "Maintenance" }},
+        new Plan { Name = "Premium", PricePerMonth = 399, Features = new() { "Maintenance", "Subdomain", "70 email accounts", "Maintenance", "Maintenance" }}
+    };
+
+    private async Task ChoosePlan(string planName)
+    {
+        await JS.InvokeVoidAsync("alert", $"You selected the {planName} plan.");
+    }
+}
