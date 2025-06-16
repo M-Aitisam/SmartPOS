@@ -65,6 +65,10 @@
             <div class="register-link">
                 Don't have an account? <a href="/businessregistration">Register your business</a>
             </div>
+            @if (StateContainer.IsAuthenticated)
+            {
+                <button @onclick="Logout">Logout</button>
+            }
         </EditForm>
     </div>
 </div>
@@ -78,6 +82,15 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadBusinessLogo();
+    }
+
+    private async Task Logout()
+    {
+        StateContainer.CurrentBusiness = null;
+        StateContainer.IsAuthenticated = false;
+        StateContainer.IsRegistered = false;
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        Navigation.NavigateTo("/", forceLoad: true);
     }
 
     private async Task LoadBusinessLogo()
@@ -131,6 +144,7 @@
                     {
                         StateContainer.CurrentBusiness = business;
                     StateContainer.IsRegistered = true;
+                    StateContainer.IsAuthenticated = true;
                     }
 
                     if (loginModel.RememberMe)
@@ -157,7 +171,7 @@
 
                     // Navigate after alert closes
                     await Task.Delay(1500);
-                    Navigation.NavigateTo("", forceLoad: true);
+                   
                 }
                 else
                 {

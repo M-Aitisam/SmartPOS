@@ -22,6 +22,20 @@ namespace ClassLibraryServices
                 }
             }
         }
+        private bool _isAuthenticated;
+
+        public bool IsAuthenticated
+        {
+            get => _isAuthenticated;
+            set
+            {
+                if (_isAuthenticated != value)
+                {
+                    _isAuthenticated = value;
+                    NotifyStateChanged();
+                }
+            }
+        }
         public List<BusinessCategory> Categories
         {
             get => _categories ?? new();
@@ -51,6 +65,7 @@ namespace ClassLibraryServices
                 if (!Equals(_currentBusiness, value))
                 {
                     _currentBusiness = value;
+                    IsAuthenticated = value != null;
                     NotifyStateChanged();
                 }
             }

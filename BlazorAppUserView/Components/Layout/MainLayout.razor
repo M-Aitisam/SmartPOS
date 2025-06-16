@@ -700,20 +700,72 @@
 @code {
     private string? businessLogoUrl;
     private string businessName = " ";
-    private string userName = "Aitisam Ahmed ";
+    private string userName = " ";
     private string userRole = "Admin";
     private string userInitials = "AA";
     private bool isSidebarExpanded = false;
+    private bool _isFirstRender = true;
+
+    
 
     protected override async Task OnInitializedAsync()
     {
+        // Load business details from state container (no JS interop here)
         await LoadBusinessDetails();
+
+        // Subscribe to state changes
         StateContainer.OnChange += HandleStateChange;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isFirstRender = false;
+
+            // Now it's safe to make JS interop calls
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                var email = await JS.InvokeAsync<string>("localStorage.getItem", "userEmail");
+                if (!string.IsNullOrEmpty(email))
+                {
+                    var business = await AdminService.GetBusinessByEmail(email);
+                    if (business != null)
+                    {
+                        StateContainer.CurrentBusiness = business;
+                        StateContainer.IsRegistered = true;
+                        StateContainer.IsAuthenticated = true;
+                        await LoadBusinessDetails();
+                    }
+                }
+            }
+
+            StateHasChanged();
+        }
+    }
+
+
+
+    public void Dispose()
+    {
+        StateContainer.OnChange -= HandleStateChange;
     }
     private async void HandleStateChange()
     {
-        await LoadBusinessDetails();
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadBusinessDetails();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log the exception as it won't be caught otherwise in async void
+            Console.WriteLine($"Error in HandleStateChange: {ex}");
+        }
     }
 
       private async Task LoadBusinessDetails()
@@ -743,29 +795,44 @@
 
     private void UpdateFromBusinessModel(BusinessModel business)
     {
-        if (business?.BusinessDetails != null)
+        // Handle null business case
+        if (business == null)
         {
-            businessName = business.BusinessDetails.BusinessName ?? "Pakistani Cafe";
-
-            if (business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0)
-            {
-                businessLogoUrl = $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}";
-            }
-            else
-            {
-                businessLogoUrl = null; // Clear previous logo if no new one exists
-            }
+            businessName = "Pakistani Cafe";
+            businessLogoUrl = null;
+            userName = string.Empty;
+            userInitials = string.Empty;
+            StateHasChanged();
+            return;
         }
 
-        if (business?.GeneralInformation != null)
+        // Process BusinessDetails
+        if (business.BusinessDetails != null)
         {
-            userName = $"{business.GeneralInformation.FirstName} {business.GeneralInformation.LastName}";
+            businessName = business.BusinessDetails.BusinessName;
+
+            businessLogoUrl = business.BusinessDetails.LogoData != null && business.BusinessDetails.LogoData.Length > 0
+                ? $"data:image/png;base64,{Convert.ToBase64String(business.BusinessDetails.LogoData)}"
+                : null;
+        }
+        else
+        {
+            businessName = "";
+            businessLogoUrl = null;
+        }
+
+        // Process GeneralInformation
+        if (business.GeneralInformation != null)
+        {
+            var firstName = business.GeneralInformation.FirstName ?? string.Empty;
+            var lastName = business.GeneralInformation.LastName ?? string.Empty;
+            userName = $"{firstName} {lastName}".Trim();
             userInitials = GetInitials(userName);
         }
         else
         {
-            userName = $"{business.GeneralInformation.FirstName} {business.GeneralInformation.LastName}";
-            userInitials = GetInitials(userName);
+            userName = string.Empty;
+            userInitials = string.Empty;
         }
 
         // Force UI update
@@ -805,10 +872,7 @@
                uri.AbsolutePath.Equals("/dashboard", StringComparison.OrdinalIgnoreCase) ||
                uri.AbsolutePath.Equals("/", StringComparison.OrdinalIgnoreCase);
     }
-    public void Dispose()
-    {
-        StateContainer.OnChange -= HandleStateChange;
-    }
+    
 
 }
 
@@ -856,7 +920,7 @@
 
         document.body.innerHTML = printContents;
         window.print();
-        document.body.innerHTML = originalContents;
+        document.body.innerHTML = originalContents;https://www.coursera.org/learn/google-ads-beginner/home/week/1
         window.location.reload();
     };
 </script>
