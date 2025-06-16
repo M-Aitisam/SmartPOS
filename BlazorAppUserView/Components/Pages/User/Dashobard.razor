@@ -41,8 +41,7 @@
         <div class="dashboard-grid">
             @foreach (var item in DashboardItems)
             {
-                bool isLocked = (item.Route != "login" && item.Route != "businessdetails") &&
-                (!IsAuthenticated || !IsRegistered);
+                bool isLocked = ShouldLockCard(item.Route);
 
                 <div class="dashboard-card @(isLocked ? "locked-card" : "")"
                      @onclick="() => HandleCardClick(item.Route)">
@@ -71,8 +70,6 @@
 </div>
 
 @code {
-    private bool IsAuthenticated => StateContainer.CurrentBusiness != null;
-    private bool IsRegistered => StateContainer.IsRegistered;
     private List<DashboardItem> DashboardItems = new()
     {
         new DashboardItem("Business Register", "fas fa-store", "businessdetails"),
@@ -89,6 +86,31 @@
     {
         await base.OnInitializedAsync();
         StateContainer.OnChange += StateHasChanged;
+
+        // Initialize state if coming back after registration/login
+        if (StateContainer.CurrentBusiness != null)
+        {
+            StateContainer.IsAuthenticated = true;
+            StateContainer.IsRegistered = true;
+        }
+    }
+
+    private bool ShouldLockCard(string route)
+    {
+        // Always allow access to these routes
+        if (route == "login" || route == "businessdetails")
+            return false;
+
+        // If not authenticated, lock all other cards
+        if (!StateContainer.IsAuthenticated)
+            return true;
+
+        // If authenticated but not registered, lock all except login
+        if (!StateContainer.IsRegistered)
+            return route != "login";
+
+        // If both authenticated and registered, unlock everything
+        return false;
     }
 
     private string GetCardDescription(string label)
@@ -107,20 +129,46 @@
         };
     }
 
-    private void HandleCardClick(string route)
+    private async Task HandleCardClick(string route)
     {
-        if (!IsAuthenticated && route != "login")
+        // Always allow these routes
+        if (route == "login" || route == "businessdetails")
         {
-            // Show message or prevent navigation
+            NavigationManager.NavigateTo($"/{route}");
             return;
         }
 
-        if (!IsRegistered && route != "businessdetails" && route != "login")
+        // If not authenticated, redirect to login
+        if (!StateContainer.IsAuthenticated)
         {
-            // Show message to complete registration first
+            await JSRuntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Authentication Required",
+                text = "Please login to access this feature",
+                icon = "info",
+                confirmButtonText = "Go to Login",
+                confirmButtonColor = "#6c5ce7"
+            });
+            NavigationManager.NavigateTo("/login");
             return;
         }
 
+        // If authenticated but not registered, redirect to registration
+        if (!StateContainer.IsRegistered)
+        {
+            await JSRuntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Complete Registration",
+                text = "Please complete your business registration first",
+                icon = "info",
+                confirmButtonText = "Go to Registration",
+                confirmButtonColor = "#6c5ce7"
+            });
+            NavigationManager.NavigateTo("/businessdetails");
+            return;
+        }
+
+        // If everything is fine, navigate to the requested route
         NavigationManager.NavigateTo($"/{route}");
     }
 
@@ -137,11 +185,11 @@
             Route = route;
         }
     }
+
     public void Dispose()
     {
-        StateContainer.OnChange -= StateHasChanged; // Add this line
+        StateContainer.OnChange -= StateHasChanged;
     }
-
 }
 
 <style>

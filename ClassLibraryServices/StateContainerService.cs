@@ -5,10 +5,25 @@ namespace ClassLibraryServices
     public class StateContainerService
     {
         public event Action? OnChange;
+
+        private BusinessModel? _currentBusiness;
         private List<BusinessCategory>? _categories;
         private List<Product>? _products;
-
         private bool _isRegistered;
+        private bool _isAuthenticated;
+
+        public BusinessModel? CurrentBusiness
+        {
+            get => _currentBusiness;
+            set
+            {
+                if (_currentBusiness != value)
+                {
+                    _currentBusiness = value;
+                    NotifyStateChanged();
+                }
+            }
+        }
 
         public bool IsRegistered
         {
@@ -22,7 +37,6 @@ namespace ClassLibraryServices
                 }
             }
         }
-        private bool _isAuthenticated;
 
         public bool IsAuthenticated
         {
@@ -36,6 +50,17 @@ namespace ClassLibraryServices
                 }
             }
         }
+
+        public void ClearState()
+        {
+            CurrentBusiness = null;
+            IsRegistered = false;
+            IsAuthenticated = false;
+            NotifyStateChanged();
+        }
+
+        private void NotifyStateChanged() => OnChange?.Invoke();
+
         public List<BusinessCategory> Categories
         {
             get => _categories ?? new();
@@ -54,22 +79,5 @@ namespace ClassLibraryServices
                 NotifyStateChanged();
             }
         }
-
-        private BusinessModel? _currentBusiness;
-
-        public BusinessModel? CurrentBusiness
-        {
-            get => _currentBusiness;
-            set
-            {
-                if (!Equals(_currentBusiness, value))
-                {
-                    _currentBusiness = value;
-                    IsAuthenticated = value != null;
-                    NotifyStateChanged();
-                }
-            }
-        }
-        private void NotifyStateChanged() => OnChange?.Invoke();
     }
 }
